@@ -1,0 +1,1 @@
+from SpeakerRecognition import SpeakerRecognitionModel as Model
