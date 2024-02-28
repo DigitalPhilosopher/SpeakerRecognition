@@ -11,7 +11,7 @@ else:
     device = torch.device("cpu")
 
 
-def get_model() -> nn.Module:
+def get_model(num_classes: int) -> nn.Module:
     """
     Creates and returns a model instance configured for either GPU or CPU based on CUDA availability.
 
@@ -26,7 +26,7 @@ def get_model() -> nn.Module:
     Returns:
         nn.Module: The initialized model, placed on the appropriate device (GPU or CPU).
     """
-    model = Model(input_size=N_MFCC, hidden_size=128, num_layers=2, num_classes=len(set(train_audio_dataset.dataset['speaker'])))
+    model = Model(input_size=N_MFCC, hidden_size=128, num_layers=2, num_classes=num_classes)
     model.to(device)
     return model
 

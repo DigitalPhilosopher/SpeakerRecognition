@@ -1,1 +1,1 @@
-from SpeakerRecognition import SpeakerRecognitionModel as Model
+from .SpeakerRecognition import SpeakerRecognitionModel as Model
