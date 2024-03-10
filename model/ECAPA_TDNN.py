@@ -102,9 +102,10 @@ class ECAPA_TDNN(nn.Module):
         x = self.conv1d_relu_bn(x)
         x1 = self.se2(x)
         x2 = self.se22(x1)
-        x3 = self.se23(x3)
+        x3 = self.se23(x2)
         x = torch.cat((x1, x2, x3), dim=1)
         x = self.conv1d_relu(x)
         x = self.pooling(x)
+        x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
