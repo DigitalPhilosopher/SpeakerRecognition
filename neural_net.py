@@ -1,5 +1,5 @@
 from config import N_MFCC, NUM_EPOCHS
-from model import Model
+from model import Model, Loss
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -11,7 +11,7 @@ else:
     device = torch.device("cpu")
 
 
-def get_model(num_classes: int) -> nn.Module:
+def get_model() -> nn.Module:
     """
     Creates and returns a model instance configured for either GPU or CPU based on CUDA availability.
 
@@ -26,30 +26,28 @@ def get_model(num_classes: int) -> nn.Module:
     Returns:
         nn.Module: The initialized model, placed on the appropriate device (GPU or CPU).
     """
-    model = Model(input_size=N_MFCC, hidden_size=128, num_layers=2, num_classes=num_classes)
+    model = Model(input_size=N_MFCC, hidden_size=128, num_layers=2, embedding_dim=64)
     model.to(device)
     return model
 
-def train_model(model: nn.Module, data_loader: DataLoader):
+def train_model(model: nn.Module, data_loader: DataLoader, num_speakers: int, num_utterances: int):
     """
     Trains a neural network model using the provided data loader for a predefined number of epochs.
-
-    The function iterates over the data loader for each epoch, processes batches of data, computes the loss using
-    CrossEntropyLoss, and updates the model's weights using the Adam optimizer with a learning rate of 0.001.
 
     Parameters:
         data_loader (DataLoader): The DataLoader providing batches of input data and labels for training.
         model (nn.Module): The neural network model to be trained.
     """
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch .optim.Adam(model.parameters(), lr = 0.001)
-    for epoch in range(NUM_EPOCHS):
-        for features, labels in data_loader:
-            features, labels = features.to(device), labels.to(device)
-            outputs = model(features)
-            loss = criterion(outputs, labels)
+    loss = Loss(init_w=10.0, init_b=-5.0)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
+    for epoch in range(NUM_EPOCHS):
+        for batch in data_loader:  # Your DataLoader needs to provide batches structured for GE2E
+            embeddings = model(batch)  # Forward pass to get embeddings
+            loss = loss(embeddings, num_speakers, num_utterances)
+            
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        
         print(f'Epoch [{epoch+1}/{NUM_EPOCHS}], Loss: {loss.item():.4f}')
