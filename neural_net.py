@@ -1,5 +1,5 @@
-from config import N_MFCC, NUM_EPOCHS
-from model import Model, Loss
+from config import N_MFCC, NUM_EPOCHS, MODEL, MODEL_PACKAGE, LOSS, LOSS_PACKAGE
+import importlib
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -26,6 +26,8 @@ def get_model() -> nn.Module:
     Returns:
         nn.Module: The initialized model, placed on the appropriate device (GPU or CPU).
     """
+    model_module = importlib.import_module(f'.{MODEL}', package=MODEL_PACKAGE)
+    Model = getattr(model_module, MODEL)
     model = Model(input_size=N_MFCC, hidden_size=128, num_layers=2, embedding_dim=64)
     model.to(device)
     return model
@@ -38,7 +40,9 @@ def train_model(model: nn.Module, data_loader: DataLoader, num_speakers: int, nu
         data_loader (DataLoader): The DataLoader providing batches of input data and labels for training.
         model (nn.Module): The neural network model to be trained.
     """
-    loss = Loss(init_w=10.0, init_b=-5.0)
+    loss_module = importlib.import_module(f'.{LOSS}', package=LOSS_PACKAGE)
+    Loss = getattr(loss_module, LOSS)
+    loss = Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     for epoch in range(NUM_EPOCHS):

@@ -21,5 +21,9 @@ except ValueError:
 FRAME_LENGTH = int(os.environ.get("FRAME_LENGTH"))
 FRAME_PADDING = bool(os.environ.get("FRAME_PADDING"))
 
+MODEL = os.environ.get("MODEL")
+MODEL_PACKAGE = os.environ.get("MODEL_PACKAGE")
+LOSS = os.environ.get("LOSS")
+LOSS_PACKAGE = os.environ.get("LOSS_PACKAGE")
 BATCH_SICE = int(os.environ.get("BATCH_SICE"))
 NUM_EPOCHS = int(os.environ.get("NUM_EPOCHS"))
