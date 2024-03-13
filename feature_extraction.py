@@ -26,8 +26,6 @@ def extract_features(audio_file: os.path) -> np.ndarray:
         wav = librosa.to_mono(wav.transpose())
     
     if samplerate != SAMPLERATE:
-        print(samplerate)
-        print(SAMPLERATE)
         wav = librosa.core.resample(y=wav, orig_sr=samplerate, target_sr=SAMPLERATE)
 
     mfcc = librosa.feature.mfcc(

@@ -162,5 +162,4 @@ class AudioDataset(Dataset):
         """
         features = self.dataset.iloc[index]['features']
         speaker = self.dataset.iloc[index]['speaker']
-        print(f"Sample shape at index {index}: {features.shape}")
         return features, speaker
