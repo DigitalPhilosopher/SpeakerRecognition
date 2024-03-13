@@ -78,7 +78,7 @@ class SERes2Block(nn.Module):
         return out + identity
 
 class ECAPA_TDNN(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, num_classes):
+    def __init__(self, input_size, hidden_size):
         super(ECAPA_TDNN, self).__init__()
         self.conv1d_relu_bn = nn.Sequential(
             nn.Conv1d(in_channels=input_size, out_channels=hidden_size, kernel_size=5, stride=1, dilation=1),

@@ -1,9 +1,8 @@
-from config import N_MFCC, NUM_EPOCHS, MODEL, MODEL_PACKAGE, LOSS, LOSS_PACKAGE
+from config import N_MFCC, NUM_EPOCHS, MODEL, MODEL_PACKAGE, MODEL_PARAMS, LOSS, LOSS_PACKAGE
 import importlib
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
@@ -28,11 +27,11 @@ def get_model() -> nn.Module:
     """
     model_module = importlib.import_module(f'.{MODEL}', package=MODEL_PACKAGE)
     Model = getattr(model_module, MODEL)
-    model = Model(input_size=N_MFCC, hidden_size=128, num_layers=2, embedding_dim=64)
+    model = Model(**MODEL_PARAMS)
     model.to(device)
     return model
 
-def train_model(model: nn.Module, data_loader: DataLoader, num_speakers: int, num_utterances: int):
+def train_model(model: nn.Module, data_loader: DataLoader, num_speakers: int, in_feats: int):
     """
     Trains a neural network model using the provided data loader for a predefined number of epochs.
 
@@ -41,17 +40,19 @@ def train_model(model: nn.Module, data_loader: DataLoader, num_speakers: int, nu
         model (nn.Module): The neural network model to be trained.
     """
     loss_module = importlib.import_module(f'.{LOSS}', package=LOSS_PACKAGE)
-    Loss = getattr(loss_module, LOSS)
-    loss = Loss()
+    LossClass = getattr(loss_module, LOSS)
+    loss_function = LossClass(in_feats=in_feats, out_feats=num_speakers, device=device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     for epoch in range(NUM_EPOCHS):
-        for batch in data_loader:  # Your DataLoader needs to provide batches structured for GE2E
-            embeddings = model(batch)  # Forward pass to get embeddings
-            loss = loss(embeddings, num_speakers, num_utterances)
-            
+        for features, labels in data_loader:
+            features = features.to(device)  # Assuming you're using a device like 'cuda' or 'cpu'
+            labels = labels.to(device)
+            # Forward pass
+            outputs = model(features)
+            # Compute loss
+            loss = loss_function(outputs, labels)  # This is where both outputs and labels are used
+            # Backward and optimize
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        
-        print(f'Epoch [{epoch+1}/{NUM_EPOCHS}], Loss: {loss.item():.4f}')

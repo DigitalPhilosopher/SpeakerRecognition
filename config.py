@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import ast
 
 load_dotenv()
 
@@ -23,6 +24,14 @@ FRAME_PADDING = bool(os.environ.get("FRAME_PADDING"))
 
 MODEL = os.environ.get("MODEL")
 MODEL_PACKAGE = os.environ.get("MODEL_PACKAGE")
+params_str = os.environ.get('MODEL_PARAMS', '{}')
+try:
+    MODEL_PARAMS = ast.literal_eval(params_str)
+    if not isinstance(MODEL_PARAMS, dict):
+        raise ValueError("MODEL_PARAMS must be a dictionary.")
+except (SyntaxError, ValueError) as e:
+    print(f"Error parsing MODEL_PARAMS: {e}")
+    MODEL_PARAMS = {}
 LOSS = os.environ.get("LOSS")
 LOSS_PACKAGE = os.environ.get("LOSS_PACKAGE")
 BATCH_SICE = int(os.environ.get("BATCH_SICE"))

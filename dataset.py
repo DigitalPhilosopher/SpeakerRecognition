@@ -95,9 +95,6 @@ class AudioDataset(Dataset):
         self.segment_utterances()
         self.convert_speaker_labels_to_tensor()
 
-        # TODO: This should not be necessary
-        self.reshape_features()
-
         # TODO: Normalize data?
         # TODO: Voice activity detection (VAD)?
 
@@ -134,24 +131,6 @@ class AudioDataset(Dataset):
                 new_rows.append(new_row)
 
         self.dataset = pd.DataFrame(new_rows)
-    
-    def reshape_features(self):
-        """
-        Reshapes the 'features' in the dataset to ensure they have the correct shape for LSTM processing.
-        The reshaping ensures that each feature tensor matches the expected input dimensions of [seq_len, input_size],
-        where 'seq_len' is the sequence length and 'input_size' is the number of features per time step.
-
-        This is particularly important to align the dimensions correctly for LSTM models that expect a specific
-        input shape.
-
-        Returns:
-            None: The method updates the 'features' column in-place, ensuring all feature tensors have the correct shape.
-        """
-        # TODO: This should not be necessary
-        def _reshape(feature_tensor):
-            return feature_tensor.transpose(0, 1)
-
-        self.dataset['features'] = self.dataset['features'].apply(_reshape)
 
 
     def convert_speaker_labels_to_tensor(self):
@@ -183,4 +162,5 @@ class AudioDataset(Dataset):
         """
         features = self.dataset.iloc[index]['features']
         speaker = self.dataset.iloc[index]['speaker']
+        print(f"Sample shape at index {index}: {features.shape}")
         return features, speaker
