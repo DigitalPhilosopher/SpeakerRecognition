@@ -1,7 +1,7 @@
 version: '3.8'  
 
 services:
-  audioverify:
+  ecapa_tdnn:
     build: .
     volumes:
       - ./data:/usr/src/app/data
@@ -17,3 +17,5 @@ services:
       memlock: -1
       stack: 67108864
     ipc: host
+    env_file:
+      - ECAPA_TDNN.env
