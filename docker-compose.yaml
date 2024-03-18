@@ -1,0 +1,19 @@
+version: '3.8'  
+
+services:
+  audioverify:
+    build: .
+    volumes:
+      - ./data:/usr/src/app/data
+      - ./target:/usr/src/app/target
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    ipc: host
