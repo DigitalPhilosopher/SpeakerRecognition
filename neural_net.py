@@ -1,13 +1,16 @@
 from config import N_MFCC, NUM_EPOCHS, MODEL, MODEL_PACKAGE, MODEL_PARAMS, LOSS, LOSS_PACKAGE
 import importlib
 import torch
+import logging
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
+    logging.info("CUDA is available. Using GPU.")
 else:
     device = torch.device("cpu")
+    logging.info("CUDA is not available. Using CPU.")
 
 
 def get_model() -> nn.Module:
@@ -25,11 +28,17 @@ def get_model() -> nn.Module:
     Returns:
         nn.Module: The initialized model, placed on the appropriate device (GPU or CPU).
     """
-    model_module = importlib.import_module(f'.{MODEL}', package=MODEL_PACKAGE)
-    Model = getattr(model_module, MODEL)
-    model = Model(**MODEL_PARAMS)
-    model.to(device)
-    return model
+    logging.debug(f"Attempting to import and initialize model {MODEL} from {MODEL_PACKAGE}.")
+    try:
+        model_module = importlib.import_module(f'.{MODEL}', package=MODEL_PACKAGE)
+        Model = getattr(model_module, MODEL)
+        model = Model(**MODEL_PARAMS)
+        model.to(device)
+        logging.info(f"Model {MODEL} initialized and moved to {device}.")
+        return model
+    except Exception as e:
+        logging.error(f"Error initializing model {MODEL}: {e}", exc_info=True)
+        raise
 
 def train_model(model: nn.Module, data_loader: DataLoader, num_speakers: int, in_feats: int):
     """
@@ -39,20 +48,25 @@ def train_model(model: nn.Module, data_loader: DataLoader, num_speakers: int, in
         data_loader (DataLoader): The DataLoader providing batches of input data and labels for training.
         model (nn.Module): The neural network model to be trained.
     """
-    loss_module = importlib.import_module(f'.{LOSS}', package=LOSS_PACKAGE)
-    LossClass = getattr(loss_module, LOSS)
-    loss_function = LossClass(in_feats=in_feats, out_feats=num_speakers, device=device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    try:
+        loss_module = importlib.import_module(f'.{LOSS}', package=LOSS_PACKAGE)
+        LossClass = getattr(loss_module, LOSS)
+        loss_function = LossClass(in_feats=in_feats, out_feats=num_speakers, device=device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        logging.info(f"Training started for {NUM_EPOCHS} epochs.")
 
-    for epoch in range(NUM_EPOCHS):
-        for features, labels in data_loader:
-            features = features.to(device)  # Assuming you're using a device like 'cuda' or 'cpu'
-            labels = labels.to(device)
-            # Forward pass
-            outputs = model(features)
-            # Compute loss
-            loss = loss_function(outputs, labels)  # This is where both outputs and labels are used
-            # Backward and optimize
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        for epoch in range(NUM_EPOCHS):
+            logging.debug(f"Epoch {epoch+1}/{NUM_EPOCHS} started.")
+            for features, labels in data_loader:
+                features = features.to(device)
+                labels = labels.to(device)
+                outputs = model(features)
+                loss = loss_function(outputs, labels)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            logging.info(f"Epoch {epoch+1}/{NUM_EPOCHS} completed.")
+        logging.info("Training completed successfully.")
+    except Exception as e:
+        logging.error(f"Error during training: {e}", exc_info=True)
+        raise

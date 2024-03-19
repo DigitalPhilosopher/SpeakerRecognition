@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import Dataset
 from sklearn.preprocessing import LabelEncoder
 from feature_extraction import extract_features, segment_tensor
+import logging
 
 def get_speaker_utterances(directory_path: os.path) -> pd.DataFrame:
     """
@@ -24,6 +25,7 @@ def get_speaker_utterances(directory_path: os.path) -> pd.DataFrame:
         - 'speaker': The name of the speaker, derived from the name of the subdirectory.
         - 'file': The full path to the audio file.
     """
+    logging.info(f"Generating DataFrame for speaker utterances in directory: {directory_path}")
     data = []
     audio_formats = ['*.mp3', '*.wav', '*.aac', '*.flac']
 
@@ -32,9 +34,12 @@ def get_speaker_utterances(directory_path: os.path) -> pd.DataFrame:
             for filename in glob.glob(os.path.join(root, audio_format)):
                 speaker_name = os.path.relpath(root, directory_path).split(os.sep)[0]
                 file_path = os.path.join(root, filename)
+                logging.debug(f"Got entry for speaker {speaker_name} with path {file_path}")
                 data.append([speaker_name, file_path])
 
-    return pd.DataFrame(data, columns=['speaker', 'file'])
+    df = pd.DataFrame(data, columns=['speaker', 'file'])
+    logging.info(f"DataFrame generated with {len(df)} entries.")
+    return df
 
 class AudioDataset(Dataset):
     """
@@ -53,6 +58,7 @@ class AudioDataset(Dataset):
         - Explore integrating voice activity detection (VAD) to focus on parts of the audio where speech is present.
     """
     def __init__(self, path: os.path):
+        logging.info(f"Initializing AudioDataset with path: {path}")
         self.dataset: pd.DataFrame = get_speaker_utterances(path)
 
         self.preprocessing()
@@ -89,6 +95,7 @@ class AudioDataset(Dataset):
         Returns:
             None
         """
+        logging.info("Starting preprocessing of audio dataset.")
         # TODO: Can we just save this to disk and only compute if not loaded?
         self.dataset['features'] = self.dataset['file'].apply(extract_features)
 
@@ -97,6 +104,7 @@ class AudioDataset(Dataset):
 
         # TODO: Normalize data?
         # TODO: Voice activity detection (VAD)?
+        logging.info("Preprocessing completed.")
 
     def segment_utterances(self):
         """
@@ -121,16 +129,19 @@ class AudioDataset(Dataset):
             None: The method updates the dataset in-place, replacing the original dataset with one that contains
             the segmented utterances.
         """
+        logging.info("Segmenting utterances into fixed-length sequences.")
         new_rows = []
         
         for _, row in self.dataset.iterrows():
             segments = segment_tensor(row['features'])
+            logging.debug(f"Adding {len(segments)} segments for {row['speaker']} with file {row['file']}")
             
             for segment in segments:
                 new_row = {'speaker': row['speaker'], 'file': row['file'], 'features': segment}
                 new_rows.append(new_row)
 
         self.dataset = pd.DataFrame(new_rows)
+        logging.info("Segmentation completed.")
 
 
     def convert_speaker_labels_to_tensor(self):
@@ -142,10 +153,12 @@ class AudioDataset(Dataset):
         Updates the 'speaker' column in-place, replacing the original speaker identifiers with their
         corresponding tensor representation.
         """
+        logging.info("Converting speaker labels to tensor.")
         label_encoder = LabelEncoder()
         encoded_labels = label_encoder.fit_transform(self.dataset['speaker'].tolist())
 
         self.dataset['speaker'] = torch.tensor(encoded_labels, dtype=torch.long)
+        logging.info("Speaker labels converted.")
 
     def __len__(self) -> int:
         """Returns the number of items in the dataset."""
