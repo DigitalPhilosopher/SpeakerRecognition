@@ -1,16 +1,39 @@
-from config import N_MFCC, NUM_EPOCHS, MODEL, MODEL_PACKAGE, MODEL_PARAMS, LOSS, LOSS_PACKAGE
+from config import NUM_EPOCHS, MODEL, MODEL_PACKAGE, MODEL_PARAMS, LOSS, LOSS_PACKAGE, DEVICE
 import importlib
 import torch
 import logging
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-if torch.cuda.is_available():
-    device = torch.device("cuda")
-    logging.info("CUDA is available. Using GPU.")
-else:
+if DEVICE == 'CPU':
     device = torch.device("cpu")
-    logging.info("CUDA is not available. Using CPU.")
+    logging.info("Configured to use CPU.")
+elif DEVICE.startswith('GPU'):
+    if torch.cuda.is_available():
+        if ':' in DEVICE:
+            # Specific GPU requested
+            gpu_index = int(DEVICE.split(':')[1])
+            if gpu_index < torch.cuda.device_count():
+                torch.cuda.set_device(gpu_index)
+                device = torch.device(f"cuda:{gpu_index}")
+                logging.info(f"Configured to use specific GPU: cuda:{gpu_index}.")
+            else:
+                logging.warning(f"Requested GPU index {gpu_index} is out of range. Defaulting to cuda:0.")
+                device = torch.device("cuda:0")
+        else:
+            # General GPU request
+            device = torch.device("cuda")
+            logging.info("CUDA is available. Configured to use GPU.")
+    else:
+        logging.warning("CUDA is not available. Falling back to CPU.")
+        device = torch.device("cpu")
+else:  # AUTO mode
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        logging.info("CUDA is available. Using GPU (Auto mode).")
+    else:
+        device = torch.device("cpu")
+        logging.info("CUDA is not available. Using CPU (Auto mode).")
 
 
 def get_model() -> nn.Module:
