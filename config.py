@@ -4,6 +4,8 @@ import ast
 
 load_dotenv()
 
+LOGGING_LEVEL = os.getenv('LOGGING_LEVEL', 'INFO').upper()
+
 TRAIN_DATASET = os.path.abspath(os.environ.get("TRAIN_DATASET"))
 TEST_DATASET = os.path.abspath(os.environ.get("TEST_DATASET"))
 
