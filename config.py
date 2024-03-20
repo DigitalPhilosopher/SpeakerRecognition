@@ -1,10 +1,14 @@
 import os
 from dotenv import load_dotenv
 import ast
+import logging
 
 load_dotenv()
 
 LOGGING_LEVEL = os.getenv('LOGGING_LEVEL', 'INFO').upper()
+logging.basicConfig(level=getattr(logging, LOGGING_LEVEL), format='%(asctime)s - %(levelname)s - %(message)s')
+
+DEVICE = os.getenv('DEVICE', 'AUTO')
 
 TRAIN_DATASET = os.path.abspath(os.environ.get("TRAIN_DATASET"))
 TEST_DATASET = os.path.abspath(os.environ.get("TEST_DATASET"))

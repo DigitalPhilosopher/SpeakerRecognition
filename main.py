@@ -3,11 +3,8 @@ import torch
 import logging
 from torch.utils.data import DataLoader
 from dataset import AudioDataset
-from config import TRAIN_DATASET, BATCH_SICE, MODEL, LOGGING_LEVEL
+from config import TRAIN_DATASET, BATCH_SICE, MODEL
 from neural_net import get_model, train_model
-
-# Configure logging
-logging.basicConfig(level=getattr(logging, LOGGING_LEVEL), format='%(asctime)s - %(levelname)s - %(message)s')
 
 def train():
     logging.info("Training process started.")
