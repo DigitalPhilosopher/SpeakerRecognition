@@ -9,3 +9,5 @@ librosa
 soundfile
 
 scikit-learn
+
+tqdm
