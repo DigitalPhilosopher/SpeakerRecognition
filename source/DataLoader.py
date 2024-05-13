@@ -30,6 +30,36 @@ class AudioDataset(Dataset):
 
     def __getitem__(self, idx):
         audio_path = self.audio_files[idx]
+        speaker, filename = self.get_speaker_and_filename(audio_path)
+
+        return self.get_triplet(audio_path, self.get_positive(speaker, filename), self.get_negative(speaker))
+    
+    def get_speaker_and_filename(self, audio_path):
+        filename = os.path.basename(audio_path)
+        speaker = filename.split('_')[0]
+        return speaker, filename
+
+    def get_positive(self, speaker, filename):
+        for file in self.audio_files:
+            s, f = self.get_speaker_and_filename(file)
+            if s == speaker:
+                if not f == filename:
+                    return file
+
+    def get_negative(self, speaker):
+        for file in self.audio_files:
+            s, _ = self.get_speaker_and_filename(file)
+            if not s == speaker:
+                return file
+    
+    def get_triplet(self, anchor_audio_path, positive_audio_path, negative_audio_path):
+        anchor = self.getitem(anchor_audio_path)
+        positive = self.getitem(positive_audio_path)
+        negative = self.getitem(negative_audio_path)
+        
+        return anchor, positive, negative
+
+    def getitem(self, audio_path):
         waveform, sample_rate = torchaudio.load(audio_path)
 
         frontend_call = self.frontend(sample_rate=sample_rate, number_output_parameters = 13)
@@ -37,32 +67,8 @@ class AudioDataset(Dataset):
 
         frontend_embedding = frontend_embedding.squeeze(0).transpose(0, 1)  # Remove batch dimension and transpose
 
-        label = self.labels[idx]
-        return frontend_embedding, label
+        return frontend_embedding
 
 def collate_fn(batch):
-    frontend_embeddings, speaker_ids = zip(*batch)
-    target_time_steps = 1024
-
-    max_feature_dim = max(frontend_embedding.size(1) for frontend_embedding in frontend_embeddings)
-
-    frontend_embeddings_processed = []
-    for frontend_embedding in frontend_embeddings:
-        # Ensure all tensors have the same feature dimension (pad if necessary)
-        if frontend_embedding.size(1) < max_feature_dim:
-            padding = max_feature_dim - frontend_embedding.size(1)
-            frontend_embedding = F.pad(frontend_embedding, (0, padding, 0, 0))  # Pad feature dimension
-
-        # Pad or truncate the time dimension
-        if frontend_embedding.size(0) > target_time_steps:
-            frontend_embedding = frontend_embedding[:target_time_steps, :]
-        else:
-            pad_amount = target_time_steps - frontend_embedding.size(0)
-            frontend_embedding = F.pad(frontend_embedding, (0, 0, 0, pad_amount))  # Pad time dimension
-
-        frontend_embeddings_processed.append(frontend_embedding)
-
-    frontend_embeddings_padded = torch.stack(frontend_embeddings_processed)  # [batch, time, features]
-    labels = torch.tensor(speaker_ids, dtype=torch.long)
-
-    return frontend_embeddings_padded, labels
+    anchors, positives, negatives = zip(*batch)
+    return torch.stack(anchors), torch.stack(positives), torch.stack(negatives)
