@@ -1,73 +1,55 @@
 import os
-import torchaudio
+from typing import List, Tuple
+import librosa
+import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
-import torch.nn.functional as F
-
+from source.extraction_utils.data_utils import read_label_file
 
 class AudioDataset(Dataset):
     def __init__(self, directory, frontend):
-        self.directory = directory
         self.frontend = frontend
-        self.audio_files = []
-        self.labels = []
-        self.speaker_id_to_label = {}
 
-        # Generate a list of files and corresponding labels
-        current_label = 0
-        for dirpath, _, filenames in os.walk(directory):
-            for filename in filenames:
-                if filename.endswith('.wav'):
-                    self.audio_files.append(os.path.join(dirpath, filename))
-                    speaker_id = os.path.basename(dirpath)
-                    if speaker_id not in self.speaker_id_to_label:
-                        self.speaker_id_to_label[speaker_id] = current_label
-                        current_label += 1
-                    self.labels.append(self.speaker_id_to_label[speaker_id])
+        self.data_list: List[Tuple[str, int]] = read_label_file(directory)
+        self.data_list = pd.DataFrame(self.data_list, columns=["filename", "is_genuine", "method_type", "method_name", "vocoder"])
+
+        self.data_list["utterance"] = self.data_list["filename"].apply(lambda x: os.path.basename(x).split(".")[0])
+        self.data_list["speaker"] = self.data_list["utterance"].apply(lambda x: x.split("_")[0])
+
+        self.genuine = self.data_list[self.data_list["is_genuine"] == 1].reset_index(drop=True)
 
     def __len__(self):
-        return len(self.audio_files)
+        return len(self.genuine)
 
     def __getitem__(self, idx):
-        audio_path = self.audio_files[idx]
-        speaker, filename = self.get_speaker_and_filename(audio_path)
-
-        return self.get_triplet(audio_path, self.get_positive(speaker, filename), self.get_negative(speaker))
+        anchor_data = self.genuine.iloc[idx]
+        positive_data = self.get_positive(anchor_data)
+        negative_data = self.get_negative(anchor_data)
+        return self.get_triplet(anchor_data, positive_data, negative_data)
     
-    def get_speaker_and_filename(self, audio_path):
-        filename = os.path.basename(audio_path)
-        speaker = filename.split('_')[0]
-        return speaker, filename
-
-    def get_positive(self, speaker, filename):
-        for file in self.audio_files:
-            s, f = self.get_speaker_and_filename(file)
-            if s == speaker:
-                if not f == filename:
-                    return file
-
-    def get_negative(self, speaker):
-        for file in self.audio_files:
-            s, _ = self.get_speaker_and_filename(file)
-            if not s == speaker:
-                return file
-    
-    def get_triplet(self, anchor_audio_path, positive_audio_path, negative_audio_path):
-        anchor = self.getitem(anchor_audio_path)
-        positive = self.getitem(positive_audio_path)
-        negative = self.getitem(negative_audio_path)
-        
+    def get_triplet(self, anchor_data, negative_data, positive_data):
+        anchor = self.read_audio(anchor_data["filename"])
+        positive = self.read_audio(negative_data["filename"])
+        negative = self.read_audio(positive_data["filename"])
         return anchor, positive, negative
 
-    def getitem(self, audio_path):
-        waveform, sample_rate = torchaudio.load(audio_path)
+    def get_positive(self, anchor_data):
+        # TODO
+        return anchor_data
 
-        frontend_call = self.frontend(sample_rate=sample_rate, number_output_parameters = 13)
-        frontend_embedding = frontend_call(waveform)
+    def get_negative(self, anchor_data):
+        # TODO
+        return anchor_data
+    
+    def read_audio(self, filename):
+        waveform, sample_rate = librosa.load(filename, sr=16000) # Read wav
+        waveform, _ = librosa.effects.trim(waveform, top_db=35) # Remove silence at beginning and end of wav
 
-        frontend_embedding = frontend_embedding.squeeze(0).transpose(0, 1)  # Remove batch dimension and transpose
+        waveform = torch.tensor(waveform, dtype=torch.float32).unsqueeze(0)
 
-        return frontend_embedding
+        mfcc_transform = self.frontend(number_output_parameters=13, sample_rate=sample_rate)
+        return mfcc_transform(waveform)
 
 def collate_fn(batch):
     anchors, positives, negatives = zip(*batch)
