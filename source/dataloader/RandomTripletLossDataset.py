@@ -1,4 +1,4 @@
-from source.dataloader import TripletLossDataset
+from dataloader import TripletLossDataset
 
 class RandomTripletLossDataset(TripletLossDataset):
     
