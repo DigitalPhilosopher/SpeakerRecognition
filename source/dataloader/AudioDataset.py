@@ -24,23 +24,7 @@ class AudioDataset(Dataset):
 
     def __getitem__(self, idx):
         anchor_data = self.genuine.iloc[idx]
-        positive_data = self.get_positive(anchor_data)
-        negative_data = self.get_negative(anchor_data)
-        return self.get_triplet(anchor_data, positive_data, negative_data)
-    
-    def get_triplet(self, anchor_data, negative_data, positive_data):
-        anchor = self.read_audio(anchor_data["filename"])
-        positive = self.read_audio(negative_data["filename"])
-        negative = self.read_audio(positive_data["filename"])
-        return anchor, positive, negative
-
-    def get_positive(self, anchor_data):
-        # TODO
-        return anchor_data
-
-    def get_negative(self, anchor_data):
-        # TODO
-        return anchor_data
+        return self.read_audio(anchor_data["filename"])
     
     def read_audio(self, filename):
         waveform, sample_rate = librosa.load(filename, sr=16000) # Read wav
@@ -48,9 +32,15 @@ class AudioDataset(Dataset):
 
         waveform = torch.tensor(waveform, dtype=torch.float32).unsqueeze(0)
 
-        mfcc_transform = self.frontend(number_output_parameters=13, sample_rate=sample_rate)
-        return mfcc_transform(waveform)
+        frontend = self.frontend(number_output_parameters=13, sample_rate=sample_rate)
+        return frontend(waveform).squeeze(0).permute(1, 0)
 
-def collate_fn(batch):
+def collate_single_fn(batch):
+    pass
+
+def collate_triplet_fn(batch):
     anchors, positives, negatives = zip(*batch)
-    return torch.stack(anchors), torch.stack(positives), torch.stack(negatives)
+    anchors = torch.stack(anchors)
+    positives = torch.stack(positives)
+    negatives = torch.stack(negatives)
+    return anchors, positives, negatives
