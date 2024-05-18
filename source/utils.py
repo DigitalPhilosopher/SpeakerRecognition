@@ -121,6 +121,24 @@ def load_genuine_dataset():
     return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
 
 
+def load_deepfake_dataset():
+    labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, all_datasets_used = get_label_files(
+        use_bsi_tts = True,
+        use_bsi_vocoder = False,
+        use_bsi_vc = False,
+        use_bsi_genuine = True,
+        use_bsi_ttsvctk = False,
+        use_bsi_ttslj = False,
+        use_bsi_ttsother = False,
+        use_bsi_vocoderlj = False,
+        use_wavefake = False,
+        use_LibriSeVoc = False,
+        use_lj = False,
+        use_asv2019 = False,
+    )
+    return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
+
+
 def clear_gpu():
     torch.cuda.reset_peak_memory_stats()
     torch.cuda.empty_cache()
