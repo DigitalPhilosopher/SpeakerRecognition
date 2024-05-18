@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from source.dataloader import AudioDataset
+from dataloader import AudioDataset
 
 class TripletLossDataset(AudioDataset, ABC):
     

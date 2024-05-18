@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 import logging
 from torch.utils.data import Dataset
-from source.extraction_utils.data_utils import read_label_file
+from extraction_utils.data_utils import read_label_file
 
 class AudioDataset(Dataset):
     def __init__(self, directory, frontend):
