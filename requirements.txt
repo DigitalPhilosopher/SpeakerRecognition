@@ -5,6 +5,7 @@ speechbrain==1.0.0
 librosa
 tqdm
 ipywidgets
+mlflow
 
 --extra-index-url https://download.pytorch.org/whl/cu121
 
