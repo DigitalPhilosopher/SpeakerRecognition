@@ -32,21 +32,13 @@ class AudioDataset(Dataset):
         logger.info(f"Number of deepfake utterances: {num_deepfake_utterances}")
 
         # TODO: Remove
-        # Downsample to have only 5 speakers with 2 utterances each
-        sampled_data = (
-            self.data_list.groupby("speaker")
-            .apply(lambda x: x.sample(2) if len(x) >= 2 else None)
-            .dropna()
-            .reset_index(drop=True)
-        )
-
-        if len(sampled_data["speaker"].unique()) > 5:
-            sampled_speakers = sampled_data["speaker"].unique()[:5]
-            sampled_data = sampled_data[sampled_data["speaker"].isin(sampled_speakers)]
-
-        self.data_list = sampled_data.reset_index(drop=True)
+        # Group by speaker and select top 5 speakers
+        top_speakers = self.data_list['speaker'].value_counts().nlargest(5).index
+        sampled_data = self.data_list[self.data_list['speaker'].isin(top_speakers)].reset_index(drop=True)
+        self.data_list = sampled_data
         self.genuine = self.data_list[self.data_list["is_genuine"] == 1].reset_index(drop=True)
-        logger.warn("Downsample to have only 5 speakers with 2 utterances each")
+        logger.warn("Downsampled to have only 5 speakers, keeping all utterances")
+
 
     def __len__(self):
         return len(self.genuine)
