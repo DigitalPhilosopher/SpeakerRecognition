@@ -13,6 +13,7 @@ class MFCCTransform(Frontend):
         )
 
     def __call__(self, waveform):
+        waveform = waveform.unsqueeze(0)
         # Ensure the output waveform is mono
         if waveform.size(0) > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)
