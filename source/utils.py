@@ -4,19 +4,23 @@ from tqdm.notebook import tqdm
 import time
 import mlflow
 import mlflow.pytorch
-import os
 import warnings
 import logging
 
 def initialize_environment(model_name):
     global MODEL_NAME
     MODEL_NAME = model_name
+
+    mlflow.set_tracking_uri("../mlruns")
+    
     warnings.filterwarnings("ignore")
+
     logging.basicConfig(filename=MODEL_NAME + '.log', 
                         level=logging.INFO, 
                         format='%(asctime)s - %(message)s')
     global logger
     logger = logging.getLogger()
+    
     return logger
 
 
@@ -33,6 +37,9 @@ def get_device():
 
 
 def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer, device):
+    latest_model_name = f"{MODEL_NAME}_latest_model"
+    best_model_name = f"{MODEL_NAME}_best_model_state"
+
     best_loss = float('inf')
     best_model_state = None
 
@@ -95,25 +102,24 @@ def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer,
             if avg_loss <= best_loss:
                 best_loss = avg_loss
                 best_model_state = model.state_dict()
-                best_model_name = f"{MODEL_NAME}_best_model"
                 mlflow.pytorch.log_model(model, best_model_name)
 
         total_end_time = time.time()
         mlflow.log_metric("total_training_time", total_end_time - total_start_time)
         logger.info(f"Training completed in {total_end_time - total_start_time:.4f} seconds.")
-        print()
 
         # Save the latest model
-        mlflow.pytorch.log_model(model, "latest_model")
+        mlflow.pytorch.log_model(model, latest_model_name)
+
         # Save the best model state as a model artifact
         if best_model_state is not None:
-            best_model_state_filename = f"{MODEL_NAME}_best_model_state.pth"
+            best_model_state_filename = f"../models/{MODEL_NAME}_best_model_state.pth"
             torch.save(best_model_state, best_model_state_filename)
             mlflow.log_artifact(best_model_state_filename)
 
 
 def load_genuine_dataset():
-    labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, all_datasets_used = get_label_files(
+    labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, _ = get_label_files(
         use_bsi_tts = False,
         use_bsi_vocoder = False,
         use_bsi_vc = False,
@@ -131,7 +137,7 @@ def load_genuine_dataset():
 
 
 def load_deepfake_dataset():
-    labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, all_datasets_used = get_label_files(
+    labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, _ = get_label_files(
         use_bsi_tts = True,
         use_bsi_vocoder = False,
         use_bsi_vc = False,
