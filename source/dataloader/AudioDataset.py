@@ -1,10 +1,9 @@
 import os
 from typing import List, Tuple
 import librosa
-import numpy as np
 import pandas as pd
 import torch
-import logging
+from utils import logger
 from torch.utils.data import Dataset
 from extraction_utils.data_utils import read_label_file
 
@@ -25,7 +24,6 @@ class AudioDataset(Dataset):
         num_genuine_utterances = len(self.genuine)
         num_deepfake_utterances = num_utterances - num_genuine_utterances
 
-        logger = logging.getLogger()
         logger.info(f"Number of speakers: {num_speakers}")
         logger.info(f"Number of utterances: {num_utterances}")
         logger.info(f"Number of genuine utterances: {num_genuine_utterances}")
