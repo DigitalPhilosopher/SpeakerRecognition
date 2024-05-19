@@ -14,78 +14,59 @@ def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer,
     best_model_state = None
 
     with mlflow.start_run(run_name=MODEL):
-        mlflow.log_param("epochs", epochs)
-        mlflow.log_param("batch_size", dataloader.batch_size)
-        mlflow.log_param("model", model.__class__.__name__)
-        mlflow.log_param("loss_function", loss_function.__class__.__name__)
-        mlflow.log_param("optimizer", optimizer.__class__.__name__)
+        # Logging model and training details
+        mlflow.log_params({
+            "epochs": epochs,
+            "batch_size": dataloader.batch_size,
+            "model": model.__class__.__name__,
+            "loss_function": loss_function.__class__.__name__,
+            "optimizer": optimizer.__class__.__name__
+        })
+
         model.train()
-        total_start_time = time.time()  # Start timing the whole training process
+        total_start_time = time.time()
         
         for epoch in range(epochs):
-            epoch_start_time = time.time()  # Start timing the epoch
+            epoch_start_time = time.time()
             running_loss = 0.0
-            progress_bar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=False)
-            
-            for anchors, positives, negatives in progress_bar:
-                batch_start_time = time.time()  # Start timing the batch
-                
-                anchors = anchors.to(device)
-                positives = positives.to(device)
-                negatives = negatives.to(device)
+            progress_bar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
 
-                optimizer.zero_grad()
-                
-                # Time the forward passes
-                forward_start_time = time.time()
-                anchor_outputs = model(anchors)
-                positive_outputs = model(positives)
-                negative_outputs = model(negatives)
-                forward_end_time = time.time()
-                
-                loss = loss_function(anchor_outputs, positive_outputs, negative_outputs)
-                loss.backward()
-                optimizer.step()
-                
-                running_loss += loss.item()
-                progress_bar.set_postfix(loss=loss.item())
-                
-                batch_end_time = time.time()
-                logger.info(f"Batch processed in {batch_end_time - batch_start_time:.4f} seconds.")
-                logger.info(f"Forward pass took {forward_end_time - forward_start_time:.4f} seconds.")
-           
-                # Log GPU memory usage specific to this process
-                if device.type == 'cuda':
-                    memory_stats = torch.cuda.memory_stats(device)
-                    gpu_memory_allocated = memory_stats["allocated_bytes.all.current"]
-                    gpu_memory_reserved = memory_stats["reserved_bytes.all.current"]
-                    mlflow.log_metric("gpu_memory_allocated", gpu_memory_allocated)
-                    mlflow.log_metric("gpu_memory_reserved", gpu_memory_reserved)
+            for anchors, positives, negatives in progress_bar:
+                try:
+                    anchors, positives, negatives = anchors.to(device), positives.to(device), negatives.to(device)
+                    optimizer.zero_grad()
+                    
+                    anchor_outputs = model(anchors)
+                    positive_outputs = model(positives)
+                    negative_outputs = model(negatives)
+                    
+                    loss = loss_function(anchor_outputs, positive_outputs, negative_outputs)
+                    loss.backward()
+                    optimizer.step()
+
+                    running_loss += loss.item()
+                    progress_bar.set_postfix(loss=loss.item())
+
+                except Exception as e:
+                    logger.error(f"Error during training: {e}")
+                    continue
 
             avg_loss = running_loss / len(dataloader)
-            epoch_end_time = time.time()
-            mlflow.log_metric("avg_loss", avg_loss, step=epoch)
-            mlflow.log_metric("epoch_time", epoch_end_time - epoch_start_time, step=epoch)
-            logger.info(f"Epoch {epoch+1} completed in {epoch_end_time - epoch_start_time:.4f} seconds. Average Loss: {avg_loss:.4f}")
+            mlflow.log_metrics({"avg_loss": avg_loss, "epoch_time": time.time() - epoch_start_time}, step=epoch)
 
-            # Save the best model
-            if avg_loss <= best_loss:
+            if avg_loss < best_loss:
                 best_loss = avg_loss
                 best_model_state = model.state_dict()
-                mlflow.pytorch.log_model(model, best_model_name)
+                mlflow.pytorch.log_model(model, artifact_path=best_model_name)
 
-        total_end_time = time.time()
-        mlflow.log_metric("total_training_time", total_end_time - total_start_time)
-        logger.info(f"Training completed in {total_end_time - total_start_time:.4f} seconds.")
+        mlflow.log_metric("total_training_time", time.time() - total_start_time)
+        mlflow.pytorch.log_model(model, artifact_path=latest_model_name)
 
-        # Save the latest model
-        mlflow.pytorch.log_model(model, latest_model_name)
+        if best_model_state:
+            torch.save(best_model_state, f"../models/{MODEL}_best_model_state.pth")
+            mlflow.log_artifact(f"../models/{MODEL}_best_model_state.pth")
 
-        # Save the best model state as a model artifact
-        if best_model_state is not None:
-            best_model_state_filename = f"../models/{MODEL}_best_model_state.pth"
-            torch.save(best_model_state, best_model_state_filename)
-            mlflow.log_artifact(best_model_state_filename)
+        logger.info(f"Training completed in {time.time() - total_start_time:.4f} seconds.")
 
 
 def load_genuine_dataset():
