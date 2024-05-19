@@ -4,46 +4,16 @@ from tqdm.notebook import tqdm
 import time
 import mlflow
 import mlflow.pytorch
-import warnings
-import logging
-
-def initialize_environment(model_name):
-    global MODEL_NAME
-    MODEL_NAME = model_name
-
-    mlflow.set_tracking_uri("../mlruns")
-    
-    warnings.filterwarnings("ignore")
-
-    logging.basicConfig(filename=MODEL_NAME + '.log', 
-                        level=logging.INFO, 
-                        format='%(asctime)s - %(message)s')
-    global logger
-    logger = logging.getLogger()
-    
-    return logger
 
 
-def get_device():
-    # Check if CUDA is available
-    if torch.cuda.is_available():
-        logger.info("CUDA is available! Training on GPU...")
-        device = torch.device("cuda")
-    else:
-        logger.info("CUDA is not available. Training on CPU...")
-        device = torch.device("cpu")
-    
-    return device
-
-
-def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer, device):
-    latest_model_name = f"{MODEL_NAME}_latest_model"
-    best_model_name = f"{MODEL_NAME}_best_model_state"
+def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer, device, MODEL, logger):
+    latest_model_name = f"{MODEL}_latest_model"
+    best_model_name = f"{MODEL}_best_model_state"
 
     best_loss = float('inf')
     best_model_state = None
 
-    with mlflow.start_run(run_name=MODEL_NAME):
+    with mlflow.start_run(run_name=MODEL):
         mlflow.log_param("epochs", epochs)
         mlflow.log_param("batch_size", dataloader.batch_size)
         mlflow.log_param("model", model.__class__.__name__)
@@ -113,7 +83,7 @@ def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer,
 
         # Save the best model state as a model artifact
         if best_model_state is not None:
-            best_model_state_filename = f"../models/{MODEL_NAME}_best_model_state.pth"
+            best_model_state_filename = f"../models/{MODEL}_best_model_state.pth"
             torch.save(best_model_state, best_model_state_filename)
             mlflow.log_artifact(best_model_state_filename)
 
@@ -152,9 +122,3 @@ def load_deepfake_dataset():
         use_asv2019 = False,
     )
     return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
-
-
-def clear_gpu():
-    torch.cuda.reset_peak_memory_stats()
-    torch.cuda.empty_cache()
-    torch.cuda.reset_max_memory_allocated()

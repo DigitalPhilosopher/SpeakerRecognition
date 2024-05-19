@@ -3,13 +3,13 @@ from typing import List, Tuple
 import librosa
 import pandas as pd
 import torch
-from utils import logger
 from torch.utils.data import Dataset
 from extraction_utils.data_utils import read_label_file
 
 class AudioDataset(Dataset):
-    def __init__(self, directory, frontend):
+    def __init__(self, directory, frontend, logger):
         self.frontend = frontend
+        self.logger = logger
 
         self.data_list: List[Tuple[str, int]] = read_label_file(directory)
         self.data_list = pd.DataFrame(self.data_list, columns=["filename", "is_genuine", "method_type", "method_name", "vocoder"])
