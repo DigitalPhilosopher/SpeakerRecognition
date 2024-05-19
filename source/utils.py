@@ -76,7 +76,15 @@ def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer,
                 batch_end_time = time.time()
                 logger.info(f"Batch processed in {batch_end_time - batch_start_time:.4f} seconds.")
                 logger.info(f"Forward pass took {forward_end_time - forward_start_time:.4f} seconds.")
-            
+           
+                # Log GPU memory usage specific to this process
+                if device.type == 'cuda':
+                    memory_stats = torch.cuda.memory_stats(device)
+                    gpu_memory_allocated = memory_stats["allocated_bytes.all.current"]
+                    gpu_memory_reserved = memory_stats["reserved_bytes.all.current"]
+                    mlflow.log_metric("gpu_memory_allocated", gpu_memory_allocated)
+                    mlflow.log_metric("gpu_memory_reserved", gpu_memory_reserved)
+
             avg_loss = running_loss / len(dataloader)
             epoch_end_time = time.time()
             mlflow.log_metric("avg_loss", avg_loss, step=epoch)
@@ -87,7 +95,8 @@ def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer,
             if avg_loss <= best_loss:
                 best_loss = avg_loss
                 best_model_state = model.state_dict()
-                mlflow.pytorch.log_model(model, "best_model")
+                best_model_name = f"{MODEL_NAME}_best_model"
+                mlflow.pytorch.log_model(model, best_model_name)
 
         total_end_time = time.time()
         mlflow.log_metric("total_training_time", total_end_time - total_start_time)
@@ -98,8 +107,9 @@ def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer,
         mlflow.pytorch.log_model(model, "latest_model")
         # Save the best model state as a model artifact
         if best_model_state is not None:
-            torch.save(best_model_state, "best_model_state.pth")
-            mlflow.log_artifact("best_model_state.pth")
+            best_model_state_filename = f"{MODEL_NAME}_best_model_state.pth"
+            torch.save(best_model_state, best_model_state_filename)
+            mlflow.log_artifact(best_model_state_filename)
 
 
 def load_genuine_dataset():
