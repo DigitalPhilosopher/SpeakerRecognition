@@ -1,3 +1,3 @@
-from .AudioDataset import AudioDataset, collate_single_fn, collate_triplet_fn
+from .AudioDataset import AudioDataset, collate_single_fn, collate_triplet_fn, collate_triplet_wav_fn
 from .TripletLossDataset import TripletLossDataset
 from .RandomTripletLossDataset import RandomTripletLossDataset, DeepfakeRandomTripletLossDataset

@@ -5,6 +5,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from extraction_utils.data_utils import read_label_file
+from torch.nn.utils.rnn import pad_sequence
 
 class AudioDataset(Dataset):
     def __init__(self, directory, frontend, logger):
@@ -49,7 +50,7 @@ class AudioDataset(Dataset):
         waveform, sample_rate = librosa.load(filename, sr=16000) # Read wav
         waveform, _ = librosa.effects.trim(waveform, top_db=35) # Remove silence at beginning and end of wav
 
-        waveform = torch.tensor(waveform, dtype=torch.float32).unsqueeze(0)
+        waveform = torch.tensor(waveform, dtype=torch.float32)
 
         return self.frontend(waveform)
 
@@ -61,4 +62,14 @@ def collate_triplet_fn(batch):
     anchors = torch.stack(anchors)
     positives = torch.stack(positives)
     negatives = torch.stack(negatives)
+    return anchors, positives, negatives
+
+def collate_triplet_wav_fn(batch):
+    anchors, positives, negatives = zip(*batch)
+
+    # Pad sequences directly without additional squeezing since tensors are already 2D
+    anchors = pad_sequence(anchors, batch_first=True, padding_value=0)
+    positives = pad_sequence(positives, batch_first=True, padding_value=0)
+    negatives = pad_sequence(negatives, batch_first=True, padding_value=0)
+
     return anchors, positives, negatives
