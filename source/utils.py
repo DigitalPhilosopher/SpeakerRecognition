@@ -82,7 +82,6 @@ def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer,
             mlflow.log_metric("avg_loss", avg_loss, step=epoch)
             mlflow.log_metric("epoch_time", epoch_end_time - epoch_start_time, step=epoch)
             logger.info(f"Epoch {epoch+1} completed in {epoch_end_time - epoch_start_time:.4f} seconds. Average Loss: {avg_loss:.4f}")
-            print(f'Epoch {epoch+1}, Average Loss: {avg_loss:.4f}', end='\r')
 
             # Save the best model
             if avg_loss <= best_loss:

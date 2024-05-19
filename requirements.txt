@@ -1,15 +1,24 @@
+# Interactive Widgets and Jupyter Support
+ipywidgets==8.1.2
+ipykernel==6.29.4
+nbconvert==7.16.4
+tqdm==4.66.4
+
+# Data Analysis and Processing
 pandas==2.2.2
-transformers==4.40.2
 matplotlib==3.8.4
+
+# Speech Processing
 speechbrain==1.0.0
-librosa
-tqdm
-ipywidgets
-mlflow
-nbconvert
+librosa==0.10.2.post1
 
+# Machine Learning and Experiment Tracking
+mlflow==2.12.2
+s3prl==0.4.15
+transformers==4.40.2
+
+# PyTorch and related libraries with CUDA 12.1 support
 --extra-index-url https://download.pytorch.org/whl/cu121
-
-torch
-torchvision
-torchaudio
+torch==2.3.0+cu121
+torchvision==0.18.0+cu121
+torchaudio==2.3.0+cu121
