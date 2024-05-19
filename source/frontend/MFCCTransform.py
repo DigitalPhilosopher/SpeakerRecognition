@@ -26,4 +26,4 @@ class MFCCTransform(Frontend):
             padding = self.max_length - mfcc.size(1)
             mfcc = torch.nn.functional.pad(mfcc, (0, padding))
 
-        return mfcc
+        return mfcc.squeeze(0).permute(1, 0)

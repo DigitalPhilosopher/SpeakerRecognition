@@ -51,8 +51,7 @@ class AudioDataset(Dataset):
 
         waveform = torch.tensor(waveform, dtype=torch.float32).unsqueeze(0)
 
-        frontend = self.frontend(number_output_parameters=13, sample_rate=sample_rate)
-        return frontend(waveform).squeeze(0).permute(1, 0)
+        return self.frontend(waveform)
 
 def collate_single_fn(batch):
     pass
