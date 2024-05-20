@@ -49,7 +49,7 @@ class ModelTrainer:
 
     ##### INIT #####
 
-    def __init__(self, model, dataloader, valid_dataloader, device, loss_function, optimizer, logger, MODEL, FOLDER="Default", validation_rate=5):
+    def __init__(self, model, dataloader, valid_dataloader, device, loss_function, optimizer, logger, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
         self.model = model
         self.dataloader = dataloader
         self.valid_dataloader = valid_dataloader
@@ -59,7 +59,8 @@ class ModelTrainer:
         self.optimizer = optimizer
         self.logger = logger
         self.MODEL = MODEL
-        self.FOLDER = FOLDER
+        self.FOLDER = self.create_or_get_experiment(FOLDER)
+        self.TAGS = TAGS
         self.best_loss = float('inf')
         self.best_model_state = None
 
@@ -95,12 +96,13 @@ class ModelTrainer:
         try:
             mlflow.start_run(run_name=self.MODEL, experiment_id=self.FOLDER)
             self.log_params(epochs)
+            self.log_tags()
             total_start_time = time.time()
 
-            if start_epoch != 0:
+            if start_epoch != 1:
                 self.load_model_state()
 
-            for epoch in range(start_epoch, epochs):
+            for epoch in range(start_epoch-1, epochs):
                 epoch_start_time = time.time()
                 epoch_loss = self.train_epoch(epoch, epochs)
                 avg_loss = epoch_loss / len(self.dataloader)
@@ -187,6 +189,10 @@ class ModelTrainer:
             "optimizer": self.optimizer.__class__.__name__
         })
 
+    def log_tags(self):
+        for key, value in self.TAGS.items():
+            mlflow.set_tag(key, value)
+
 
     def log_epoch_metrics(self, avg_loss, epoch_start_time, epoch):
         mlflow.log_metrics({"avg_loss": avg_loss, "epoch_time": time.time() - epoch_start_time}, step=epoch)
@@ -198,6 +204,14 @@ class ModelTrainer:
         elif model_type == "latest":
             mlflow.pytorch.log_model(self.model, artifact_path=f"{self.MODEL}_latest_model")
 
+
+    def create_or_get_experiment(self, name):
+        experiment = mlflow.get_experiment_by_name(name)
+        if experiment:
+            return experiment.experiment_id
+        else:
+            return mlflow.create_experiment(name)
+    
 
     ##### SAVING #####
 
