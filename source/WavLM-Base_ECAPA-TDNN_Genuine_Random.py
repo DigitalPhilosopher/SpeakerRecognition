@@ -1,4 +1,5 @@
 import logging
+import warnings
 import mlflow
 from utils import get_device, load_genuine_dataset, ModelTrainer
 import torch.optim as optim
@@ -30,6 +31,7 @@ VALIDATION_RATE = 1
 
 def main():
     ##### CONFIG #####
+    warnings.filterwarnings("ignore")
     logging.basicConfig(filename=f'../logs/{MODEL}.log',
                         level=logging.INFO,
                         format='%(asctime)s - %(message)s')
@@ -44,10 +46,10 @@ def main():
     train_labels, dev_labels, test_labels = load_genuine_dataset()
 
     audio_dataset = RandomTripletLossDataset(train_labels, frontend=lambda x: x, logger=logger)
-    audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_triplet_wav_fn)
+    audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True, collate_fn=collate_triplet_wav_fn)
 
     validation_dataset = ValidationDataset(dev_labels, frontend=lambda x: x, logger=logger)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_valid_fn)
+    validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
 
     ##### MODEL DEFINITION #####
