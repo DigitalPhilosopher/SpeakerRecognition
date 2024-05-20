@@ -2,71 +2,11 @@ import torch
 from extraction_utils.get_label_files import get_label_files
 from tqdm.notebook import tqdm
 import time
+import numpy as np
 import mlflow
 import mlflow.pytorch
-
-
-def train_model_random_loss(epochs, dataloader, model, loss_function, optimizer, device, MODEL, logger):
-    latest_model_name = f"{MODEL}_latest_model"
-    best_model_name = f"{MODEL}_best_model_state"
-
-    best_loss = float('inf')
-    best_model_state = None
-
-    with mlflow.start_run(run_name=MODEL):
-        # Logging model and training details
-        mlflow.log_params({
-            "epochs": epochs,
-            "batch_size": dataloader.batch_size,
-            "model": model.__class__.__name__,
-            "loss_function": loss_function.__class__.__name__,
-            "optimizer": optimizer.__class__.__name__
-        })
-
-        model.train()
-        total_start_time = time.time()
-        
-        for epoch in range(epochs):
-            epoch_start_time = time.time()
-            running_loss = 0.0
-            progress_bar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
-
-            for anchors, positives, negatives in progress_bar:
-                try:
-                    anchors, positives, negatives = anchors.to(device), positives.to(device), negatives.to(device)
-                    optimizer.zero_grad()
-                    
-                    anchor_outputs = model(anchors)
-                    positive_outputs = model(positives)
-                    negative_outputs = model(negatives)
-                    
-                    loss = loss_function(anchor_outputs, positive_outputs, negative_outputs)
-                    loss.backward()
-                    optimizer.step()
-
-                    running_loss += loss.item()
-                    progress_bar.set_postfix(loss=loss.item())
-
-                except Exception as e:
-                    logger.error(f"Error during training: {e}")
-                    continue
-
-            avg_loss = running_loss / len(dataloader)
-            mlflow.log_metrics({"avg_loss": avg_loss, "epoch_time": time.time() - epoch_start_time}, step=epoch)
-
-            if avg_loss < best_loss:
-                best_loss = avg_loss
-                best_model_state = model.state_dict()
-                mlflow.pytorch.log_model(model, artifact_path=best_model_name)
-
-        mlflow.log_metric("total_training_time", time.time() - total_start_time)
-        mlflow.pytorch.log_model(model, artifact_path=latest_model_name)
-
-        if best_model_state:
-            torch.save(best_model_state, f"../models/{MODEL}_best_model_state.pth")
-            mlflow.log_artifact(f"../models/{MODEL}_best_model_state.pth")
-
-        logger.info(f"Training completed in {time.time() - total_start_time:.4f} seconds.")
+from sklearn.metrics import roc_curve
+from itertools import combinations
 
 
 def load_genuine_dataset():
@@ -106,9 +46,14 @@ def load_deepfake_dataset():
 
 
 class ModelTrainer:
-    def __init__(self, model, dataloader, device, loss_function, optimizer, logger, MODEL):
+
+    ##### INIT #####
+
+    def __init__(self, model, dataloader, valid_dataloader, device, loss_function, optimizer, logger, MODEL, validation_rate=5):
         self.model = model
         self.dataloader = dataloader
+        self.valid_dataloader = valid_dataloader
+        self.validation_rate = validation_rate
         self.device = device
         self.loss_function = loss_function
         self.optimizer = optimizer
@@ -116,6 +61,9 @@ class ModelTrainer:
         self.MODEL = MODEL
         self.best_loss = float('inf')
         self.best_model_state = None
+
+
+    ##### TRAINING #####
 
     def train_epoch(self, epoch, epochs):
         self.model.train()
@@ -141,6 +89,7 @@ class ModelTrainer:
                 continue
         return running_loss
 
+
     def train_model(self, epochs):
         mlflow.start_run(run_name=self.MODEL)
         self.log_params(epochs)
@@ -152,14 +101,66 @@ class ModelTrainer:
             avg_loss = epoch_loss / len(self.dataloader)
             self.log_epoch_metrics(avg_loss, epoch_start_time, epoch)
 
+            # Save the best model based on training loss
             if avg_loss < self.best_loss:
                 self.best_loss = avg_loss
                 self.best_model_state = self.model.state_dict()
                 self.log_model("best")
 
+            # Validation check every 5 epochs
+            if (epoch + 1) % self.validation_rate == 0:
+                eer = self.validate_model(self.valid_dataloader)
+                self.logger.info(f'Validation EER at epoch {epoch + 1}: {eer:.4f}')
+                mlflow.log_metrics({'validation_eer': eer}, step=epoch)
+
+        # Log and save the latest model after training is complete
         self.log_model("latest")
         self.save_models()
         self.logger.info(f"Training completed in {time.time() - total_start_time:.4f} seconds.")
+
+
+    ##### VALIDATION #####
+
+    def validate_model(self, dataloader):
+        self.model.eval()
+        embeddings = []
+        labels = []
+        with torch.no_grad():
+            for data in dataloader:
+                inputs, targets = data
+                inputs = inputs.to(self.device)
+                outputs = self.model(inputs)
+                embeddings.extend(outputs.data.cpu().numpy())
+                labels.extend(targets)
+
+        scores, score_labels = self.pairwise_scores(embeddings, labels)
+        eer = self.compute_eer(scores, score_labels)
+        return eer
+
+
+    def pairwise_scores(self, embeddings, labels):
+        scores = []
+        score_labels = []
+        # Compute pairwise scores
+        for (emb1, lbl1), (emb2, lbl2) in combinations(zip(embeddings, labels), 2):
+            # Ensure that embeddings are 1D
+            emb1 = np.squeeze(emb1)
+            emb2 = np.squeeze(emb2)
+            score = np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))  # Cosine similarity
+            scores.append(score)
+            score_labels.append(1 if lbl1 == lbl2 else 0)
+        return scores, score_labels
+
+
+    def compute_eer(self, scores, score_labels):
+        # Calculate the EER
+        fpr, tpr, thresholds = roc_curve(score_labels, scores, pos_label=1)
+        fnr = 1 - tpr
+        eer = fpr[np.nanargmin(np.abs(fpr - fnr))]
+        return eer
+
+
+    ##### LOGGING #####
 
     def log_params(self, epochs):
         mlflow.log_params({
@@ -170,14 +171,19 @@ class ModelTrainer:
             "optimizer": self.optimizer.__class__.__name__
         })
 
+
     def log_epoch_metrics(self, avg_loss, epoch_start_time, epoch):
         mlflow.log_metrics({"avg_loss": avg_loss, "epoch_time": time.time() - epoch_start_time}, step=epoch)
+
 
     def log_model(self, model_type):
         if model_type == "best":
             mlflow.pytorch.log_model(self.model, artifact_path=f"{self.MODEL}_best_model_state")
         elif model_type == "latest":
             mlflow.pytorch.log_model(self.model, artifact_path=f"{self.MODEL}_latest_model")
+
+
+    ##### SAVING #####
 
     def save_models(self):
         if self.best_model_state:

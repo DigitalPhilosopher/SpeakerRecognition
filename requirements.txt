@@ -16,6 +16,7 @@ librosa==0.10.2.post1
 mlflow==2.12.2
 s3prl==0.4.15
 transformers==4.40.2
+scikit-learn==1.4.2
 
 # PyTorch and related libraries with CUDA 12.1 support
 --extra-index-url https://download.pytorch.org/whl/cu121
