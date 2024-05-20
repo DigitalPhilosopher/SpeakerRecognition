@@ -109,9 +109,9 @@ class ModelTrainer:
 
             # Validation check every 5 epochs
             if (epoch + 1) % self.validation_rate == 0:
-                eer = self.validate_model(self.valid_dataloader)
-                self.logger.info(f'Validation EER at epoch {epoch + 1}: {eer:.4f}')
-                mlflow.log_metrics({'validation_eer': eer}, step=epoch)
+                eer, min_dcf = self.validate_model(self.valid_dataloader)
+                self.logger.info(f'Validation EER: {eer:.4f}, minDCF: {min_dcf:.4f}')
+                mlflow.log_metrics({'validation_eer': eer, 'validation_min_dcf': min_dcf}, step=epoch)
 
         # Log and save the latest model after training is complete
         self.log_model("latest")
@@ -134,8 +134,9 @@ class ModelTrainer:
                 labels.extend(targets)
 
         scores, score_labels = self.pairwise_scores(embeddings, labels)
-        eer = self.compute_eer(scores, score_labels)
-        return eer
+        eer, min_dcf = self.compute_metrics(scores, score_labels)
+        return eer, min_dcf
+
 
 
     def pairwise_scores(self, embeddings, labels):
@@ -152,12 +153,22 @@ class ModelTrainer:
         return scores, score_labels
 
 
-    def compute_eer(self, scores, score_labels):
+    def compute_metrics(self, scores, score_labels, c_fa=1, c_fr=1, p_target=0.01):
         # Calculate the EER
         fpr, tpr, thresholds = roc_curve(score_labels, scores, pos_label=1)
         fnr = 1 - tpr
         eer = fpr[np.nanargmin(np.abs(fpr - fnr))]
-        return eer
+        
+        # Calculate the minDCF
+        min_dcf = float('inf')
+        for threshold in thresholds:
+            fnr_at_threshold = 1 - tpr[thresholds >= threshold][0]
+            fpr_at_threshold = fpr[thresholds >= threshold][0]
+            dcf = c_fr * fnr_at_threshold * p_target + c_fa * fpr_at_threshold * (1 - p_target)
+            if dcf < min_dcf:
+                min_dcf = dcf
+        
+        return eer, min_dcf
 
 
     ##### LOGGING #####
