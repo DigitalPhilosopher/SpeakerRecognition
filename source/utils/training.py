@@ -49,7 +49,7 @@ class ModelTrainer:
 
     ##### INIT #####
 
-    def __init__(self, model, dataloader, valid_dataloader, device, loss_function, optimizer, logger, MODEL, validation_rate=5):
+    def __init__(self, model, dataloader, valid_dataloader, device, loss_function, optimizer, logger, MODEL, FOLDER="Default", validation_rate=5):
         self.model = model
         self.dataloader = dataloader
         self.valid_dataloader = valid_dataloader
@@ -59,6 +59,7 @@ class ModelTrainer:
         self.optimizer = optimizer
         self.logger = logger
         self.MODEL = MODEL
+        self.FOLDER = FOLDER
         self.best_loss = float('inf')
         self.best_model_state = None
 
@@ -90,33 +91,38 @@ class ModelTrainer:
         return running_loss
 
 
-    def train_model(self, epochs):
-        mlflow.start_run(run_name=self.MODEL)
-        self.log_params(epochs)
-        total_start_time = time.time()
+    def train_model(self, epochs, start_epoch=1):
+        try:
+            mlflow.start_run(run_name=self.MODEL, experiment_id=self.FOLDER)
+            self.log_params(epochs)
+            total_start_time = time.time()
 
-        for epoch in range(epochs):
-            epoch_start_time = time.time()
-            epoch_loss = self.train_epoch(epoch, epochs)
-            avg_loss = epoch_loss / len(self.dataloader)
-            self.log_epoch_metrics(avg_loss, epoch_start_time, epoch)
+            if start_epoch != 0:
+                self.load_model_state()
 
-            # Save the best model based on training loss
-            if avg_loss < self.best_loss:
-                self.best_loss = avg_loss
-                self.best_model_state = self.model.state_dict()
-                self.log_model("best")
+            for epoch in range(start_epoch, epochs):
+                epoch_start_time = time.time()
+                epoch_loss = self.train_epoch(epoch, epochs)
+                avg_loss = epoch_loss / len(self.dataloader)
+                self.log_epoch_metrics(avg_loss, epoch_start_time, epoch)
 
-            # Validation check every 5 epochs
-            if (epoch + 1) % self.validation_rate == 0:
-                eer, min_dcf = self.validate_model(self.valid_dataloader)
-                self.logger.info(f'Validation EER: {eer:.4f}, minDCF: {min_dcf:.4f}')
-                mlflow.log_metrics({'validation_eer': eer, 'validation_min_dcf': min_dcf}, step=epoch)
+                if avg_loss < self.best_loss:
+                    self.best_loss = avg_loss
+                    self.best_model_state = self.model.state_dict()
+                    self.log_model("best")
 
-        # Log and save the latest model after training is complete
-        self.log_model("latest")
-        self.save_models()
-        self.logger.info(f"Training completed in {time.time() - total_start_time:.4f} seconds.")
+                if (epoch + 1) % self.validation_rate == 0:
+                    eer, min_dcf = self.validate_model(self.valid_dataloader)
+                    self.logger.info(f'Validation EER: {eer:.4f}, minDCF: {min_dcf:.4f}')
+                    mlflow.log_metrics({'validation_eer': eer, 'validation_min_dcf': min_dcf}, step=epoch)
+
+                self.save_model_state(epoch)
+
+            self.log_model("latest")
+            self.save_models()
+            self.logger.info(f"Training completed in {time.time() - total_start_time:.4f} seconds.")
+        finally:
+            mlflow.end_run()
 
 
     ##### VALIDATION #####
@@ -136,7 +142,6 @@ class ModelTrainer:
         scores, score_labels = self.pairwise_scores(embeddings, labels)
         eer, min_dcf = self.compute_metrics(scores, score_labels)
         return eer, min_dcf
-
 
 
     def pairwise_scores(self, embeddings, labels):
@@ -200,3 +205,20 @@ class ModelTrainer:
         if self.best_model_state:
             torch.save(self.best_model_state, f"../models/{self.MODEL}_best_model_state.pth")
             mlflow.log_artifact(f"../models/{self.MODEL}_best_model_state.pth")
+
+
+    def save_model_state(self, epoch):
+        state = {
+            'epoch': epoch,
+            'state_dict': self.model.state_dict(),
+            'optimizer': self.optimizer.state_dict(),
+            'best_loss': self.best_loss
+        }
+        torch.save(state, f'../models/{self.MODEL}_checkpoint.pth')
+
+
+    def load_model_state(self):
+        checkpoint = torch.load(f'../models/{self.MODEL}_checkpoint.pth')
+        self.model.load_state_dict(checkpoint['state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        self.best_loss = checkpoint['best_loss']
