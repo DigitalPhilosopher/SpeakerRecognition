@@ -1,6 +1,6 @@
 import torch
 from extraction_utils.get_label_files import get_label_files
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 import time
 import numpy as np
 import mlflow
