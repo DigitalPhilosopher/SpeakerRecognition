@@ -1,0 +1,20 @@
+Cuda version 12.1 or higher needs to be installed
+
+# Create virtual python environment 
+python -m venv .venv
+source .venv/bin/activate
+
+# Install requirements
+pip install -r requirements.txt
+
+# Train Model
+python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 8 --epochs 25 --validation_rate 5
+python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 8 --epochs 25 --validation_rate 5
+
+python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 25 --validation_rate 5
+
+# Show results:
+mlflow ui 
+
+## Open in browser:
+http://127.0.0.1:5000/#/experiments/0?searchFilter=&orderByKey=attributes.start_time&orderByAsc=false&startTime=ALL&lifecycleFilter=Active&modelVersionFilter=All+Runs&datasetsFilter=W10%3D 
