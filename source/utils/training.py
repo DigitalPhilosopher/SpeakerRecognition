@@ -100,7 +100,7 @@ class ModelTrainer:
             total_start_time = time.time()
 
             if start_epoch != 1:
-                self.load_model_state()
+                self.load_model_state(start_epoch-1)
 
             for epoch in range(start_epoch-1, epochs):
                 epoch_start_time = time.time()
@@ -228,11 +228,11 @@ class ModelTrainer:
             'optimizer': self.optimizer.state_dict(),
             'best_loss': self.best_loss
         }
-        torch.save(state, f'../models/{self.MODEL}_checkpoint.pth')
+        torch.save(state, f'../models/{self.MODEL}_checkpoint_{epoch}.pth')
 
 
-    def load_model_state(self):
-        checkpoint = torch.load(f'../models/{self.MODEL}_checkpoint.pth')
+    def load_model_state(self, epoch):
+        checkpoint = torch.load(f'../models/{self.MODEL}_checkpoint_{epoch}.pth')
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.best_loss = checkpoint['best_loss']
