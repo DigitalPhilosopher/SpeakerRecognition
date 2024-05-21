@@ -1,6 +1,7 @@
 import logging
 import argparse
 import sys
+import os
 import warnings
 import mlflow
 from utils import get_device, load_genuine_dataset, load_deepfake_dataset, ModelTrainer
@@ -185,4 +186,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    os.chdir("./source")
     sys.exit(main(args))
