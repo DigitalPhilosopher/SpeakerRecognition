@@ -12,22 +12,13 @@ from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRand
 from models import WavLM_Base_frozen_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
+from torch.optim.lr_scheduler import CosineAnnealingWarmupRestarts
 
 
 def define_variables(args):
-    global MODEL
-    global FOLDER
-    global TAGS
-
-    global LEARNING_RATE
-    global MARGIN
-    global NORM
-    global BATCH_SIZE
-    global EPOCHS
-    global VALIDATION_RATE
-    global MFCCS
-    global SAMPLE_RATE
-    global EMBEDDING_SIZE
+    global MODEL, FOLDER, TAGS
+    global LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE
+    global MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, WEIGHT_DECAY, AMSGRAD
 
     LEARNING_RATE = args.learning_rate
     MARGIN = args.margin
@@ -38,6 +29,8 @@ def define_variables(args):
     MFCCS = args.mfccs
     SAMPLE_RATE = args.sample_rate
     EMBEDDING_SIZE = args.embedding_size
+    WEIGHT_DECAY = args.weight_decay
+    AMSGRAD = args.amsgrad
 
     if args.frontend == "mfcc":
         MODEL = "MFCC"
@@ -120,9 +113,7 @@ def create_dataset(args):
     validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
 def get_model(args):
-    global model
-    global optimizer
-    global triplet_loss
+    global model, optimizer, scheduler, triplet_loss
 
     if args.frontend == "mfcc":
         model = ECAPA_TDNN(input_size=MFCCS, lin_neurons=EMBEDDING_SIZE, device=device)
@@ -131,7 +122,16 @@ def get_model(args):
             model = WavLM_Base_frozen_ECAPA_TDNN(device=device)
     
     model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
+    scheduler = CosineAnnealingWarmupRestarts(
+        optimizer,
+        first_cycle_steps=10000,
+        cycle_mult=1.0,
+        max_lr=0.00005,
+        min_lr=0.000005,
+        warmup_steps=1000,
+        gamma=0.75
+    )
     triplet_loss = TripletMarginLoss(margin=MARGIN, p=NORM)
 
 
@@ -148,7 +148,7 @@ def main(args):
     get_model(args)
 
     ##### TRAINING #####
-    trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, device, triplet_loss, optimizer, logger, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
+    trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, device, triplet_loss, optimizer, scheduler, logger, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
     trainer.train_model(EPOCHS)
 
 
@@ -175,6 +175,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--learning_rate", type=float, required=False, default=0.001, help="")
+    parser.add_argument("--weight_decay", type=float, required=False, default=0.00001, help="Weight decay to use for optimizing")
+    parser.add_argument("--amsgrad", type=bool, required=False, default=False, help="Whether to use the AMSGrad variant of Adam")
     parser.add_argument("--margin", type=int, required=False, default=1, help="")
     parser.add_argument("--norm", type=int, required=False, default=2, help="")
     parser.add_argument("--batch_size", type=int, required=False, default=8, help="")
