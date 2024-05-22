@@ -107,10 +107,10 @@ def create_dataset(args):
         frontend = lambda x: x
 
     audio_dataset = tripletLossDataset(train_labels, frontend=frontend, logger=logger)
-    audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True, collate_fn=collate_triplet_wav_fn)
+    audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_triplet_wav_fn)
 
     validation_dataset = ValidationDataset(dev_labels, frontend=frontend, logger=logger)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+    validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
 def get_model(args):
     global model, optimizer, scheduler, triplet_loss
