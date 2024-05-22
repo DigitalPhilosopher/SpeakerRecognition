@@ -7,6 +7,7 @@ import mlflow
 import mlflow.pytorch
 from sklearn.metrics import roc_curve
 from itertools import combinations
+from .validation import ModelValidator
 
 
 def load_genuine_dataset():
@@ -64,6 +65,7 @@ class ModelTrainer:
         self.TAGS = TAGS
         self.best_loss = float('inf')
         self.best_model_state = None
+        self.validator = ModelValidator(valid_dataloader, device)
 
 
     ##### TRAINING #####
@@ -117,9 +119,7 @@ class ModelTrainer:
                     self.log_model("best")
 
                 if (epoch + 1) % self.validation_rate == 0:
-                    eer, min_dcf = self.validate_model(self.valid_dataloader)
-                    self.logger.info(f'Validation EER: {eer:.4f}, minDCF: {min_dcf:.4f}')
-                    mlflow.log_metrics({'validation_eer': eer, 'validation_min_dcf': min_dcf}, step=epoch)
+                    self.validator.validate_model(self.model, epoch)
 
                 self.save_model_state(epoch)
 
@@ -130,67 +130,16 @@ class ModelTrainer:
             mlflow.end_run()
 
 
-    ##### VALIDATION #####
-
-    def validate_model(self, dataloader):
-        self.model.eval()
-        embeddings = []
-        labels = []
-        with torch.no_grad():
-            for data in dataloader:
-                inputs, targets = data
-                inputs = inputs.to(self.device)
-                outputs = self.model(inputs)
-                embeddings.extend(outputs.data.cpu().numpy())
-                labels.extend(targets)
-
-        scores, score_labels = self.pairwise_scores(embeddings, labels)
-        eer, min_dcf = self.compute_metrics(scores, score_labels)
-        return eer, min_dcf
-
-
-    def pairwise_scores(self, embeddings, labels):
-        scores = []
-        score_labels = []
-        # Compute pairwise scores
-        for (emb1, lbl1), (emb2, lbl2) in combinations(zip(embeddings, labels), 2):
-            # Ensure that embeddings are 1D
-            emb1 = np.squeeze(emb1)
-            emb2 = np.squeeze(emb2)
-            score = np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))  # Cosine similarity
-            scores.append(score)
-            score_labels.append(1 if lbl1 == lbl2 else 0)
-        return scores, score_labels
-
-
-    def compute_metrics(self, scores, score_labels, c_fa=1, c_fr=1, p_target=0.01):
-        # Calculate the EER
-        fpr, tpr, thresholds = roc_curve(score_labels, scores, pos_label=1)
-        fnr = 1 - tpr
-        eer = fpr[np.nanargmin(np.abs(fpr - fnr))]
-        
-        # Calculate the minDCF
-        min_dcf = float('inf')
-        for threshold in thresholds:
-            fnr_at_threshold = 1 - tpr[thresholds >= threshold][0]
-            fpr_at_threshold = fpr[thresholds >= threshold][0]
-            dcf = c_fr * fnr_at_threshold * p_target + c_fa * fpr_at_threshold * (1 - p_target)
-            if dcf < min_dcf:
-                min_dcf = dcf
-        
-        return eer, min_dcf
-
-
     ##### LOGGING #####
 
     def log_params(self, epochs):
         mlflow.log_params({
-            "epochs": epochs,
-            "batch_size": self.dataloader.batch_size,
-            "model": self.model.__class__.__name__,
-            "loss_function": self.loss_function.__class__.__name__,
-            "optimizer": self.optimizer.__class__.__name__,
-            "scheduler": self.scheduler.__class__.__name__
+            "Epochs": epochs,
+            "Batch size": self.dataloader.batch_size,
+            "Model": self.model.__class__.__name__,
+            "Loss function": self.loss_function.__class__.__name__,
+            "Optimizer": self.optimizer.__class__.__name__,
+            "Scheduler": self.scheduler.__class__.__name__
         })
 
     def log_tags(self):
@@ -199,7 +148,7 @@ class ModelTrainer:
 
 
     def log_epoch_metrics(self, avg_loss, epoch_start_time, epoch):
-        mlflow.log_metrics({"avg_loss": avg_loss, "epoch_time": time.time() - epoch_start_time}, step=epoch)
+        mlflow.log_metrics({"Average Triplet Loss": avg_loss, "Epoch time (in seconds)": time.time() - epoch_start_time}, step=epoch)
 
 
     def log_model(self, model_type):
