@@ -49,7 +49,7 @@ class ModelTrainer:
 
     ##### INIT #####
 
-    def __init__(self, model, dataloader, valid_dataloader, device, loss_function, optimizer, logger, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
+    def __init__(self, model, dataloader, valid_dataloader, device, loss_function, optimizer, scheduler, logger, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
         self.model = model
         self.dataloader = dataloader
         self.valid_dataloader = valid_dataloader
@@ -57,6 +57,7 @@ class ModelTrainer:
         self.device = device
         self.loss_function = loss_function
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.logger = logger
         self.MODEL = MODEL
         self.FOLDER = self.create_or_get_experiment(FOLDER)
@@ -83,6 +84,7 @@ class ModelTrainer:
                 loss = self.loss_function(anchor_outputs, positive_outputs, negative_outputs)
                 loss.backward()
                 self.optimizer.step()
+                self.scheduler.step()  # Update the learning rate after optimizer step
 
                 running_loss += loss.item()
                 progress_bar.set_postfix(loss=loss.item())
@@ -186,7 +188,8 @@ class ModelTrainer:
             "batch_size": self.dataloader.batch_size,
             "model": self.model.__class__.__name__,
             "loss_function": self.loss_function.__class__.__name__,
-            "optimizer": self.optimizer.__class__.__name__
+            "optimizer": self.optimizer.__class__.__name__,
+            "scheduler": self.scheduler.__class__.__name__
         })
 
     def log_tags(self):
@@ -226,6 +229,7 @@ class ModelTrainer:
             'epoch': epoch,
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
+            'scheduler': self.scheduler.state_dict(),
             'best_loss': self.best_loss
         }
         torch.save(state, f'../models/{self.MODEL}_checkpoint_{epoch}.pth')
@@ -235,4 +239,5 @@ class ModelTrainer:
         checkpoint = torch.load(f'../models/{self.MODEL}_checkpoint_{epoch}.pth')
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
+        self.scheduler.load_state_dict(checkpoint['scheduler'])
         self.best_loss = checkpoint['best_loss']
