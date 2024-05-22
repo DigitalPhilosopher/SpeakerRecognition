@@ -12,7 +12,7 @@ from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRand
 from models import WavLM_Base_frozen_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
-from torch.optim.lr_scheduler import CosineAnnealingWarmupRestarts
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 
 def define_variables(args):
@@ -123,14 +123,11 @@ def get_model(args):
     
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
-    scheduler = CosineAnnealingWarmupRestarts(
+    scheduler = CosineAnnealingWarmRestarts(
         optimizer,
-        first_cycle_steps=10000,
-        cycle_mult=1.0,
-        max_lr=0.00005,
-        min_lr=0.000005,
-        warmup_steps=1000,
-        gamma=0.75
+        T_0=10000,
+        T_mult=1,
+        eta_min=0.000005
     )
     triplet_loss = TripletMarginLoss(margin=MARGIN, p=NORM)
 
@@ -177,7 +174,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=float, required=False, default=0.001, help="")
     parser.add_argument("--weight_decay", type=float, required=False, default=0.00001, help="Weight decay to use for optimizing")
     parser.add_argument("--amsgrad", type=bool, required=False, default=False, help="Whether to use the AMSGrad variant of Adam")
-    parser.add_argument("--margin", type=int, required=False, default=1, help="")
+    parser.add_argument("--margin", type=float, required=False, default=1, help="")
     parser.add_argument("--norm", type=int, required=False, default=2, help="")
     parser.add_argument("--batch_size", type=int, required=False, default=8, help="")
     parser.add_argument("--epochs", type=int, required=False, default=25, help="")
