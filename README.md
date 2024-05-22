@@ -8,10 +8,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Train Model
-python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 8 --epochs 25 --validation_rate 5
-python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 8 --epochs 25 --validation_rate 5
+python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5
+python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5
 
-python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 25 --validation_rate 5
+python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5
 
 # Show results:
 mlflow ui 
