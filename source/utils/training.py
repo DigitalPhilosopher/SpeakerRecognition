@@ -84,13 +84,14 @@ class ModelTrainer:
                 loss = self.loss_function(anchor_outputs, positive_outputs, negative_outputs)
                 loss.backward()
                 self.optimizer.step()
-                self.scheduler.step()  # Update the learning rate after optimizer step
 
                 running_loss += loss.item()
                 progress_bar.set_postfix(loss=loss.item())
             except Exception as e:
                 self.logger.error(f"Error during training: {e}")
                 continue
+
+        self.scheduler.step()
         return running_loss
 
 

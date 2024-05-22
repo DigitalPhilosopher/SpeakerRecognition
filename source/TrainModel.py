@@ -125,7 +125,7 @@ def get_model(args):
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
     scheduler = CosineAnnealingWarmRestarts(
         optimizer,
-        T_0=10000,
+        T_0=5,
         T_mult=1,
         eta_min=0.000005
     )
