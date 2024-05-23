@@ -7,6 +7,9 @@ source .venv/bin/activate
 # Install requirements
 pip install -r requirements.txt
 
+# Add extraction utils
+ln -s /path/to/extraction_utils source/extraction_utils
+
 # Train Model
 python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5
 python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5
