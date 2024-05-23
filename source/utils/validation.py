@@ -94,7 +94,7 @@ class ModelValidator:
             prefix + 'EER - Deepfake Detection': eer,
             prefix + 'Threshold - Deepfake Detection': threshold,
             prefix + 'Validation time in minutes': validation_time_minutes,
-        prefix + 'Hardest Deepfake Method': hardest_method_score
+            prefix + 'Hardest Deepfake Method': hardest_method_score
         }, step=step)
         mlflow.log_param(prefix + 'Hardest Deepfake Method', hardest_method)
 

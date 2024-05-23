@@ -32,11 +32,11 @@ class AudioDataset(Dataset):
 
         # TODO: Remove
         # Group by speaker and select top 5 speakers
-        top_speakers = self.data_list['speaker'].value_counts().nlargest(5).index
-        sampled_data = self.data_list[self.data_list['speaker'].isin(top_speakers)].reset_index(drop=True)
-        self.data_list = sampled_data
-        self.genuine = self.data_list[self.data_list["is_genuine"] == 1].reset_index(drop=True)
-        logger.warn("Downsampled to have only 5 speakers, keeping all utterances")
+        # top_speakers = self.data_list['speaker'].value_counts().nlargest(5).index
+        # sampled_data = self.data_list[self.data_list['speaker'].isin(top_speakers)].reset_index(drop=True)
+        # self.data_list = sampled_data
+        # self.genuine = self.data_list[self.data_list["is_genuine"] == 1].reset_index(drop=True)
+        # logger.warn("Downsampled to have only 5 speakers, keeping all utterances")
 
 
     def __len__(self):
