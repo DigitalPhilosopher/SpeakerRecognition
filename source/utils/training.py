@@ -125,7 +125,6 @@ class ModelTrainer:
 
             self.log_model("latest")
             self.save_models()
-            self.logger.info(f"Training completed in {time.time() - total_start_time:.4f} seconds.")
         finally:
             mlflow.end_run()
 
@@ -148,7 +147,11 @@ class ModelTrainer:
 
 
     def log_epoch_metrics(self, avg_loss, epoch_start_time, epoch):
-        mlflow.log_metrics({"Average Triplet Loss": avg_loss, "Epoch time in seconds": time.time() - epoch_start_time}, step=epoch)
+        time_minutes = int((time.time() - epoch_start_time) / 60)
+        mlflow.log_metrics({
+            "Average Triplet Loss": avg_loss,
+            "Epoch time in minutes": time_minutes
+            }, step=epoch)
 
 
     def log_model(self, model_type):
