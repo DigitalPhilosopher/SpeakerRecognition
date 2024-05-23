@@ -11,10 +11,10 @@ pip install -r requirements.txt
 ln -s /path/to/extraction_utils source/extraction_utils
 
 # Train Model
-python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5
-python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5
+python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 16 --epochs 20 --validation_rate 10 --margin 0.5 --restart_epoch 50 --mfccs 80
+python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 16 --epochs 20 --validation_rate 10 --margin 0.5 --restart_epoch 50 --mfccs 80
 
-python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5
+python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 20 --validation_rate 10 --margin 0.5 --restart_epoch 50
 
 # Show results:
 mlflow ui 
