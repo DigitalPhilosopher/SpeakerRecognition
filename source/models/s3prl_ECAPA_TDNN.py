@@ -3,13 +3,18 @@ from torch import nn
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 from abc import ABC, abstractmethod
 
-class s3prl_frozen_ECAPA_TDNN(nn.Module, ABC):
-    def __init__(self, device='cuda'):
+class s3prl_ECAPA_TDNN(nn.Module, ABC):
+    def __init__(self, frozen = True, device='cuda'):
         super().__init__()
 
         # Initialize WavLM Base model
         self.frontend = self.hub_function()
         self.frontend.to(device)
+        
+        # Freeze the frontend parameters
+        if frozen:
+            for param in self.frontend.parameters():
+                param.requires_grad = False
 
         # We need to determine the output feature size of WavLM dynamically
         # This can be done by processing a small dummy input through WavLM
