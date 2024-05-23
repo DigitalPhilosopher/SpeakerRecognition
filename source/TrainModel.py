@@ -4,7 +4,7 @@ import sys
 import os
 import warnings
 import mlflow
-from utils import get_device, load_genuine_dataset, load_deepfake_dataset, ModelTrainer
+from utils import get_device, load_deepfake_dataset, ModelTrainer
 import torch.optim as optim
 from torch.nn import TripletMarginLoss
 from torch.utils.data import DataLoader
@@ -91,14 +91,13 @@ def config():
     device = get_device(logger)
 
 def create_dataset(args):
-    global audio_dataloader
-    global validation_dataloader
+    global audio_dataloader, validation_dataloader, test_dataloader
 
+    train_labels, dev_labels, test_labels = load_deepfake_dataset()
+    
     if args.dataset == "genuine":
-        train_labels, dev_labels, test_labels = load_deepfake_dataset()
         tripletLossDataset = RandomTripletLossDataset
     elif args.dataset == "deepfake":
-        train_labels, dev_labels, test_labels = load_deepfake_dataset()
         tripletLossDataset = DeepfakeRandomTripletLossDataset
 
     if args.frontend == "mfcc":
@@ -111,6 +110,9 @@ def create_dataset(args):
 
     validation_dataset = ValidationDataset(dev_labels, frontend=frontend, logger=logger)
     validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+
+    test_dataset = ValidationDataset(test_labels, frontend=frontend, logger=logger)
+    test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
 def get_model(args):
     global model, optimizer, scheduler, triplet_loss
@@ -145,7 +147,7 @@ def main(args):
     get_model(args)
 
     ##### TRAINING #####
-    trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, device, triplet_loss, optimizer, scheduler, logger, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
+    trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss, optimizer, scheduler, logger, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
     trainer.train_model(EPOCHS)
 
 
@@ -186,4 +188,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.chdir("./source")
+    os.environ["MLFLOW_ENABLE_SYSTEM_METRICS_LOGGING"] = "true"
+
     sys.exit(main(args))
