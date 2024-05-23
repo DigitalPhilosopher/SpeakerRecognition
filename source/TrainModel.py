@@ -133,7 +133,11 @@ def get_model(args):
         model = ECAPA_TDNN(
             input_size=MFCCS, lin_neurons=EMBEDDING_SIZE, device=device)
     elif args.frontend == "wavlm_base":
-        model = WavLM_Base_ECAPA_TDNN(frozen=args.frozen, device=device)
+        if args.frozen == 0:
+            frozen = False
+        else:
+            frozen = True
+        model = WavLM_Base_ECAPA_TDNN(frozen=frozen, device=device)
 
     model.to(device)
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters(
@@ -176,10 +180,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--frozen",
-        type=bool,
+        type=int,
         required=False,
-        default=True,
-        help="Whether the frontend model is jointly trained or frozen during training",
+        default=1,
+        help="Whether the frontend model is jointly trained or frozen during training (1=frozen, 0=joint)",
     )
     parser.add_argument(
         "--dataset",
