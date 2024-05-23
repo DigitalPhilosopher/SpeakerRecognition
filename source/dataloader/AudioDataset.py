@@ -8,6 +8,14 @@ from extraction_utils.data_utils import read_label_file
 from torch.nn.utils.rnn import pad_sequence
 
 
+def extract_speaker_id(file_path):
+    dir_name = os.path.dirname(file_path)
+    dir_parts = dir_name.split(os.path.sep)
+    last_folder = dir_parts[-1]
+    speaker_id = last_folder.split("_")[-1]
+    return speaker_id
+
+
 class AudioDataset(Dataset):
     def __init__(self, directory, frontend, logger):
         self.frontend = frontend
@@ -19,8 +27,8 @@ class AudioDataset(Dataset):
 
         self.data_list["utterance"] = self.data_list["filename"].apply(
             lambda x: os.path.basename(x).split(".")[0])
-        self.data_list["speaker"] = self.data_list["utterance"].apply(
-            lambda x: x.split("_")[0])
+        self.data_list["speaker"] = self.data_list["filename"].apply(
+            extract_speaker_id)
 
         self.genuine = self.data_list[self.data_list["is_genuine"] == 1].reset_index(
             drop=True)
