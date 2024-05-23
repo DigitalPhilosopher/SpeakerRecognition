@@ -20,7 +20,7 @@ class ModelValidator:
 
     ##### VALIDATION #####
 
-    def validate_model(self, model, step):
+    def validate_model(self, model, step, prefix=""):
         start_time = time.time()
         model.eval()
 
@@ -48,9 +48,9 @@ class ModelValidator:
         eer, threshold = self.compute_eer(scores, score_labels)
 
         mlflow.log_metrics({
-            'EER - Speaker Verification': eer,
-            'Threshold - Speaker Verification': threshold,
-            }, step=step)
+            prefix + 'EER - Speaker Verification': eer,
+            prefix + 'Threshold - Speaker Verification': threshold,
+        }, step=step)
 
         unique_labels = list(set(labels))
     
@@ -77,16 +77,16 @@ class ModelValidator:
                     score = np.linalg.norm(emb1 - emb2)
                     genuine_deepfake_scores.append(score)
                     genuine_deepfake_labels.append(0)
-        
+
         eer, threshold = self.compute_eer(genuine_deepfake_scores, genuine_deepfake_labels)
 
         end_time = time.time()
         validation_time_minutes = int((end_time - start_time) / 60)
         mlflow.log_metrics({
-            'EER - Deepfake Detection': eer,
-            'Threshold - Deepfake Detection': threshold,
-            'Validation time in minutes': validation_time_minutes
-            }, step=step)
+            prefix + 'EER - Deepfake Detection': eer,
+            prefix + 'Threshold - Deepfake Detection': threshold,
+            prefix + 'Validation time in minutes': validation_time_minutes
+        }, step=step)
 
 
     def pairwise_scores(self, embeddings, labels):
