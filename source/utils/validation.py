@@ -6,6 +6,7 @@ import mlflow.pytorch
 from collections import defaultdict
 from sklearn.metrics import roc_curve
 from itertools import combinations
+import gc
 
 
 class ModelValidator:
@@ -101,6 +102,8 @@ class ModelValidator:
             prefix + 'Validation time in minutes': validation_time_minutes,
             prefix + 'Hardest Deepfake Method': hardest_method_score
         }, step=step)
+
+        gc.collect()
 
     def pairwise_scores(self, embeddings, labels):
         scores = []
