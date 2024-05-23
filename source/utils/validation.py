@@ -13,7 +13,7 @@ class ModelValidator:
 
     ##### INIT #####
 
-    def __init__(self,valid_dataloader, device):
+    def __init__(self, valid_dataloader, device):
         self.dataloader = valid_dataloader
         self.device = device
 
@@ -22,15 +22,26 @@ class ModelValidator:
 
     def validate_model(self, model, step):
         model.eval()
+
         embeddings = []
         labels = []
+        
+        deepfake_embeddings = []
+        deepfake_labels = []
+
         with torch.no_grad():
             for data in self.dataloader:
-                inputs, targets = data
+                inputs, targets, is_genuine = data
                 inputs = inputs.to(self.device)
                 outputs = model(inputs)
-                embeddings.extend(outputs.data.cpu().numpy())
-                labels.extend(targets)
+                embedding_output = outputs.data.cpu().numpy() 
+                genuine_indices = is_genuine == 1
+
+                # Separate embeddings and labels for genuine and deepfake
+                embeddings.extend(embedding_output[genuine_indices])
+                labels.extend(targets[genuine_indices])
+                deepfake_embeddings.extend(embedding_output[~genuine_indices])
+                deepfake_labels.extend(targets[~genuine_indices])
 
         scores, score_labels = self.pairwise_scores(embeddings, labels)
         eer, threshold = self.compute_eer(scores, score_labels)
@@ -38,6 +49,40 @@ class ModelValidator:
         mlflow.log_metrics({
             'EER - Speaker Verification': eer,
             'Threshold - Speaker Verification': threshold,
+            }, step=step)
+
+        unique_labels = list(set(labels))
+        unique_deepfake_labels = list(set(deepfake_labels))
+        
+        genuine_deepfake_scores = []
+        genuine_deepfake_labels = []
+
+        for speaker in unique_labels:
+            genuine_indices = [i for i, lbl in enumerate(labels) if lbl == speaker]
+            deepfake_indices = [i for i, lbl in enumerate(deepfake_labels) if lbl == speaker]
+
+            # Compute scores for genuine-genuine pairs
+            for gi1, gi2 in combinations(genuine_indices, 2):
+                emb1 = np.squeeze(embeddings[gi1])
+                emb2 = np.squeeze(embeddings[gi2])
+                score = np.linalg.norm(emb1 - emb2)
+                genuine_deepfake_scores.append(score)
+                genuine_deepfake_labels.append(1)  # 1 indicates genuine-genuine
+
+            # Compute scores for genuine-deepfake pairs
+            for gi in genuine_indices:
+                for di in deepfake_indices:
+                    emb1 = np.squeeze(embeddings[gi])
+                    emb2 = np.squeeze(deepfake_embeddings[di])
+                    score = np.linalg.norm(emb1 - emb2)
+                    genuine_deepfake_scores.append(score)
+                    genuine_deepfake_labels.append(0)
+        
+        eer, threshold = self.compute_eer(genuine_deepfake_scores, genuine_deepfake_labels)
+
+        mlflow.log_metrics({
+            'EER - Deepfake Detection': eer,
+            'Threshold - Deepfake Detection': threshold,
             }, step=step)
 
 

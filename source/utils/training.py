@@ -148,7 +148,7 @@ class ModelTrainer:
 
 
     def log_epoch_metrics(self, avg_loss, epoch_start_time, epoch):
-        mlflow.log_metrics({"Average Triplet Loss": avg_loss, "Epoch time (in seconds)": time.time() - epoch_start_time}, step=epoch)
+        mlflow.log_metrics({"Average Triplet Loss": avg_loss, "Epoch time in seconds": time.time() - epoch_start_time}, step=epoch)
 
 
     def log_model(self, model_type):

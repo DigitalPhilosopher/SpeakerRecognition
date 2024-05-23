@@ -95,7 +95,7 @@ def create_dataset(args):
     global validation_dataloader
 
     if args.dataset == "genuine":
-        train_labels, dev_labels, test_labels = load_genuine_dataset()
+        train_labels, dev_labels, test_labels = load_deepfake_dataset()
         tripletLossDataset = RandomTripletLossDataset
     elif args.dataset == "deepfake":
         train_labels, dev_labels, test_labels = load_deepfake_dataset()
