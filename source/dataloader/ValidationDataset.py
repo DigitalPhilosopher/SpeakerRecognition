@@ -2,11 +2,12 @@ from dataloader import AudioDataset
 from torch.nn.utils.rnn import pad_sequence
 import numpy as np
 
+
 class ValidationDataset(AudioDataset):
     def __getitem__(self, idx):
         anchor_data = self.data_list.iloc[idx]
         return (self.read_audio(anchor_data["filename"]), anchor_data["speaker"], anchor_data["is_genuine"], anchor_data["method_name"])
-    
+
     def __len__(self):
         return len(self.data_list)
 

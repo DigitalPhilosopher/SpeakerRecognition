@@ -52,7 +52,7 @@ def define_variables(args):
             TAGS = {
                 "Frontend": "WavLM-Large"
             }
-        
+
         if args.frozen:
             MODEL += "-frozen"
             FOLDER += "/frozen"
@@ -66,7 +66,7 @@ def define_variables(args):
     FOLDER += "/ECAPA-TDNN/Random-Triplet-Mining"
     TAGS["Model"] = "joint"
     TAGS["Triplet Mining Strategy"] = "Random Triplet Mining"
-    
+
     if args.dataset == "genuine":
         MODEL += "_Genuine"
         FOLDER += "/Genuine"
@@ -75,6 +75,7 @@ def define_variables(args):
         MODEL += "_Deepfake"
         FOLDER += "/Deepfake"
         TAGS["Dataset"] = "Deepfake"
+
 
 def config():
     global logger
@@ -87,44 +88,56 @@ def config():
     logger = logging.getLogger()
 
     mlflow.set_tracking_uri("../mlruns")
-    logging.getLogger('mlflow.utils.requirements_utils').setLevel(logging.ERROR)
+    logging.getLogger(
+        'mlflow.utils.requirements_utils').setLevel(logging.ERROR)
 
     device = get_device(logger)
+
 
 def create_dataset(args):
     global audio_dataloader, validation_dataloader, test_dataloader
 
     train_labels, dev_labels, test_labels = load_deepfake_dataset()
-    
+
     if args.dataset == "genuine":
         tripletLossDataset = RandomTripletLossDataset
     elif args.dataset == "deepfake":
         tripletLossDataset = DeepfakeRandomTripletLossDataset
 
     if args.frontend == "mfcc":
-        frontend = MFCCTransform(number_output_parameters=MFCCS, sample_rate=SAMPLE_RATE)
+        frontend = MFCCTransform(
+            number_output_parameters=MFCCS, sample_rate=SAMPLE_RATE)
     else:
-        frontend = lambda x: x
+        def frontend(x): return x
 
-    audio_dataset = tripletLossDataset(train_labels, frontend=frontend, logger=logger)
-    audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_triplet_wav_fn)
+    audio_dataset = tripletLossDataset(
+        train_labels, frontend=frontend, logger=logger)
+    audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True,
+                                  drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_triplet_wav_fn)
 
-    validation_dataset = ValidationDataset(dev_labels, frontend=frontend, logger=logger)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+    validation_dataset = ValidationDataset(
+        dev_labels, frontend=frontend, logger=logger)
+    validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True,
+                                       drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
-    test_dataset = ValidationDataset(test_labels, frontend=frontend, logger=logger)
-    test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+    test_dataset = ValidationDataset(
+        test_labels, frontend=frontend, logger=logger)
+    test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True,
+                                 drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+
 
 def get_model(args):
     global model, optimizer, scheduler, triplet_loss
 
     if args.frontend == "mfcc":
-        model = ECAPA_TDNN(input_size=MFCCS, lin_neurons=EMBEDDING_SIZE, device=device)
+        model = ECAPA_TDNN(
+            input_size=MFCCS, lin_neurons=EMBEDDING_SIZE, device=device)
     elif args.frontend == "wavlm_base":
         model = WavLM_Base_ECAPA_TDNN(frozen=args.frozen, device=device)
-    
+
     model.to(device)
-    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters(
+    )), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
     scheduler = CosineAnnealingWarmRestarts(
         optimizer,
         T_0=RESTART_EPOCH,
@@ -147,12 +160,14 @@ def main(args):
     get_model(args)
 
     ##### TRAINING #####
-    trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss, optimizer, scheduler, logger, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
+    trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
+                           optimizer, scheduler, logger, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
     trainer.train_model(EPOCHS)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Training ECAPA-TDNN Model for Deepfake Speaker Verification")
+    parser = argparse.ArgumentParser(
+        description="Training ECAPA-TDNN Model for Deepfake Speaker Verification")
     parser.add_argument(
         "--frontend",
         type=str,
@@ -173,18 +188,29 @@ if __name__ == "__main__":
         help="Which dataset to use (genuine | deepfake)",
     )
 
-    parser.add_argument("--learning_rate", type=float, required=False, default=0.001, help="")
-    parser.add_argument("--restart_epoch", type=int, required=False, default=5, help="")
-    parser.add_argument("--weight_decay", type=float, required=False, default=0.00001, help="Weight decay to use for optimizing")
-    parser.add_argument("--amsgrad", type=bool, required=False, default=False, help="Whether to use the AMSGrad variant of Adam")
-    parser.add_argument("--margin", type=float, required=False, default=1, help="")
+    parser.add_argument("--learning_rate", type=float,
+                        required=False, default=0.001, help="")
+    parser.add_argument("--restart_epoch", type=int,
+                        required=False, default=5, help="")
+    parser.add_argument("--weight_decay", type=float, required=False,
+                        default=0.00001, help="Weight decay to use for optimizing")
+    parser.add_argument("--amsgrad", type=bool, required=False,
+                        default=False, help="Whether to use the AMSGrad variant of Adam")
+    parser.add_argument("--margin", type=float,
+                        required=False, default=1, help="")
     parser.add_argument("--norm", type=int, required=False, default=2, help="")
-    parser.add_argument("--batch_size", type=int, required=False, default=8, help="")
-    parser.add_argument("--epochs", type=int, required=False, default=25, help="")
-    parser.add_argument("--validation_rate", type=int, required=False, default=5, help="")
-    parser.add_argument("--mfccs", type=int, required=False, default=13, help="")
-    parser.add_argument("--sample_rate", type=int, required=False, default=16000, help="")
-    parser.add_argument("--embedding_size", type=int, required=False, default=192, help="")
+    parser.add_argument("--batch_size", type=int,
+                        required=False, default=8, help="")
+    parser.add_argument("--epochs", type=int,
+                        required=False, default=25, help="")
+    parser.add_argument("--validation_rate", type=int,
+                        required=False, default=5, help="")
+    parser.add_argument("--mfccs", type=int,
+                        required=False, default=13, help="")
+    parser.add_argument("--sample_rate", type=int,
+                        required=False, default=16000, help="")
+    parser.add_argument("--embedding_size", type=int,
+                        required=False, default=192, help="")
 
     args = parser.parse_args()
 
