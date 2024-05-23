@@ -21,6 +21,7 @@ class ModelValidator:
     ##### VALIDATION #####
 
     def validate_model(self, model, step):
+        start_time = time.time()
         model.eval()
 
         embeddings = []
@@ -52,8 +53,7 @@ class ModelValidator:
             }, step=step)
 
         unique_labels = list(set(labels))
-        unique_deepfake_labels = list(set(deepfake_labels))
-        
+    
         genuine_deepfake_scores = []
         genuine_deepfake_labels = []
 
@@ -80,9 +80,12 @@ class ModelValidator:
         
         eer, threshold = self.compute_eer(genuine_deepfake_scores, genuine_deepfake_labels)
 
+        end_time = time.time()
+        validation_time_minutes = int((end_time - start_time) / 60)
         mlflow.log_metrics({
             'EER - Deepfake Detection': eer,
             'Threshold - Deepfake Detection': threshold,
+            'Validation time in minutes': validation_time_minutes
             }, step=step)
 
 
