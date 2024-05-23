@@ -5,3 +5,4 @@ logs
 *.log
 mlruns
 *.pth
+extraction_utils
