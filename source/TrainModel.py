@@ -9,7 +9,7 @@ import torch.optim as optim
 from torch.nn import TripletMarginLoss
 from torch.utils.data import DataLoader
 from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn
-from models import WavLM_Base_frozen_ECAPA_TDNN
+from models import WavLM_Base_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
@@ -17,10 +17,11 @@ from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 def define_variables(args):
     global MODEL, FOLDER, TAGS
-    global LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE
+    global LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, RESTART_EPOCH
     global MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, WEIGHT_DECAY, AMSGRAD
 
     LEARNING_RATE = args.learning_rate
+    RESTART_EPOCH = args.restart_epoch
     MARGIN = args.margin
     NORM = args.norm
     BATCH_SIZE = args.batch_size
@@ -120,14 +121,13 @@ def get_model(args):
     if args.frontend == "mfcc":
         model = ECAPA_TDNN(input_size=MFCCS, lin_neurons=EMBEDDING_SIZE, device=device)
     elif args.frontend == "wavlm_base":
-        if args.frozen:
-            model = WavLM_Base_frozen_ECAPA_TDNN(device=device)
+        model = WavLM_Base_ECAPA_TDNN(frozen=args.frozen, device=device)
     
     model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
     scheduler = CosineAnnealingWarmRestarts(
         optimizer,
-        T_0=5,
+        T_0=RESTART_EPOCH,
         T_mult=1,
         eta_min=0.000005
     )
@@ -174,6 +174,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--learning_rate", type=float, required=False, default=0.001, help="")
+    parser.add_argument("--restart_epoch", type=int, required=False, default=5, help="")
     parser.add_argument("--weight_decay", type=float, required=False, default=0.00001, help="Weight decay to use for optimizing")
     parser.add_argument("--amsgrad", type=bool, required=False, default=False, help="Whether to use the AMSGrad variant of Adam")
     parser.add_argument("--margin", type=float, required=False, default=1, help="")
