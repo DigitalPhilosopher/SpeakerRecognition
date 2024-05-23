@@ -3,14 +3,15 @@ from torch import nn
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 from abc import ABC, abstractmethod
 
+
 class s3prl_ECAPA_TDNN(nn.Module, ABC):
-    def __init__(self, frozen = True, device='cuda'):
+    def __init__(self, frozen=True, device='cuda'):
         super().__init__()
 
         # Initialize WavLM Base model
         self.frontend = self.hub_function()
         self.frontend.to(device)
-        
+
         # Freeze the frontend parameters
         if frozen:
             for param in self.frontend.parameters():
@@ -18,7 +19,8 @@ class s3prl_ECAPA_TDNN(nn.Module, ABC):
 
         # We need to determine the output feature size of WavLM dynamically
         # This can be done by processing a small dummy input through WavLM
-        dummy_input = torch.randn(1, 16000).to(device)  # 1 second of random noise
+        dummy_input = torch.randn(1, 16000).to(
+            device)  # 1 second of random noise
         with torch.no_grad():
             # Forward pass to get the feature size
             dummy_output = self.frontend(dummy_input)
@@ -26,24 +28,28 @@ class s3prl_ECAPA_TDNN(nn.Module, ABC):
             feature_size = dummy_output['hidden_states'][-1].shape[-1]
 
         # Initialize ECAPA_TDNN with the dynamically determined feature size
-        self.embedding = ECAPA_TDNN(input_size=feature_size, lin_neurons=192, device=device)
+        self.embedding = ECAPA_TDNN(
+            input_size=feature_size, lin_neurons=192, device=device)
         self.device = device
 
     def forward(self, batch_wavefiles):
         wavlm_features = []
         for waveform in batch_wavefiles:
-            waveform = waveform.unsqueeze(0) if waveform.dim() == 1 else waveform
+            waveform = waveform.unsqueeze(
+                0) if waveform.dim() == 1 else waveform
             with torch.no_grad():
                 features = self.frontend(waveform)['hidden_states'][-1]
             wavlm_features.append(features)
-        
+
         # Ensure all tensors are 2D before concatenation
-        wavlm_features = [feat.unsqueeze(0) if feat.dim() == 1 else feat for feat in wavlm_features]
-        wavlm_features = torch.cat(wavlm_features, dim=0)  # Concatenate along the batch dimension
+        wavlm_features = [feat.unsqueeze(0) if feat.dim(
+        ) == 1 else feat for feat in wavlm_features]
+        # Concatenate along the batch dimension
+        wavlm_features = torch.cat(wavlm_features, dim=0)
 
         embeddings = self.embedding(wavlm_features)
         return embeddings
-    
+
     @abstractmethod
     def hub_function(self):
         pass

@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from dataloader import AudioDataset
 
+
 class TripletLossDataset(AudioDataset, ABC):
-    
+
     @abstractmethod
     def get_positive(self, anchor_data):
         """Abstract method to get a positive sample."""

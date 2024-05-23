@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class Frontend(ABC):
     @abstractmethod
     def __init__(self, number_output_parameters=80, sample_rate=16000, max_length=1024):

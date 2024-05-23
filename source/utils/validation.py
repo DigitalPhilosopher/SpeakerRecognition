@@ -16,7 +16,6 @@ class ModelValidator:
         self.dataloader = valid_dataloader
         self.device = device
 
-
     ##### VALIDATION #####
 
     def validate_model(self, model, step, prefix=""):
@@ -25,7 +24,7 @@ class ModelValidator:
 
         embeddings = []
         labels = []
-        
+
         deepfake_embeddings = []
         deepfake_labels = []
         deepfake_methods = []
@@ -35,7 +34,7 @@ class ModelValidator:
                 inputs, targets, is_genuine, method = data
                 inputs = inputs.to(self.device)
                 outputs = model(inputs)
-                embedding_output = outputs.data.cpu().numpy() 
+                embedding_output = outputs.data.cpu().numpy()
                 genuine_indices = is_genuine == 1
 
                 # Separate embeddings and labels for genuine and deepfake
@@ -54,14 +53,16 @@ class ModelValidator:
         }, step=step)
 
         unique_labels = list(set(labels))
-        
+
         genuine_deepfake_scores = []
         genuine_deepfake_labels = []
         method_scores = defaultdict(list)
 
         for speaker in unique_labels:
-            genuine_indices = [i for i, lbl in enumerate(labels) if lbl == speaker]
-            deepfake_indices = [i for i, lbl in enumerate(deepfake_labels) if lbl == speaker]
+            genuine_indices = [i for i, lbl in enumerate(
+                labels) if lbl == speaker]
+            deepfake_indices = [i for i, lbl in enumerate(
+                deepfake_labels) if lbl == speaker]
 
             # Compute scores for genuine-genuine pairs
             for gi1, gi2 in combinations(genuine_indices, 2):
@@ -69,7 +70,8 @@ class ModelValidator:
                 emb2 = np.squeeze(embeddings[gi2])
                 score = np.linalg.norm(emb1 - emb2)
                 genuine_deepfake_scores.append(score)
-                genuine_deepfake_labels.append(1)  # 1 indicates genuine-genuine
+                # 1 indicates genuine-genuine
+                genuine_deepfake_labels.append(1)
 
             # Compute scores for genuine-deepfake pairs
             for gi in genuine_indices:
@@ -79,12 +81,15 @@ class ModelValidator:
                     score = np.linalg.norm(emb1 - emb2)
                     genuine_deepfake_scores.append(score)
                     genuine_deepfake_labels.append(0)
-                    method_scores[deepfake_methods[di]].append(score)  # Track scores for each method
+                    method_scores[deepfake_methods[di]].append(
+                        score)  # Track scores for each method
 
-        eer, threshold = self.compute_eer(genuine_deepfake_scores, genuine_deepfake_labels)
+        eer, threshold = self.compute_eer(
+            genuine_deepfake_scores, genuine_deepfake_labels)
 
         # Find the hardest method
-        avg_method_scores = {method: np.mean(scores) for method, scores in method_scores.items()}
+        avg_method_scores = {method: np.mean(
+            scores) for method, scores in method_scores.items()}
         hardest_method = min(avg_method_scores, key=avg_method_scores.get)
         hardest_method_score = avg_method_scores[hardest_method]
 
@@ -98,7 +103,6 @@ class ModelValidator:
         }, step=step)
         mlflow.log_param(prefix + 'Hardest Deepfake Method', hardest_method)
 
-
     def pairwise_scores(self, embeddings, labels):
         scores = []
         score_labels = []
@@ -111,7 +115,6 @@ class ModelValidator:
             scores.append(score)
             score_labels.append(1 if lbl1 == lbl2 else 0)
         return np.array(scores), np.array(score_labels)
-
 
     def compute_eer(self, scores, score_labels):
         # Calculate the EER

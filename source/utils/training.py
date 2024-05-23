@@ -9,36 +9,36 @@ from .validation import ModelValidator
 
 def load_genuine_dataset():
     labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, _ = get_label_files(
-        use_bsi_tts = False,
-        use_bsi_vocoder = False,
-        use_bsi_vc = False,
-        use_bsi_genuine = True,
-        use_bsi_ttsvctk = False,
-        use_bsi_ttslj = False,
-        use_bsi_ttsother = False,
-        use_bsi_vocoderlj = False,
-        use_wavefake = False,
-        use_LibriSeVoc = False,
-        use_lj = False,
-        use_asv2019 = False,
+        use_bsi_tts=False,
+        use_bsi_vocoder=False,
+        use_bsi_vc=False,
+        use_bsi_genuine=True,
+        use_bsi_ttsvctk=False,
+        use_bsi_ttslj=False,
+        use_bsi_ttsother=False,
+        use_bsi_vocoderlj=False,
+        use_wavefake=False,
+        use_LibriSeVoc=False,
+        use_lj=False,
+        use_asv2019=False,
     )
     return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
 
 
 def load_deepfake_dataset():
     labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, _ = get_label_files(
-        use_bsi_tts = True,
-        use_bsi_vocoder = False,
-        use_bsi_vc = True,
-        use_bsi_genuine = True,
-        use_bsi_ttsvctk = False,
-        use_bsi_ttslj = False,
-        use_bsi_ttsother = False,
-        use_bsi_vocoderlj = False,
-        use_wavefake = False,
-        use_LibriSeVoc = False,
-        use_lj = False,
-        use_asv2019 = False,
+        use_bsi_tts=True,
+        use_bsi_vocoder=False,
+        use_bsi_vc=True,
+        use_bsi_genuine=True,
+        use_bsi_ttsvctk=False,
+        use_bsi_ttslj=False,
+        use_bsi_ttsother=False,
+        use_bsi_vocoderlj=False,
+        use_wavefake=False,
+        use_LibriSeVoc=False,
+        use_lj=False,
+        use_asv2019=False,
     )
     return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
 
@@ -65,23 +65,25 @@ class ModelTrainer:
         self.best_model_state = None
         self.validator = ModelValidator(valid_dataloader, device)
 
-
     ##### TRAINING #####
 
     def train_epoch(self, epoch, epochs):
         self.model.train()
         running_loss = 0.0
-        progress_bar = tqdm(self.dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
+        progress_bar = tqdm(
+            self.dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
         for anchors, positives, negatives in progress_bar:
             try:
-                anchors, positives, negatives = anchors.to(self.device), positives.to(self.device), negatives.to(self.device)
+                anchors, positives, negatives = anchors.to(
+                    self.device), positives.to(self.device), negatives.to(self.device)
                 self.optimizer.zero_grad()
 
                 anchor_outputs = self.model(anchors)
                 positive_outputs = self.model(positives)
                 negative_outputs = self.model(negatives)
 
-                loss = self.loss_function(anchor_outputs, positive_outputs, negative_outputs)
+                loss = self.loss_function(
+                    anchor_outputs, positive_outputs, negative_outputs)
                 loss.backward()
                 self.optimizer.step()
 
@@ -93,7 +95,6 @@ class ModelTrainer:
 
         self.scheduler.step()
         return running_loss
-
 
     def train_model(self, epochs, start_epoch=1):
         try:
@@ -132,7 +133,6 @@ class ModelTrainer:
         finally:
             mlflow.end_run()
 
-
     ##### LOGGING #####
 
     def log_params(self, epochs):
@@ -149,21 +149,20 @@ class ModelTrainer:
         for key, value in self.TAGS.items():
             mlflow.set_tag(key, value)
 
-
     def log_epoch_metrics(self, avg_loss, epoch_start_time, epoch):
         time_minutes = int((time.time() - epoch_start_time) / 60)
         mlflow.log_metrics({
             "Average Triplet Loss": avg_loss,
             "Epoch time in minutes": time_minutes
-            }, step=epoch)
-
+        }, step=epoch)
 
     def log_model(self, model_type):
         if model_type == "best":
-            mlflow.pytorch.log_model(self.model, artifact_path=f"{self.MODEL}_best_model_state")
+            mlflow.pytorch.log_model(
+                self.model, artifact_path=f"{self.MODEL}_best_model_state")
         elif model_type == "latest":
-            mlflow.pytorch.log_model(self.model, artifact_path=f"{self.MODEL}_latest_model")
-
+            mlflow.pytorch.log_model(
+                self.model, artifact_path=f"{self.MODEL}_latest_model")
 
     def create_or_get_experiment(self, name):
         experiment = mlflow.get_experiment_by_name(name)
@@ -171,15 +170,14 @@ class ModelTrainer:
             return experiment.experiment_id
         else:
             return mlflow.create_experiment(name)
-    
 
     ##### SAVING #####
 
     def save_models(self):
         if self.best_model_state:
-            torch.save(self.best_model_state, f"../models/{self.MODEL}_best_model_state.pth")
+            torch.save(self.best_model_state,
+                       f"../models/{self.MODEL}_best_model_state.pth")
             mlflow.log_artifact(f"../models/{self.MODEL}_best_model_state.pth")
-
 
     def save_model_state(self, epoch):
         state = {
@@ -191,9 +189,9 @@ class ModelTrainer:
         }
         torch.save(state, f'../models/{self.MODEL}_checkpoint_{epoch}.pth')
 
-
     def load_model_state(self, epoch):
-        checkpoint = torch.load(f'../models/{self.MODEL}_checkpoint_{epoch}.pth')
+        checkpoint = torch.load(
+            f'../models/{self.MODEL}_checkpoint_{epoch}.pth')
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.scheduler.load_state_dict(checkpoint['scheduler'])
