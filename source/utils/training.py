@@ -2,11 +2,8 @@ import torch
 from extraction_utils.get_label_files import get_label_files
 from tqdm import tqdm
 import time
-import numpy as np
 import mlflow
 import mlflow.pytorch
-from sklearn.metrics import roc_curve
-from itertools import combinations
 from .validation import ModelValidator
 
 
@@ -50,10 +47,11 @@ class ModelTrainer:
 
     ##### INIT #####
 
-    def __init__(self, model, dataloader, valid_dataloader, device, loss_function, optimizer, scheduler, logger, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
+    def __init__(self, model, dataloader, valid_dataloader, test_dataloader, device, loss_function, optimizer, scheduler, logger, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
         self.model = model
         self.dataloader = dataloader
-        self.valid_dataloader = valid_dataloader
+        self.test_dataloader = valid_dataloader
+        self.test_dataloader = test_dataloader
         self.validation_rate = validation_rate
         self.device = device
         self.loss_function = loss_function
@@ -102,7 +100,6 @@ class ModelTrainer:
             mlflow.start_run(run_name=self.MODEL, experiment_id=self.FOLDER)
             self.log_params(epochs)
             self.log_tags()
-            total_start_time = time.time()
 
             if start_epoch != 1:
                 self.load_model_state(start_epoch-1)
@@ -111,7 +108,7 @@ class ModelTrainer:
                 epoch_start_time = time.time()
                 epoch_loss = self.train_epoch(epoch, epochs)
                 avg_loss = epoch_loss / len(self.dataloader)
-                self.log_epoch_metrics(avg_loss, epoch_start_time, epoch)
+                self.log_epoch_metrics(avg_loss, epoch_start_time, epoch+1)
 
                 if avg_loss < self.best_loss:
                     self.best_loss = avg_loss
@@ -119,12 +116,19 @@ class ModelTrainer:
                     self.log_model("best")
 
                 if (epoch + 1) % self.validation_rate == 0:
-                    self.validator.validate_model(self.model, epoch)
+                    self.validator.validate_model(self.model, epoch+1)
 
                 self.save_model_state(epoch)
 
             self.log_model("latest")
             self.save_models()
+
+            best_model = self.model
+            best_model.load_state_dict(self.best_model_state)
+            best_model.to(self.device)
+            best_model.eval()
+            tester = ModelValidator(self.test_dataloader, self.device)
+            tester.validate_model(best_model, epochs, "Best Model - ")
         finally:
             mlflow.end_run()
 
