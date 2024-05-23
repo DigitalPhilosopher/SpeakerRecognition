@@ -5,6 +5,7 @@ import time
 import mlflow
 import mlflow.pytorch
 from .validation import ModelValidator
+import gc
 
 
 def load_genuine_dataset():
@@ -103,7 +104,7 @@ class ModelTrainer:
             self.log_tags()
 
             if start_epoch != 1:
-                self.load_model_state(start_epoch-1)
+                self.load_model_state()
 
             for epoch in range(start_epoch-1, epochs):
                 epoch_start_time = time.time()
@@ -120,6 +121,8 @@ class ModelTrainer:
                     self.validator.validate_model(self.model, epoch+1)
 
                 self.save_model_state(epoch)
+
+                gc.collect()
 
             self.log_model("latest")
             self.save_models()
@@ -187,11 +190,11 @@ class ModelTrainer:
             'scheduler': self.scheduler.state_dict(),
             'best_loss': self.best_loss
         }
-        torch.save(state, f'../models/{self.MODEL}_checkpoint_{epoch}.pth')
+        torch.save(state, f'../models/{self.MODEL}_checkpoint.pth')
 
-    def load_model_state(self, epoch):
+    def load_model_state(self):
         checkpoint = torch.load(
-            f'../models/{self.MODEL}_checkpoint_{epoch}.pth')
+            f'../models/{self.MODEL}_checkpoint.pth')
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.scheduler.load_state_dict(checkpoint['scheduler'])
