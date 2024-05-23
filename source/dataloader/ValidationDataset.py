@@ -5,13 +5,13 @@ import numpy as np
 class ValidationDataset(AudioDataset):
     def __getitem__(self, idx):
         anchor_data = self.data_list.iloc[idx]
-        return (self.read_audio(anchor_data["filename"]), anchor_data["speaker"], anchor_data["is_genuine"])
+        return (self.read_audio(anchor_data["filename"]), anchor_data["speaker"], anchor_data["is_genuine"], anchor_data["method_name"])
     
     def __len__(self):
         return len(self.data_list)
 
 
 def collate_valid_fn(batch):
-    audio_data, speakers, is_genuine = zip(*batch)
+    audio_data, speakers, is_genuine, method_name = zip(*batch)
     audio_data = pad_sequence(audio_data, batch_first=True, padding_value=0)
-    return audio_data, np.array(speakers), np.array(is_genuine)
+    return audio_data, np.array(speakers), np.array(is_genuine), np.array(method_name)
