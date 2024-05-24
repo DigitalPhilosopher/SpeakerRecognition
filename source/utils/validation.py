@@ -23,6 +23,40 @@ class ModelValidator:
         start_time = time.time()
         model.eval()
 
+        embeddings, labels, deepfake_embeddings, deepfake_labels, deepfake_methods = self.generate_embeddings(
+            model)
+
+        scores, score_labels = self.pairwise_scores(embeddings, labels)
+        eer, threshold = self.compute_eer(scores, score_labels)
+
+        mlflow.log_metrics({
+            prefix + 'EER - Speaker Verification': eer,
+            prefix + 'Threshold - Speaker Verification': threshold,
+        }, step=step)
+
+        genuine_deepfake_scores, genuine_deepfake_labels, method_scores = self.generate_deepfake_pairwise_scores(
+            labels, embeddings, deepfake_labels, deepfake_embeddings, deepfake_methods)
+        eer, threshold = self.compute_eer(
+            genuine_deepfake_scores, genuine_deepfake_labels)
+
+        # Find the hardest method
+        avg_method_scores = {method: np.mean(
+            scores) for method, scores in method_scores.items()}
+        hardest_method = min(avg_method_scores, key=avg_method_scores.get)
+        hardest_method_score = avg_method_scores[hardest_method]
+
+        end_time = time.time()
+        validation_time_minutes = int((end_time - start_time) / 60)
+        mlflow.log_metrics({
+            prefix + 'EER - Deepfake Detection': eer,
+            prefix + 'Threshold - Deepfake Detection': threshold,
+            prefix + 'Validation time in minutes': validation_time_minutes,
+            prefix + 'Hardest Deepfake Method': hardest_method_score
+        }, step=step)
+
+        gc.collect()
+
+    def generate_embeddings(self, model):
         embeddings = []
         labels = []
 
@@ -44,15 +78,9 @@ class ModelValidator:
                 deepfake_embeddings.extend(embedding_output[~genuine_indices])
                 deepfake_labels.extend(targets[~genuine_indices])
                 deepfake_methods.extend(method[~genuine_indices])
+        return embeddings, labels, deepfake_embeddings, deepfake_labels, deepfake_methods
 
-        scores, score_labels = self.pairwise_scores(embeddings, labels)
-        eer, threshold = self.compute_eer(scores, score_labels)
-
-        mlflow.log_metrics({
-            prefix + 'EER - Speaker Verification': eer,
-            prefix + 'Threshold - Speaker Verification': threshold,
-        }, step=step)
-
+    def generate_deepfake_pairwise_scores(self, labels, embeddings, deepfake_labels, deepfake_embeddings, deepfake_methods):
         unique_labels = list(set(labels))
 
         genuine_deepfake_scores = []
@@ -81,25 +109,7 @@ class ModelValidator:
                     genuine_deepfake_labels.append(0)
                     method_scores[deepfake_methods[di]].append(score)
 
-        eer, threshold = self.compute_eer(
-            genuine_deepfake_scores, genuine_deepfake_labels)
-
-        # Find the hardest method
-        avg_method_scores = {method: np.mean(
-            scores) for method, scores in method_scores.items()}
-        hardest_method = min(avg_method_scores, key=avg_method_scores.get)
-        hardest_method_score = avg_method_scores[hardest_method]
-
-        end_time = time.time()
-        validation_time_minutes = int((end_time - start_time) / 60)
-        mlflow.log_metrics({
-            prefix + 'EER - Deepfake Detection': eer,
-            prefix + 'Threshold - Deepfake Detection': threshold,
-            prefix + 'Validation time in minutes': validation_time_minutes,
-            prefix + 'Hardest Deepfake Method': hardest_method_score
-        }, step=step)
-
-        gc.collect()
+        return genuine_deepfake_scores, genuine_deepfake_labels, method_scores
 
     def pairwise_scores(self, embeddings, labels):
         scores = []
