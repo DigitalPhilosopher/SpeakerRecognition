@@ -7,6 +7,7 @@ from collections import defaultdict
 from sklearn.metrics import roc_curve
 from itertools import combinations
 import gc
+from tqdm import tqdm
 
 
 class ModelValidator:
@@ -18,7 +19,6 @@ class ModelValidator:
         self.device = device
 
     ##### VALIDATION #####
-
     def validate_model(self, model, step, prefix=""):
         start_time = time.time()
         model.eval()
@@ -31,7 +31,7 @@ class ModelValidator:
         deepfake_methods = []
 
         with torch.no_grad():
-            for data in self.dataloader:
+            for data in tqdm(self.dataloader, desc="Generating embeddings"):
                 inputs, targets, is_genuine, method = data
                 inputs = inputs.to(self.device)
                 outputs = model(inputs)
@@ -59,7 +59,7 @@ class ModelValidator:
         genuine_deepfake_labels = []
         method_scores = defaultdict(list)
 
-        for speaker in unique_labels:
+        for speaker in tqdm(unique_labels, desc="Calculating deepfake distances"):
             genuine_indices = [i for i, lbl in enumerate(
                 labels) if lbl == speaker]
             deepfake_indices = [i for i, lbl in enumerate(
@@ -67,23 +67,19 @@ class ModelValidator:
 
             # Compute scores for genuine-genuine pairs
             for gi1, gi2 in combinations(genuine_indices, 2):
-                emb1 = np.squeeze(embeddings[gi1])
-                emb2 = np.squeeze(embeddings[gi2])
-                score = np.linalg.norm(emb1 - emb2)
-                genuine_deepfake_scores.append(score)
+                genuine_deepfake_scores.append(
+                    self.compute_distance(embeddings[gi1], embeddings[gi2]))
                 # 1 indicates genuine-genuine
                 genuine_deepfake_labels.append(1)
 
             # Compute scores for genuine-deepfake pairs
             for gi in genuine_indices:
                 for di in deepfake_indices:
-                    emb1 = np.squeeze(embeddings[gi])
-                    emb2 = np.squeeze(deepfake_embeddings[di])
-                    score = np.linalg.norm(emb1 - emb2)
+                    score = self.compute_distance(
+                        embeddings[gi], deepfake_embeddings[di])
                     genuine_deepfake_scores.append(score)
                     genuine_deepfake_labels.append(0)
-                    method_scores[deepfake_methods[di]].append(
-                        score)  # Track scores for each method
+                    method_scores[deepfake_methods[di]].append(score)
 
         eer, threshold = self.compute_eer(
             genuine_deepfake_scores, genuine_deepfake_labels)
@@ -109,14 +105,15 @@ class ModelValidator:
         scores = []
         score_labels = []
         # Compute pairwise scores
-        for (emb1, lbl1), (emb2, lbl2) in combinations(zip(embeddings, labels), 2):
-            # Ensure that embeddings are 1D
-            emb1 = np.squeeze(emb1)
-            emb2 = np.squeeze(emb2)
-            score = np.linalg.norm(emb1 - emb2)
-            scores.append(score)
+        for (emb1, lbl1), (emb2, lbl2) in tqdm(combinations(zip(embeddings, labels), 2), desc="Computing pairwise scores"):
+            scores.append(self.compute_distance(emb1, emb2))
             score_labels.append(1 if lbl1 == lbl2 else 0)
         return np.array(scores), np.array(score_labels)
+
+    def compute_distance(self, emb1, emb2):
+        emb1 = np.squeeze(emb1)
+        emb2 = np.squeeze(emb2)
+        return np.linalg.norm(emb1 - emb2)
 
     def compute_eer(self, scores, score_labels):
         # Calculate the EER
