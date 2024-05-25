@@ -54,14 +54,14 @@ options:
 
 
 ## Examples
-python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.5 --restart_epoch 50 --mfccs 80 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.5 --restart_epoch 50 --mfccs 80 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 16 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --mfccs 80 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 16 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --mfccs 80 --downsample_valid 25 --downsample_test 50
 
-python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend wavlm_base --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
 
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.5 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
 
 # Show results:
 mlflow ui 
@@ -95,11 +95,11 @@ options:
                         Size of the embedding vector (default: 192)
 
 ## Examples
-python source/Inference.py --frontend mfcc --dataset genuine --mfccs 80 --reference_audio ./data/reference.wav --audio_in_question ./data/question.wav
-python source/Inference.py --frontend mfcc --dataset deepfake --mfccs 80 --reference_audio ./data/reference.wav --audio_in_question ./data/question.wav
+python source/Inference.py --frontend mfcc --dataset genuine --mfccs 80 --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend mfcc --dataset deepfake --mfccs 80 --reference_audio ..data/reference.wav --audio_in_question ../data/question.wav
 
-python source/TrainModel.py --frontend wavlm_base --dataset genuine --reference_audio ./data/reference.wav --audio_in_question ./data/question.wav
-python source/TrainModel.py --frontend wavlm_base --dataset deepfake --reference_audio ./data/reference.wav --audio_in_question ./data/question.wav
+python source/Inference.py --frontend wavlm_base --dataset genuine --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_base --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
 
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset genuine  --reference_audio ./data/reference.wav --audio_in_question ./data/question.wav
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset deepfake --reference_audio ./data/reference.wav --audio_in_question ./data/question.wav
+python source/Inference.py --frontend wavlm_base --frozen 0 --dataset genuine  --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_base --frozen 0 --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
