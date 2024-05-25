@@ -1,10 +1,9 @@
 import logging
-import argparse
 import sys
 import os
 import warnings
 import mlflow
-from utils import get_device, load_deepfake_dataset, ModelTrainer
+from utils import get_device, load_deepfake_dataset, ModelTrainer, get_arguments
 import torch.optim as optim
 from torch.nn import TripletMarginLoss
 from torch.utils.data import DataLoader
@@ -170,60 +169,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Training ECAPA-TDNN Model for Deepfake Speaker Verification")
-    parser.add_argument(
-        "--frontend",
-        type=str,
-        required=True,
-        help="Which frontend model to use for feature extraction (mfcc, wavlm_base, wavlm_large)",
-    )
-    parser.add_argument(
-        "--frozen",
-        type=int,
-        required=False,
-        default=1,
-        help="Whether the frontend model is jointly trained or frozen during training (1=frozen, 0=joint)",
-    )
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        required=True,
-        help="Which dataset to use (genuine | deepfake)",
-    )
-
-    parser.add_argument("--learning_rate", type=float,
-                        required=False, default=0.001, help="")
-    parser.add_argument("--restart_epoch", type=int,
-                        required=False, default=5, help="")
-    parser.add_argument("--weight_decay", type=float, required=False,
-                        default=0.00001, help="Weight decay to use for optimizing")
-    parser.add_argument("--amsgrad", type=bool, required=False,
-                        default=False, help="Whether to use the AMSGrad variant of Adam")
-    parser.add_argument("--margin", type=float,
-                        required=False, default=1, help="")
-    parser.add_argument("--norm", type=int, required=False, default=2, help="")
-    parser.add_argument("--batch_size", type=int,
-                        required=False, default=8, help="")
-    parser.add_argument("--epochs", type=int,
-                        required=False, default=25, help="")
-    parser.add_argument("--validation_rate", type=int,
-                        required=False, default=5, help="")
-    parser.add_argument("--mfccs", type=int,
-                        required=False, default=13, help="")
-    parser.add_argument("--sample_rate", type=int,
-                        required=False, default=16000, help="")
-    parser.add_argument("--embedding_size", type=int,
-                        required=False, default=192, help="")
-
-    parser.add_argument("--downsample_train", type=int,
-                        required=False, default=0, help="")
-    parser.add_argument("--downsample_valid", type=int,
-                        required=False, default=0, help="")
-    parser.add_argument("--downsample_test", type=int,
-                        required=False, default=0, help="")
-
-    args = parser.parse_args()
+    args = get_arguments()
 
     os.chdir("./source")
     os.environ["MLFLOW_ENABLE_SYSTEM_METRICS_LOGGING"] = "true"
