@@ -3,7 +3,7 @@ import sys
 import os
 import warnings
 import mlflow
-from utils import get_device, load_deepfake_dataset, ModelTrainer, get_arguments
+from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_arguments
 import torch.optim as optim
 from torch.nn import TripletMarginLoss
 from torch.utils.data import DataLoader
@@ -169,7 +169,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    args = get_arguments()
+    args = get_training_arguments()
 
     os.chdir("./source")
     os.environ["MLFLOW_ENABLE_SYSTEM_METRICS_LOGGING"] = "true"
