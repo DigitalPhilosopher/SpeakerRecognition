@@ -29,6 +29,7 @@ class ModelValidator:
         start_time = time.time()
 
         sv_eer, sv_threshold, dd_eer, dd_threshold = -1, -1, -1, -1
+        sv_rates, dd_rates = {}, {}
 
         model.eval()
 
@@ -38,6 +39,14 @@ class ModelValidator:
         if speaker_eer:
             scores, score_labels = self.pairwise_scores(embeddings, labels)
             sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
+            TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
+                scores, score_labels, 15)
+            sv_rates = {
+                "TP": TP,
+                "TN": TN,
+                "FP": FP,
+                "FN": FN,
+            }
 
             if mlflow_logging:
                 mlflow.log_metrics({
@@ -50,6 +59,14 @@ class ModelValidator:
                 labels, embeddings, deepfake_labels, deepfake_embeddings, deepfake_methods)
             dd_eer, dd_threshold = self.compute_eer(
                 genuine_deepfake_scores, genuine_deepfake_labels)
+            TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
+                genuine_deepfake_scores, genuine_deepfake_labels, dd_threshold)
+            dd_rates = {
+                "TP": TP,
+                "TN": TN,
+                "FP": FP,
+                "FN": FN,
+            }
 
             # Find the hardest method
             avg_method_scores = {method: np.mean(
@@ -73,7 +90,7 @@ class ModelValidator:
 
         gc.collect()
 
-        return sv_eer, sv_threshold, dd_eer, dd_threshold
+        return sv_eer, sv_threshold, sv_rates, dd_eer, dd_threshold, dd_rates
 
     def generate_embeddings(self, model):
         embeddings = []
@@ -148,3 +165,23 @@ class ModelValidator:
         eer = fpr[np.nanargmin(np.abs(fnr - fpr))]
 
         return eer, threshold
+
+    def compute_tp_tn_fp_fn(self, scores, score_labels, threshold):
+        # Initialize counters
+        TP = TN = FP = FN = 0
+
+        # Classify scores based on the threshold
+        predicted_labels = scores >= threshold
+
+        # Calculate TP, TN, FP, and FN
+        for true_label, predicted_label in zip(score_labels, predicted_labels):
+            if true_label == 1 and predicted_label == 1:
+                TP += 1
+            elif true_label == 0 and predicted_label == 0:
+                TN += 1
+            elif true_label == 0 and predicted_label == 1:
+                FP += 1
+            elif true_label == 1 and predicted_label == 0:
+                FN += 1
+
+        return TP, TN, FP, FN
