@@ -19,6 +19,7 @@ def define_variables(args):
     global MODEL, FOLDER, TAGS
     global LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, RESTART_EPOCH
     global MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, WEIGHT_DECAY, AMSGRAD
+    global DOWNSAMPLING_TRAIN, DOWNSAMPLING_VALID, DOWNSAMPLING_TEST
 
     LEARNING_RATE = args.learning_rate
     RESTART_EPOCH = args.restart_epoch
@@ -32,6 +33,10 @@ def define_variables(args):
     EMBEDDING_SIZE = args.embedding_size
     WEIGHT_DECAY = args.weight_decay
     AMSGRAD = args.amsgrad
+
+    DOWNSAMPLING_TRAIN = args.downsample_train
+    DOWNSAMPLING_TEST = args.downsample_test
+    DOWNSAMPLING_VALID = args.downsample_valid
 
     if args.frontend == "mfcc":
         MODEL = "MFCC"
@@ -78,20 +83,15 @@ def define_variables(args):
 
 
 def config():
-    global logger
     global device
 
     warnings.filterwarnings("ignore")
-    logging.basicConfig(filename=f'../logs/{MODEL}.log',
-                        level=logging.INFO,
-                        format='%(asctime)s - %(message)s')
-    logger = logging.getLogger()
 
     mlflow.set_tracking_uri("../mlruns")
     logging.getLogger(
         'mlflow.utils.requirements_utils').setLevel(logging.ERROR)
 
-    device = get_device(logger)
+    device = get_device()
 
 
 def create_dataset(args):
@@ -111,17 +111,17 @@ def create_dataset(args):
         def frontend(x): return x
 
     audio_dataset = tripletLossDataset(
-        train_labels, frontend=frontend, logger=logger)
+        train_labels, frontend=frontend, downsampling=DOWNSAMPLING_TRAIN)
     audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True,
                                   drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_triplet_wav_fn)
 
     validation_dataset = ValidationDataset(
-        dev_labels, frontend=frontend, logger=logger)
+        dev_labels, frontend=frontend, downsampling=DOWNSAMPLING_VALID)
     validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True,
                                        drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
     test_dataset = ValidationDataset(
-        test_labels, frontend=frontend, logger=logger)
+        test_labels, frontend=frontend, downsampling=DOWNSAMPLING_TEST)
     test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True,
                                  drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
@@ -165,7 +165,7 @@ def main(args):
 
     ##### TRAINING #####
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
-                           optimizer, scheduler, logger, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
+                           optimizer, scheduler, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
     trainer.train_model(EPOCHS)
 
 
@@ -215,6 +215,13 @@ if __name__ == "__main__":
                         required=False, default=16000, help="")
     parser.add_argument("--embedding_size", type=int,
                         required=False, default=192, help="")
+
+    parser.add_argument("--downsample_train", type=int,
+                        required=False, default=0, help="")
+    parser.add_argument("--downsample_valid", type=int,
+                        required=False, default=0, help="")
+    parser.add_argument("--downsample_test", type=int,
+                        required=False, default=0, help="")
 
     args = parser.parse_args()
 

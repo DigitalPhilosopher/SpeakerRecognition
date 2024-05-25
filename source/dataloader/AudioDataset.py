@@ -17,9 +17,8 @@ def extract_speaker_id(file_path):
 
 
 class AudioDataset(Dataset):
-    def __init__(self, directory, frontend, logger):
+    def __init__(self, directory, frontend, downsampling=0):
         self.frontend = frontend
-        self.logger = logger
 
         self.data_list: List[Tuple[str, int]] = read_label_file(directory)
         self.data_list = pd.DataFrame(self.data_list, columns=[
@@ -30,27 +29,14 @@ class AudioDataset(Dataset):
         self.data_list["speaker"] = self.data_list["filename"].apply(
             extract_speaker_id)
 
+        if downsampling > 0:
+            top_speakers = self.data_list['speaker'].value_counts().nlargest(
+                downsampling).index
+            self.data_list = self.data_list[self.data_list['speaker'].isin(
+                top_speakers)].reset_index(drop=True)
+
         self.genuine = self.data_list[self.data_list["is_genuine"] == 1].reset_index(
             drop=True)
-
-        num_speakers = self.data_list["speaker"].nunique()
-        num_utterances = len(self.data_list)
-        num_genuine_utterances = len(self.genuine)
-        num_deepfake_utterances = num_utterances - num_genuine_utterances
-
-        logger.info(f"Number of speakers: {num_speakers}")
-        logger.info(f"Number of utterances: {num_utterances}")
-        logger.info(f"Number of genuine utterances: {num_genuine_utterances}")
-        logger.info(
-            f"Number of deepfake utterances: {num_deepfake_utterances}")
-
-        # TODO: Remove
-        # Group by speaker and select top 5 speakers
-        # top_speakers = self.data_list['speaker'].value_counts().nlargest(5).index
-        # sampled_data = self.data_list[self.data_list['speaker'].isin(top_speakers)].reset_index(drop=True)
-        # self.data_list = sampled_data
-        # self.genuine = self.data_list[self.data_list["is_genuine"] == 1].reset_index(drop=True)
-        # logger.warn("Downsampled to have only 5 speakers, keeping all utterances")
 
     def __len__(self):
         return len(self.genuine)

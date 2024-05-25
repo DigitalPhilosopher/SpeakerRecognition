@@ -48,7 +48,7 @@ class ModelTrainer:
 
     ##### INIT #####
 
-    def __init__(self, model, dataloader, valid_dataloader, test_dataloader, device, loss_function, optimizer, scheduler, logger, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
+    def __init__(self, model, dataloader, valid_dataloader, test_dataloader, device, loss_function, optimizer, scheduler, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
         self.model = model
         self.dataloader = dataloader
         self.test_dataloader = valid_dataloader
@@ -58,7 +58,6 @@ class ModelTrainer:
         self.loss_function = loss_function
         self.optimizer = optimizer
         self.scheduler = scheduler
-        self.logger = logger
         self.MODEL = MODEL
         self.FOLDER = self.create_or_get_experiment(FOLDER)
         self.TAGS = TAGS
@@ -91,7 +90,7 @@ class ModelTrainer:
                 running_loss += loss.item()
                 progress_bar.set_postfix(loss=loss.item())
             except Exception as e:
-                self.logger.error(f"Error during training: {e}")
+                print(f"Error during training: {e}")
                 continue
 
         self.scheduler.step()
