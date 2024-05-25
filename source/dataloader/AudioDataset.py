@@ -16,6 +16,16 @@ def extract_speaker_id(file_path):
     return speaker_id
 
 
+def read_audio(filename, frontend=lambda x: x):
+    waveform, _ = librosa.load(filename, sr=16000)
+
+    waveform, _ = librosa.effects.trim(waveform, top_db=35)
+
+    waveform = torch.tensor(waveform, dtype=torch.float32)
+
+    return frontend(waveform)
+
+
 class AudioDataset(Dataset):
     def __init__(self, directory, frontend, downsampling=0):
         self.frontend = frontend
@@ -46,13 +56,7 @@ class AudioDataset(Dataset):
         return self.read_audio(anchor_data["filename"])
 
     def read_audio(self, filename):
-        waveform, sample_rate = librosa.load(filename, sr=16000)  # Read wav
-        # Remove silence at beginning and end of wav
-        waveform, _ = librosa.effects.trim(waveform, top_db=35)
-
-        waveform = torch.tensor(waveform, dtype=torch.float32)
-
-        return self.frontend(waveform)
+        return read_audio(filename, self.frontend)
 
 
 def collate_triplet_fn(batch):
