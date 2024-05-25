@@ -6,6 +6,7 @@ import mlflow
 import mlflow.pytorch
 from .validation import ModelValidator
 import gc
+from .distance import l2_normalize
 
 
 def load_genuine_dataset():
@@ -83,7 +84,7 @@ class ModelTrainer:
                 negative_outputs = self.model(negatives)
 
                 loss = self.loss_function(
-                    anchor_outputs, positive_outputs, negative_outputs)
+                    l2_normalize(anchor_outputs), l2_normalize(positive_outputs), l2_normalize(negative_outputs))
                 loss.backward()
                 self.optimizer.step()
 

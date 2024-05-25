@@ -3,9 +3,9 @@ import sys
 import os
 import warnings
 import mlflow
-from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_arguments, get_training_variables
+from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_arguments, get_training_variables, compute_distance
 import torch.optim as optim
-from torch.nn import TripletMarginLoss
+from torch.nn import TripletMarginWithDistanceLoss
 from torch.utils.data import DataLoader
 from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn
 from models import WavLM_Base_ECAPA_TDNN
@@ -90,7 +90,8 @@ def get_model(args):
         T_mult=1,
         eta_min=0.000005
     )
-    triplet_loss = TripletMarginLoss(margin=MARGIN, p=NORM)
+    triplet_loss = TripletMarginWithDistanceLoss(
+        distance_function=compute_distance, margin=MARGIN)
 
 
 def main(args):

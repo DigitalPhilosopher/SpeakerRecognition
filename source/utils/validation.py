@@ -8,12 +8,7 @@ from sklearn.metrics import roc_curve
 from itertools import combinations
 import gc
 from tqdm import tqdm
-
-
-def compute_distance(emb1, emb2):
-    emb1 = np.squeeze(emb1)
-    emb2 = np.squeeze(emb2)
-    return np.linalg.norm(emb1 - emb2)
+from .distance import compute_distance, l2_normalize
 
 
 class ModelValidator:
@@ -105,7 +100,7 @@ class ModelValidator:
                 inputs, targets, is_genuine, method = data
                 inputs = inputs.to(self.device)
                 outputs = model(inputs)
-                embedding_output = outputs.data.cpu().numpy()
+                embedding_output = outputs.data.cpu()
                 genuine_indices = is_genuine == 1
 
                 # Separate embeddings and labels for genuine and deepfake
@@ -132,7 +127,7 @@ class ModelValidator:
             # Compute scores for genuine-genuine pairs
             for gi1, gi2 in combinations(genuine_indices, 2):
                 genuine_deepfake_scores.append(
-                    compute_distance(embeddings[gi1], embeddings[gi2]))
+                    compute_distance(l2_normalize(embeddings[gi1]), l2_normalize(embeddings[gi2])))
                 # 1 indicates genuine-genuine
                 genuine_deepfake_labels.append(1)
 
@@ -140,7 +135,7 @@ class ModelValidator:
             for gi in genuine_indices:
                 for di in deepfake_indices:
                     score = compute_distance(
-                        embeddings[gi], deepfake_embeddings[di])
+                        l2_normalize(embeddings[gi]), l2_normalize(deepfake_embeddings[di]))
                     genuine_deepfake_scores.append(score)
                     genuine_deepfake_labels.append(0)
                     method_scores[deepfake_methods[di]].append(score)
@@ -152,7 +147,8 @@ class ModelValidator:
         score_labels = []
         # Compute pairwise scores
         for (emb1, lbl1), (emb2, lbl2) in tqdm(combinations(zip(embeddings, labels), 2), desc="Computing pairwise scores"):
-            scores.append(compute_distance(emb1, emb2))
+            scores.append(compute_distance(
+                l2_normalize(emb1), l2_normalize(emb2)))
             score_labels.append(1 if lbl1 == lbl2 else 0)
         return np.array(scores), np.array(score_labels)
 
