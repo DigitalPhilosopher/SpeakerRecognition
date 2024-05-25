@@ -1,13 +1,11 @@
 import torch
 
 
-def get_device(logger):
+def get_device():
     # Check if CUDA is available
     if torch.cuda.is_available():
-        logger.info("CUDA is available! Training on GPU...")
         device = torch.device("cuda")
     else:
-        logger.info("CUDA is not available. Training on CPU...")
         device = torch.device("cpu")
 
     return device
