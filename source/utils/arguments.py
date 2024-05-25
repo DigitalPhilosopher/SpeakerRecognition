@@ -108,6 +108,60 @@ def get_training_arguments():
     return parser.parse_args()
 
 
+def get_training_variables(args):
+    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE = get_general_variables(args)
+    LEARNING_RATE = args.learning_rate
+    RESTART_EPOCH = args.restart_epoch
+    MARGIN = args.margin
+    NORM = args.norm
+    BATCH_SIZE = args.batch_size
+    EPOCHS = args.epochs
+    VALIDATION_RATE = args.validation_rate
+    WEIGHT_DECAY = args.weight_decay
+    AMSGRAD = args.amsgrad
+
+    DOWNSAMPLING_TRAIN = args.downsample_train
+    DOWNSAMPLING_TEST = args.downsample_test
+    DOWNSAMPLING_VALID = args.downsample_valid
+
+    if args.frontend == "mfcc":
+        FOLDER = "MFCC"
+        TAGS = {
+            "Frontend": "MFCC"
+        }
+    else:
+        if args.frontend == "wavlm_base":
+            FOLDER = "WavLM-Base"
+            TAGS = {
+                "Frontend": "WavLM-Base"
+            }
+        elif args.frontend == "wavlm_large":
+            FOLDER = "WavLM-Large"
+            TAGS = {
+                "Frontend": "WavLM-Large"
+            }
+
+        if args.frozen:
+            FOLDER += "/frozen"
+            TAGS["Frontend-training"] = "frozen"
+        else:
+            FOLDER += "/joint"
+            TAGS["Frontend-training"] = "joint"
+
+    FOLDER += "/ECAPA-TDNN/Random-Triplet-Mining"
+    TAGS["Model"] = "joint"
+    TAGS["Triplet Mining Strategy"] = "Random Triplet Mining"
+
+    if args.dataset == "genuine":
+        FOLDER += "/Genuine"
+        TAGS["Dataset"] = "Genuine"
+    else:
+        FOLDER += "/Deepfake"
+        TAGS["Dataset"] = "Deepfake"
+
+    return MODEL, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, LEARNING_RATE, RESTART_EPOCH, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID
+
+
 def add_general_arguments(parser):
     # Dataset
     parser.add_argument(
@@ -156,3 +210,31 @@ def add_general_arguments(parser):
     )
 
     return parser
+
+
+def get_general_variables(args):
+    MFCCS = args.mfccs
+    SAMPLE_RATE = args.sample_rate
+    EMBEDDING_SIZE = args.embedding_size
+
+    if args.frontend == "mfcc":
+        MODEL = "MFCC"
+    else:
+        if args.frontend == "wavlm_base":
+            MODEL = "WavLM-Base"
+        elif args.frontend == "wavlm_large":
+            MODEL = "WavLM-Large"
+
+        if args.frozen:
+            MODEL += "-frozen"
+        else:
+            MODEL += "-joint"
+
+    MODEL += "_ECAPA-TDNN_Random-Triplet-Mining"
+
+    if args.dataset == "genuine":
+        MODEL += "_Genuine"
+    else:
+        MODEL += "_Deepfake"
+
+    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE
