@@ -3,7 +3,7 @@ import sys
 import os
 import warnings
 import mlflow
-from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_arguments
+from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_arguments, get_training_variables
 import torch.optim as optim
 from torch.nn import TripletMarginLoss
 from torch.utils.data import DataLoader
@@ -20,65 +20,8 @@ def define_variables(args):
     global MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, WEIGHT_DECAY, AMSGRAD
     global DOWNSAMPLING_TRAIN, DOWNSAMPLING_VALID, DOWNSAMPLING_TEST
 
-    LEARNING_RATE = args.learning_rate
-    RESTART_EPOCH = args.restart_epoch
-    MARGIN = args.margin
-    NORM = args.norm
-    BATCH_SIZE = args.batch_size
-    EPOCHS = args.epochs
-    VALIDATION_RATE = args.validation_rate
-    MFCCS = args.mfccs
-    SAMPLE_RATE = args.sample_rate
-    EMBEDDING_SIZE = args.embedding_size
-    WEIGHT_DECAY = args.weight_decay
-    AMSGRAD = args.amsgrad
-
-    DOWNSAMPLING_TRAIN = args.downsample_train
-    DOWNSAMPLING_TEST = args.downsample_test
-    DOWNSAMPLING_VALID = args.downsample_valid
-
-    if args.frontend == "mfcc":
-        MODEL = "MFCC"
-        FOLDER = "MFCC"
-        TAGS = {
-            "Frontend": "MFCC"
-        }
-    else:
-        if args.frontend == "wavlm_base":
-            MODEL = "WavLM-Base"
-            FOLDER = "WavLM-Base"
-            TAGS = {
-                "Frontend": "WavLM-Base"
-            }
-        elif args.frontend == "wavlm_large":
-            MODEL = "WavLM-Large"
-            FOLDER = "WavLM-Large"
-            TAGS = {
-                "Frontend": "WavLM-Large"
-            }
-
-        if args.frozen:
-            MODEL += "-frozen"
-            FOLDER += "/frozen"
-            TAGS["Frontend-training"] = "frozen"
-        else:
-            MODEL += "-joint"
-            FOLDER += "/joint"
-            TAGS["Frontend-training"] = "joint"
-
-    MODEL += "_ECAPA-TDNN_Random-Triplet-Mining"
-    FOLDER += "/ECAPA-TDNN/Random-Triplet-Mining"
-    TAGS["Model"] = "joint"
-    TAGS["Triplet Mining Strategy"] = "Random Triplet Mining"
-
-    if args.dataset == "genuine":
-        MODEL += "_Genuine"
-        FOLDER += "/Genuine"
-        TAGS["Dataset"] = "Genuine"
-    else:
-        MODEL += "_Deepfake"
-        FOLDER += "/Deepfake"
-        TAGS["Dataset"] = "Deepfake"
+    MODEL, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, LEARNING_RATE, RESTART_EPOCH, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_training_variables(
+        args)
 
 
 def config():
