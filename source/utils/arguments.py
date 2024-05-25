@@ -2,24 +2,9 @@
 import argparse
 
 
-def get_arguments():
+def get_training_arguments():
     parser = argparse.ArgumentParser(
         description="Training ECAPA-TDNN Model for Deepfake Speaker Verification"
-    )
-
-    # Dataset
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        required=True,
-        help="Which dataset to use (genuine | deepfake)"
-    )
-    parser.add_argument(
-        "--sample_rate",
-        type=int,
-        required=False,
-        default=16000,
-        help="Sample rate for the audio data (default: 16000)"
     )
 
     # Downsampling
@@ -45,36 +30,7 @@ def get_arguments():
         help="Downsample test data by a factor (default: 0 - no downsampling)"
     )
 
-    # Frontend
-    parser.add_argument(
-        "--mfccs",
-        type=int,
-        required=False,
-        default=13,
-        help="Number of MFCC features to extract (default: 13)"
-    )
-    parser.add_argument(
-        "--frontend",
-        type=str,
-        required=True,
-        help="Which frontend model to use for feature extraction (mfcc, wavlm_base, wavlm_large)"
-    )
-    parser.add_argument(
-        "--frozen",
-        type=int,
-        required=False,
-        default=1,
-        help="Whether the frontend model is jointly trained or frozen during training (1=frozen, 0=joint)"
-    )
-
-    # Model
-    parser.add_argument(
-        "--embedding_size",
-        type=int,
-        required=False,
-        default=192,
-        help="Size of the embedding vector (default: 192)"
-    )
+    parser = add_general_arguments(parser)
 
     # Training
     parser.add_argument(
@@ -150,3 +106,53 @@ def get_arguments():
     )
 
     return parser.parse_args()
+
+
+def add_general_arguments(parser):
+    # Dataset
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        required=True,
+        help="Which dataset to use (genuine | deepfake)"
+    )
+
+    # Frontend
+    parser.add_argument(
+        "--mfccs",
+        type=int,
+        required=False,
+        default=13,
+        help="Number of MFCC features to extract (default: 13)"
+    )
+    parser.add_argument(
+        "--sample_rate",
+        type=int,
+        required=False,
+        default=16000,
+        help="Sample rate for the audio data (default: 16000)"
+    )
+    parser.add_argument(
+        "--frontend",
+        type=str,
+        required=True,
+        help="Which frontend model to use for feature extraction (mfcc, wavlm_base, wavlm_large)"
+    )
+    parser.add_argument(
+        "--frozen",
+        type=int,
+        required=False,
+        default=1,
+        help="Whether the frontend model is jointly trained or frozen during training (1=frozen, 0=joint)"
+    )
+
+    # Model
+    parser.add_argument(
+        "--embedding_size",
+        type=int,
+        required=False,
+        default=192,
+        help="Size of the embedding vector (default: 192)"
+    )
+
+    return parser
