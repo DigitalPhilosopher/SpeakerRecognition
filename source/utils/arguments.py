@@ -162,6 +162,48 @@ def get_training_variables(args):
     return MODEL, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, LEARNING_RATE, RESTART_EPOCH, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID
 
 
+def get_inference_arguments():
+    parser = argparse.ArgumentParser(
+        description="Inference of the ECAPA-TDNN Model for Deepfake Speaker Verification or Deepfake Detection"
+    )
+
+    # Data
+    parser.add_argument(
+        "--reference_audio",
+        type=str,
+        required=True,
+        help="Genuine reference audio of speaker"
+    )
+    parser.add_argument(
+        "--audio_in_question",
+        type=str,
+        required=True,
+        help="Audio in question to be speaker"
+    )
+
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        required=False,
+        default=50.0,
+        help="Threshold that can not be passed for it to beeing a genuine audio"
+    )
+
+    parser = add_general_arguments(parser)
+
+    return parser.parse_args()
+
+
+def get_inference_variables(args):
+    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE = get_general_variables(args)
+
+    REFERENCE_AUDIO = args.reference_audio
+    QUESTION_AUDIO = args.audio_in_question
+    THRESHOLD = args.threshold
+
+    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
+
+
 def add_general_arguments(parser):
     # Dataset
     parser.add_argument(

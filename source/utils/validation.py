@@ -10,6 +10,12 @@ import gc
 from tqdm import tqdm
 
 
+def compute_distance(emb1, emb2):
+    emb1 = np.squeeze(emb1)
+    emb2 = np.squeeze(emb2)
+    return np.linalg.norm(emb1 - emb2)
+
+
 class ModelValidator:
 
     ##### INIT #####
@@ -96,14 +102,14 @@ class ModelValidator:
             # Compute scores for genuine-genuine pairs
             for gi1, gi2 in combinations(genuine_indices, 2):
                 genuine_deepfake_scores.append(
-                    self.compute_distance(embeddings[gi1], embeddings[gi2]))
+                    compute_distance(embeddings[gi1], embeddings[gi2]))
                 # 1 indicates genuine-genuine
                 genuine_deepfake_labels.append(1)
 
             # Compute scores for genuine-deepfake pairs
             for gi in genuine_indices:
                 for di in deepfake_indices:
-                    score = self.compute_distance(
+                    score = compute_distance(
                         embeddings[gi], deepfake_embeddings[di])
                     genuine_deepfake_scores.append(score)
                     genuine_deepfake_labels.append(0)
@@ -116,14 +122,9 @@ class ModelValidator:
         score_labels = []
         # Compute pairwise scores
         for (emb1, lbl1), (emb2, lbl2) in tqdm(combinations(zip(embeddings, labels), 2), desc="Computing pairwise scores"):
-            scores.append(self.compute_distance(emb1, emb2))
+            scores.append(compute_distance(emb1, emb2))
             score_labels.append(1 if lbl1 == lbl2 else 0)
         return np.array(scores), np.array(score_labels)
-
-    def compute_distance(self, emb1, emb2):
-        emb1 = np.squeeze(emb1)
-        emb2 = np.squeeze(emb2)
-        return np.linalg.norm(emb1 - emb2)
 
     def compute_eer(self, scores, score_labels):
         # Calculate the EER
