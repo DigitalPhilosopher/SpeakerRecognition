@@ -141,11 +141,26 @@ options:
                         Whether to generate analytics for the deepfake dataset. (default: True)
 
 ## Examples
-python source/Analytics.py --frontend mfcc --dataset genuine --mfccs 80 --embedding_size 192 --batch_size 16 --downsample_train 1000
-python source/Analytics.py --frontend mfcc --dataset deepfake --mfccs 80 --embedding_size 192 --batch_size 16 --downsample_train 1000
+python source/Analytics.py --frontend mfcc --dataset genuine --mfccs 80 --batch_size 16 --downsample_train 1000
+python source/Analytics.py --frontend mfcc --dataset deepfake --mfccs 80 --batch_size 16 --downsample_train 1000
 
-python source/Analytics.py --frontend wavlm_base --dataset genuine --mfccs 80 --embedding_size 192 --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_base --dataset deepfake --mfccs 80 --embedding_size 192 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --dataset genuine --mfccs 80 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --dataset deepfake --mfccs 80 --batch_size 8 --downsample_train 1000
 
-python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset genuine --mfccs 80 --embedding_size 192 --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset deepfake --mfccs 80 --embedding_size 192 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset genuine --mfccs 80 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset deepfake --mfccs 80 --batch_size 8 --downsample_train 1000
+
+# Experiments
+
+## Usage
+usage: Experiments.py [-h] [--experiments EXPERIMENTS]
+
+Running several experiments on ECAPA-TDNN Model for Deepfake Speaker Verification
+
+options:
+  -h, --help            show this help message and exit
+  --experiments EXPERIMENTS
+                        File of experiments to run
+
+## Example
+python source/Experiments.py --experiments experiments.txt
