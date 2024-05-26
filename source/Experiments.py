@@ -78,7 +78,11 @@ def thread_function(name, commands, list_lock):
         command.append("--device")
         command.append(name)
         with open(f'logs/{name}.log', 'a') as log_file:
-            log_file.write(f"Starting new process on device {name}: {command}")
+            pcommand = ' '.join(command)
+            print(
+                f"Starting new process on device {name}: {pcommand}")
+            log_file.write(
+                f"Starting new process on device {name}: {pcommand}")
             # Start the process and wait for it to finish
             process = subprocess.Popen(
                 command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -98,6 +102,8 @@ def thread_function(name, commands, list_lock):
                 log_file.write("\nProcess finished successfully\n")
             else:
                 log_file.write("\nProcess finished with errors\n")
+
+            print(f"Finished process on device {name}: {pcommand}")
 
 
 if __name__ == "__main__":
