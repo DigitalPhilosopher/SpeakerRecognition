@@ -75,15 +75,6 @@ def get_training_arguments():
         help="Whether to use the AMSGrad variant of Adam optimizer (default: False)"
     )
 
-    # Scheduler
-    parser.add_argument(
-        "--restart_epoch",
-        type=int,
-        required=False,
-        default=5,
-        help="Epoch at which to restart training (default: 5)"
-    )
-
     return parser.parse_args()
 
 

@@ -11,7 +11,6 @@ from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRand
 from models import WavLM_Base_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 
 def define_variables(args):
@@ -69,7 +68,7 @@ def create_dataset(args):
 
 
 def get_model(args):
-    global model, optimizer, scheduler, triplet_loss
+    global model, optimizer, triplet_loss
 
     if args.frontend == "mfcc":
         model = ECAPA_TDNN(
@@ -84,12 +83,6 @@ def get_model(args):
     model.to(device)
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters(
     )), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
-    scheduler = CosineAnnealingWarmRestarts(
-        optimizer,
-        T_0=RESTART_EPOCH,
-        T_mult=1,
-        eta_min=0.000005
-    )
     triplet_loss = TripletMarginWithDistanceLoss(
         distance_function=compute_distance, margin=MARGIN)
 
@@ -108,7 +101,7 @@ def main(args):
 
     ##### TRAINING #####
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
-                           optimizer, scheduler, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
+                           optimizer, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
     trainer.train_model(EPOCHS)
 
 

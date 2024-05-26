@@ -38,7 +38,7 @@ def create_dataset(args):
 
 
 def get_model(args):
-    global model, optimizer, scheduler, triplet_loss
+    global model, optimizer, triplet_loss
 
     if args.frontend == "mfcc":
         model = ECAPA_TDNN(

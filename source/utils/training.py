@@ -49,7 +49,7 @@ class ModelTrainer:
 
     ##### INIT #####
 
-    def __init__(self, model, dataloader, valid_dataloader, test_dataloader, device, loss_function, optimizer, scheduler, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
+    def __init__(self, model, dataloader, valid_dataloader, test_dataloader, device, loss_function, optimizer, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
         self.model = model
         self.dataloader = dataloader
         self.test_dataloader = valid_dataloader
@@ -58,7 +58,6 @@ class ModelTrainer:
         self.device = device
         self.loss_function = loss_function
         self.optimizer = optimizer
-        self.scheduler = scheduler
         self.MODEL = MODEL
         self.FOLDER = self.create_or_get_experiment(FOLDER)
         self.TAGS = TAGS
@@ -94,7 +93,6 @@ class ModelTrainer:
                 print(f"Error during training: {e}")
                 continue
 
-        self.scheduler.step()
         return running_loss
 
     def train_model(self, epochs, start_epoch=1):
@@ -144,8 +142,7 @@ class ModelTrainer:
             "Batch size": self.dataloader.batch_size,
             "Model": self.model.__class__.__name__,
             "Loss function": self.loss_function.__class__.__name__,
-            "Optimizer": self.optimizer.__class__.__name__,
-            "Scheduler": self.scheduler.__class__.__name__
+            "Optimizer": self.optimizer.__class__.__name__
         })
 
     def log_tags(self):
@@ -187,7 +184,6 @@ class ModelTrainer:
             'epoch': epoch,
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
-            'scheduler': self.scheduler.state_dict(),
             'best_loss': self.best_loss
         }
         torch.save(state, f'../models/{self.MODEL}_checkpoint.pth')
@@ -197,5 +193,4 @@ class ModelTrainer:
             f'../models/{self.MODEL}_checkpoint.pth')
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
-        self.scheduler.load_state_dict(checkpoint['scheduler'])
         self.best_loss = checkpoint['best_loss']
