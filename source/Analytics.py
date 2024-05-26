@@ -5,7 +5,7 @@ from dataloader import ValidationDataset, collate_valid_fn
 from utils import load_deepfake_dataset, get_device, get_analytics_arguments, get_analytics_variables, ModelValidator
 import torch
 from torch.utils.data import DataLoader
-from models import WavLM_Base_ECAPA_TDNN
+from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 import pandas as pd
@@ -67,15 +67,18 @@ def create_dataset(args):
 def get_model(args):
     global model, optimizer, triplet_loss
 
+    if args.frozen == 0:
+        frozen = False
+    else:
+        frozen = True
+
     if args.frontend == "mfcc":
         model = ECAPA_TDNN(
             input_size=MFCCS, lin_neurons=EMBEDDING_SIZE, device=device)
     elif args.frontend == "wavlm_base":
-        if args.frozen == 0:
-            frozen = False
-        else:
-            frozen = True
         model = WavLM_Base_ECAPA_TDNN(frozen=frozen, device=device)
+    elif args.frontend == "wavlm_large":
+        model = WavLM_Large_ECAPA_TDNN(frozen=frozen, device=device)
 
     model.to(device)
 
