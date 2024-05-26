@@ -61,6 +61,12 @@ python source/TrainModel.py --frontend wavlm_base --dataset deepfake --batch_siz
 python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
 python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
 
+python source/TrainModel.py --frontend wavlm_large --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_large --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+
+python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset genuine --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset deepfake --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+
 # Show results:
 mlflow ui 
 
@@ -102,6 +108,12 @@ python source/Inference.py --frontend wavlm_base --dataset deepfake --reference_
 
 python source/Inference.py --frontend wavlm_base --frozen 0 --dataset genuine  --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
 python source/Inference.py --frontend wavlm_base --frozen 0 --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+
+python source/Inference.py --frontend wavlm_large --dataset genuine --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_large --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+
+python source/Inference.py --frontend wavlm_large --frozen 0 --dataset genuine  --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_large --frozen 0 --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
 
 # Analytics
 
@@ -149,6 +161,12 @@ python source/Analytics.py --frontend wavlm_base --dataset deepfake --mfccs 80 -
 
 python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset genuine --mfccs 80 --batch_size 8 --downsample_train 1000
 python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset deepfake --mfccs 80 --batch_size 8 --downsample_train 1000
+
+python source/Analytics.py --frontend wavlm_large --dataset genuine --mfccs 80 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --dataset deepfake --mfccs 80 --batch_size 8 --downsample_train 1000
+
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset genuine --mfccs 80 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset deepfake --mfccs 80 --batch_size 8 --downsample_train 1000
 
 # Experiments
 
