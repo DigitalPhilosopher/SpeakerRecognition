@@ -156,17 +156,17 @@ options:
 python source/Analytics.py --frontend mfcc --dataset genuine --mfccs 80 --batch_size 16 --downsample_train 1000
 python source/Analytics.py --frontend mfcc --dataset deepfake --mfccs 80 --batch_size 16 --downsample_train 1000
 
-python source/Analytics.py --frontend wavlm_base --dataset genuine --mfccs 80 --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_base --dataset deepfake --mfccs 80 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --dataset genuine --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --dataset deepfake --batch_size 8 --downsample_train 1000
 
-python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset genuine --mfccs 80 --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset deepfake --mfccs 80 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset genuine --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset deepfake --batch_size 8 --downsample_train 1000
 
-python source/Analytics.py --frontend wavlm_large --dataset genuine --mfccs 80 --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_large --dataset deepfake --mfccs 80 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --dataset genuine --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --dataset deepfake --batch_size 8 --downsample_train 1000
 
-python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset genuine --mfccs 80 --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset deepfake --mfccs 80 --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset genuine --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset deepfake --batch_size 8 --downsample_train 1000
 
 # Experiments
 
