@@ -11,6 +11,14 @@ python source/TrainModel.py --frontend wavlm_base --dataset deepfake --batch_siz
 python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
 python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
 
+## WavLM Large Frozen
+python source/TrainModel.py --frontend wavlm_large --dataset genuine --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_large --dataset deepfake --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+
+## WavLM Large Joint
+python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset genuine --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset deepfake --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+
 
 # Analytics
 ## MFCC
@@ -24,3 +32,11 @@ python source/Analytics.py --frontend wavlm_base --dataset deepfake --mfccs 80 -
 ## WavLM Base Joint
 python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset genuine --mfccs 80 --batch_size 8 --train --valid --test --downsample_train 1000
 python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset deepfake --mfccs 80 --batch_size 8 --train --valid --test --downsample_train 1000
+
+## WavLM Large Frozen
+python source/Analytics.py --frontend wavlm_large --dataset genuine --mfccs 80 --batch_size 4 --train --valid --test --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --dataset deepfake --mfccs 80 --batch_size 4 --train --valid --test --downsample_train 1000
+
+## WavLM Large Joint
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset genuine --mfccs 80 --batch_size 4 --train --valid --test --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset deepfake --mfccs 80 --batch_size 4 --train --valid --test --downsample_train 1000
