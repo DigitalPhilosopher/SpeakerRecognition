@@ -4,3 +4,4 @@ __pycache__
 mlruns
 *.pth
 extraction_utils
+logs
