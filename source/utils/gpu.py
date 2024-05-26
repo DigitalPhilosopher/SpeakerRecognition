@@ -1,9 +1,10 @@
 import torch
 
 
-def get_device():
-    # Check if CUDA is available
-    if torch.cuda.is_available():
+def get_device(device):
+    if device:
+        device = torch.device(device)
+    elif torch.cuda.is_available():
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
