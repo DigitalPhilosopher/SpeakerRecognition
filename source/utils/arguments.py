@@ -7,28 +7,7 @@ def get_training_arguments():
         description="Training ECAPA-TDNN Model for Deepfake Speaker Verification"
     )
 
-    # Downsampling
-    parser.add_argument(
-        "--downsample_train",
-        type=int,
-        required=False,
-        default=0,
-        help="Downsample training data by a factor (default: 0 - no downsampling)"
-    )
-    parser.add_argument(
-        "--downsample_valid",
-        type=int,
-        required=False,
-        default=0,
-        help="Downsample validation data by a factor (default: 0 - no downsampling)"
-    )
-    parser.add_argument(
-        "--downsample_test",
-        type=int,
-        required=False,
-        default=0,
-        help="Downsample test data by a factor (default: 0 - no downsampling)"
-    )
+    parser = add_downsampling_arguments(parser)
 
     parser = add_general_arguments(parser)
 
@@ -110,6 +89,9 @@ def get_training_arguments():
 
 def get_training_variables(args):
     MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE = get_general_variables(args)
+    DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_downsampling_variables(
+        args)
+
     LEARNING_RATE = args.learning_rate
     RESTART_EPOCH = args.restart_epoch
     MARGIN = args.margin
@@ -119,10 +101,6 @@ def get_training_variables(args):
     VALIDATION_RATE = args.validation_rate
     WEIGHT_DECAY = args.weight_decay
     AMSGRAD = args.amsgrad
-
-    DOWNSAMPLING_TRAIN = args.downsample_train
-    DOWNSAMPLING_TEST = args.downsample_test
-    DOWNSAMPLING_VALID = args.downsample_valid
 
     if args.frontend == "mfcc":
         FOLDER = "MFCC"
@@ -204,6 +182,76 @@ def get_inference_variables(args):
     return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
 
 
+def get_analytics_arguments():
+    parser = argparse.ArgumentParser(
+        description="Analytics of the ECAPA-TDNN Model for Deepfake Speaker Verification and Deepfake Detection"
+    )
+
+    parser.add_argument(
+        "--train",
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help="Whether to generate analytics for the training set (default=False)"
+    )
+    parser.add_argument(
+        "--valid",
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help="Whether to generate analytics for the valid set (default=False)"
+    )
+    parser.add_argument(
+        "--test",
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help="Whether to generate analytics for the test set (default=True)"
+    )
+
+    parser = add_downsampling_arguments(parser)
+
+    parser = add_general_arguments(parser)
+
+    # Training
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        required=False,
+        default=8,
+        help="Batch size for training (default: 8)"
+    )
+
+    parser.add_argument(
+        "--analyze_genuine",
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help="Whether to generate analytics for the genuine dataset."
+    )
+    parser.add_argument(
+        "--analyze_deepfake",
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help="Whether to  generate analytics for the deepfake dataset."
+    )
+
+    return parser.parse_args()
+
+
+def get_analytics_variables(args):
+    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE = get_general_variables(args)
+    DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_downsampling_variables(
+        args)
+
+    BATCH_SIZE = args.batch_size
+
+    TRAIN = args.train
+    VALID = args.valid
+    TEST = args.test
+
+    NO_GENUINE = not args.analyze_genuine
+    NO_DEEPFAKE = not args.analyze_deepfake
+
+    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE
+
+
 def add_general_arguments(parser):
     # Dataset
     parser.add_argument(
@@ -254,6 +302,33 @@ def add_general_arguments(parser):
     return parser
 
 
+def add_downsampling_arguments(parser):
+    # Downsampling
+    parser.add_argument(
+        "--downsample_train",
+        type=int,
+        required=False,
+        default=0,
+        help="Downsample training data by a factor (default: 0 - no downsampling)"
+    )
+    parser.add_argument(
+        "--downsample_valid",
+        type=int,
+        required=False,
+        default=0,
+        help="Downsample validation data by a factor (default: 0 - no downsampling)"
+    )
+    parser.add_argument(
+        "--downsample_test",
+        type=int,
+        required=False,
+        default=0,
+        help="Downsample test data by a factor (default: 0 - no downsampling)"
+    )
+
+    return parser
+
+
 def get_general_variables(args):
     MFCCS = args.mfccs
     SAMPLE_RATE = args.sample_rate
@@ -280,3 +355,11 @@ def get_general_variables(args):
         MODEL += "_Deepfake"
 
     return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE
+
+
+def get_downsampling_variables(args):
+    DOWNSAMPLING_TRAIN = args.downsample_train
+    DOWNSAMPLING_TEST = args.downsample_test
+    DOWNSAMPLING_VALID = args.downsample_valid
+
+    return DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID
