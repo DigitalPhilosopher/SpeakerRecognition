@@ -27,6 +27,8 @@ class ModelValidator:
         sv_rates, dd_rates = {"TP": 0, "TN": 0, "FP": 0, "FN": 0}, {
             "TP": 0, "TN": 0, "FP": 0, "FN": 0}
 
+        sv_min_dcf, dd_min_dcf = -1, -1
+
         model.eval()
 
         embeddings, labels, deepfake_embeddings, deepfake_labels, deepfake_methods = self.generate_embeddings(
@@ -35,8 +37,9 @@ class ModelValidator:
         if speaker_eer:
             scores, score_labels = self.pairwise_scores(embeddings, labels)
             sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
+            sv_min_dcf = self.compute_min_dcf(scores, score_labels)
             TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
-                scores, score_labels, 15)
+                scores, score_labels, sv_threshold)
             sv_rates = {
                 "TP": TP,
                 "TN": TN,
@@ -48,12 +51,15 @@ class ModelValidator:
                 mlflow.log_metrics({
                     prefix + 'EER - Speaker Verification': sv_eer,
                     prefix + 'Threshold - Speaker Verification': sv_threshold,
+                    prefix + 'minDCF - Speaker Verification': sv_min_dcf
                 }, step=step)
 
         if deepfake_eer:
             genuine_deepfake_scores, genuine_deepfake_labels, method_scores = self.generate_deepfake_pairwise_scores(
                 labels, embeddings, deepfake_labels, deepfake_embeddings, deepfake_methods)
             dd_eer, dd_threshold = self.compute_eer(
+                genuine_deepfake_scores, genuine_deepfake_labels)
+            dd_min_dcf = self.compute_min_dcf(
                 genuine_deepfake_scores, genuine_deepfake_labels)
             TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
                 genuine_deepfake_scores, genuine_deepfake_labels, dd_threshold)
@@ -74,6 +80,7 @@ class ModelValidator:
                 mlflow.log_metrics({
                     prefix + 'EER - Deepfake Detection': dd_eer,
                     prefix + 'Threshold - Deepfake Detection': dd_threshold,
+                    prefix + 'minDCF - Deepfake Detection': dd_min_dcf,
                     prefix + 'Hardest Deepfake Method': hardest_method_score
                 }, step=step)
 
@@ -86,7 +93,7 @@ class ModelValidator:
 
         gc.collect()
 
-        return sv_eer, sv_threshold, sv_rates, dd_eer, dd_threshold, dd_rates
+        return sv_eer, sv_threshold, sv_rates, sv_min_dcf, dd_eer, dd_threshold, dd_rates, dd_min_dcf
 
     def generate_embeddings(self, model):
         embeddings = []
@@ -182,3 +189,20 @@ class ModelValidator:
                 FN += 1
 
         return TP, TN, FP, FN
+
+    def compute_min_dcf(self, scores, score_labels, p_target=0.01, c_miss=1, c_fa=1):
+        fpr, tpr, thresholds = roc_curve(score_labels, scores, pos_label=1)
+        fnr = 1 - tpr
+
+        # Define the function for DCF
+        def dcf(beta, fnr, fpr):
+            return c_miss * fnr * p_target + c_fa * fpr * (1 - p_target)
+
+        # Compute the minDCF
+        min_dcf = float('inf')
+        for fpr_i, fnr_i in zip(fpr, fnr):
+            dcf_i = dcf(1, fnr_i, fpr_i)
+            if dcf_i < min_dcf:
+                min_dcf = dcf_i
+
+        return min_dcf
