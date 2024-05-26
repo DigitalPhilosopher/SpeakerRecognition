@@ -10,9 +10,9 @@ from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 
 
 def define_variables(args):
-    global MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
+    global MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
 
-    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO = get_inference_variables(
+    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO = get_inference_variables(
         args)
 
 
@@ -21,7 +21,7 @@ def config():
 
     warnings.filterwarnings("ignore")
 
-    device = get_device()
+    device = get_device(DEVICE)
 
 
 def create_dataset(args):

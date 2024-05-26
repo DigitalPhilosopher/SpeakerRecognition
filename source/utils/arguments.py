@@ -79,12 +79,12 @@ def get_training_arguments():
 
 
 def get_training_variables(args):
-    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE = get_general_variables(args)
+    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
+        args)
     DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_downsampling_variables(
         args)
 
     LEARNING_RATE = args.learning_rate
-    RESTART_EPOCH = args.restart_epoch
     MARGIN = args.margin
     NORM = args.norm
     BATCH_SIZE = args.batch_size
@@ -128,7 +128,7 @@ def get_training_variables(args):
         FOLDER += "/Deepfake"
         TAGS["Dataset"] = "Deepfake"
 
-    return MODEL, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, LEARNING_RATE, RESTART_EPOCH, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID
+    return MODEL, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID
 
 
 def get_inference_arguments():
@@ -164,13 +164,14 @@ def get_inference_arguments():
 
 
 def get_inference_variables(args):
-    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE = get_general_variables(args)
+    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
+        args)
 
     REFERENCE_AUDIO = args.reference_audio
     QUESTION_AUDIO = args.audio_in_question
     THRESHOLD = args.threshold
 
-    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
+    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
 
 
 def get_analytics_arguments():
@@ -227,7 +228,8 @@ def get_analytics_arguments():
 
 
 def get_analytics_variables(args):
-    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE = get_general_variables(args)
+    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
+        args)
     DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_downsampling_variables(
         args)
 
@@ -240,7 +242,7 @@ def get_analytics_variables(args):
     NO_GENUINE = not args.analyze_genuine
     NO_DEEPFAKE = not args.analyze_deepfake
 
-    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE
+    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE
 
 
 def add_general_arguments(parser):
@@ -290,6 +292,14 @@ def add_general_arguments(parser):
         help="Size of the embedding vector (default: 192)"
     )
 
+    # Device
+    parser.add_argument(
+        "--device",
+        type=str,
+        required=False,
+        help="Which device to use (per default looks if cuda is available)"
+    )
+
     return parser
 
 
@@ -324,6 +334,7 @@ def get_general_variables(args):
     MFCCS = args.mfccs
     SAMPLE_RATE = args.sample_rate
     EMBEDDING_SIZE = args.embedding_size
+    DEVICE = args.device
 
     if args.frontend == "mfcc":
         MODEL = "MFCC"
@@ -345,7 +356,7 @@ def get_general_variables(args):
     else:
         MODEL += "_Deepfake"
 
-    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE
+    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE
 
 
 def get_downsampling_variables(args):
