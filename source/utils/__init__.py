@@ -1,4 +1,4 @@
-from .gpu import get_device
+from .gpu import get_device, list_cuda_devices
 from .training import load_genuine_dataset, load_deepfake_dataset, ModelTrainer
 from .distance import l2_normalize, compute_distance
 from .validation import ModelValidator
