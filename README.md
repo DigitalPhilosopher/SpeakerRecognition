@@ -103,3 +103,49 @@ python source/Inference.py --frontend wavlm_base --dataset deepfake --reference_
 
 python source/Inference.py --frontend wavlm_base --frozen 0 --dataset genuine  --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
 python source/Inference.py --frontend wavlm_base --frozen 0 --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+
+# Analytics
+
+## Usage
+usage: Analytics.py [-h] [--train | --no-train] [--valid | --no-valid] [--test | --no-test] [--downsample_train DOWNSAMPLE_TRAIN]
+                    [--downsample_valid DOWNSAMPLE_VALID] [--downsample_test DOWNSAMPLE_TEST] --dataset DATASET [--mfccs MFCCS] [--sample_rate SAMPLE_RATE]
+                    --frontend FRONTEND [--frozen FROZEN] [--embedding_size EMBEDDING_SIZE] [--batch_size BATCH_SIZE]
+                    [--no_analyze_genuine | --no-no_analyze_genuine] [--no_analyze_deepfake | --no-no_analyze_deepfake]
+
+Analytics of the ECAPA-TDNN Model for Deepfake Speaker Verification and Deepfake Detection
+
+options:
+  -h, --help            show this help message and exit
+  --train, --no-train   Generate embeddings for the training set
+  --valid, --no-valid   Generate embeddings for the valid set
+  --test, --no-test     Generate embeddings for the test set
+  --downsample_train DOWNSAMPLE_TRAIN
+                        Downsample training data by a factor (default: 0 - no downsampling)
+  --downsample_valid DOWNSAMPLE_VALID
+                        Downsample validation data by a factor (default: 0 - no downsampling)
+  --downsample_test DOWNSAMPLE_TEST
+                        Downsample test data by a factor (default: 0 - no downsampling)
+  --dataset DATASET     Which dataset to use (genuine | deepfake)
+  --mfccs MFCCS         Number of MFCC features to extract (default: 13)
+  --sample_rate SAMPLE_RATE
+                        Sample rate for the audio data (default: 16000)
+  --frontend FRONTEND   Which frontend model to use for feature extraction (mfcc, wavlm_base, wavlm_large)
+  --frozen FROZEN       Whether the frontend model is jointly trained or frozen during training (1=frozen, 0=joint)
+  --embedding_size EMBEDDING_SIZE
+                        Size of the embedding vector (default: 192)
+  --batch_size BATCH_SIZE
+                        Batch size for training (default: 8)
+  --no_analyze_genuine, --no-no_analyze_genuine
+                        Do not generate analytics for the genuine dataset.
+  --no_analyze_deepfake, --no-no_analyze_deepfake
+                        Do not generate analytics for the deepfake dataset.
+
+## Examples
+python source/Analytics.py --frontend mfcc --dataset genuine --mfccs 80 --embedding_size 192 --batch_size 16
+python source/Analytics.py --frontend mfcc --dataset deepfake --mfccs 80 --embedding_size 192 --batch_size 16
+
+python source/Analytics.py --frontend wavlm_base --dataset genuine --mfccs 80 --embedding_size 192 --batch_size 8
+python source/Analytics.py --frontend wavlm_base --dataset deepfake --mfccs 80 --embedding_size 192 --batch_size 8
+
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset genuine --mfccs 80 --embedding_size 192 --batch_size 8
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset deepfake --mfccs 80 --embedding_size 192 --batch_size 8

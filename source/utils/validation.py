@@ -24,7 +24,8 @@ class ModelValidator:
         start_time = time.time()
 
         sv_eer, sv_threshold, dd_eer, dd_threshold = -1, -1, -1, -1
-        sv_rates, dd_rates = {}, {}
+        sv_rates, dd_rates = {"TP": 0, "TN": 0, "FP": 0, "FN": 0}, {
+            "TP": 0, "TN": 0, "FP": 0, "FN": 0}
 
         model.eval()
 
