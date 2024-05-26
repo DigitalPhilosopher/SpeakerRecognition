@@ -54,14 +54,14 @@ options:
 
 
 ## Examples
-python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 16 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --mfccs 80 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 16 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --mfccs 80 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.2 --restart_epoch 50 --mfccs 80 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.2 --restart_epoch 50 --mfccs 80 --downsample_valid 25 --downsample_test 50
 
-python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend wavlm_base --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
 
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 1 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --restart_epoch 50 --downsample_valid 25 --downsample_test 50
 
 # Show results:
 mlflow ui 
