@@ -1,3 +1,18 @@
+# Audio Deepfake Detection with the aid of Authentic Reference Material
+
+This repository was developed as part of the research for my Master's thesis titled "Audio Deepfake Detection with the Aid of Authentic Reference Material," conducted at the University of Hagen. The thesis was supervised by Prof. Jörg Keller (University of Hagen) and Dr. Dominique Dresen (Federal Office for Information Security), with additional support from Matthias Neu (Federal Office for Information Security).
+
+The primary objective of this repository is to facilitate the development of a deepfake detection model using the ECAPA-TDNN architecture. The audio features are generated using either an MFCC extractor or the SSL model WavLM. A key innovation in this thesis is the introduction of the triplet loss function for training the model, as opposed to the current state-of-the-art which uses ECAPA-TDNN with WavLM-Large but employs the AAM-Softmax loss function.
+
+To achieve better results in deepfake detection, the triplets are generated as anchor A (audio of speaker A), positive P (different audio of speaker A), and deepfake D (deepfake of speaker A). The loss function aims to minimize the Euclidean distance of the embeddings generated from the ECAPA-TDNN model in the same manner as done in FaceNet.
+
+To create these triplets, a dataset is required that consists of authentic audios as well as deepfake audios of the same speaker. The Federal Office for Information Security provided a dataset including authentic audio files from LibriTTS and their corresponding deepfakes. These deepfakes are produced using both Text-to-Speech (TTS) and Voice Conversion (VC) methods.
+
+
+## Setup
+
+This repository uses the deepfake dataset given by the Federal Office for Information Security
+
 Cuda version 12.1 or higher needs to be installed
 
 # Create virtual python environment 
