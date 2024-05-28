@@ -278,8 +278,99 @@ python source/Experiments.py --experiments experiments.txt
 
 # References
 
-1. 
-2. 
-3. 
-4. 
-5. 
+1. [ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification](https://arxiv.org/abs/2005.07143)
+```latex
+@inproceedings{desplanques20_interspeech,
+  author={Brecht Desplanques and Jenthe Thienpondt and Kris Demuynck},
+  title={{ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification}},
+  year=2020,
+  booktitle={Proc. Interspeech 2020},
+  pages={3830--3834},
+  doi={10.21437/Interspeech.2020-2650},
+  issn={2308-457X}
+}
+```
+2. [WavLM: Large-Scale Self-Supervised Pre-Training for Full Stack Speech Processing](https://arxiv.org/abs/2110.13900)
+```latex
+@ARTICLE{9814838,
+  author={Chen, Sanyuan and Wang, Chengyi and Chen, Zhengyang and Wu, Yu and Liu, Shujie and Chen, Zhuo and Li, Jinyu and Kanda, Naoyuki and Yoshioka, Takuya and Xiao, Xiong and Wu, Jian and Zhou, Long and Ren, Shuo and Qian, Yanmin and Qian, Yao and Wu, Jian and Zeng, Michael and Yu, Xiangzhan and Wei, Furu},
+  journal={IEEE Journal of Selected Topics in Signal Processing}, 
+  title={WavLM: Large-Scale Self-Supervised Pre-Training for Full Stack Speech Processing}, 
+  year={2022},
+  volume={16},
+  number={6},
+  pages={1505-1518},
+  keywords={Predictive models;Self-supervised learning;Speech processing;Speech recognition;Convolution;Benchmark testing;Self-supervised learning;speech pre-training},
+  doi={10.1109/JSTSP.2022.3188113}}
+```
+3. [ESPnet-SPK: full pipeline speaker embedding toolkit with reproducible recipes, self-supervised front-ends, and off-the-shelf models
+](https://arxiv.org/abs/2401.17230)
+```latex
+@misc{jung2024espnetspk,
+      title={ESPnet-SPK: full pipeline speaker embedding toolkit with reproducible recipes, self-supervised front-ends, and off-the-shelf models}, 
+      author={Jee-weon Jung and Wangyou Zhang and Jiatong Shi and Zakaria Aldeneh and Takuya Higuchi and Barry-John Theobald and Ahmed Hussen Abdelaziz and Shinji Watanabe},
+      year={2024},
+      eprint={2401.17230},
+      archivePrefix={arXiv},
+      primaryClass={cs.SD}
+}
+```
+4. [SpeechBrain: A General-Purpose Speech Toolkit
+](https://arxiv.org/abs/2106.04624)
+```latex
+@misc{ravanelli2021speechbrain,
+      title={SpeechBrain: A General-Purpose Speech Toolkit}, 
+      author={Mirco Ravanelli and Titouan Parcollet and Peter Plantinga and Aku Rouhe and Samuele Cornell and Loren Lugosch and Cem Subakan and Nauman Dawalatabad and Abdelwahab Heba and Jianyuan Zhong and Ju-Chieh Chou and Sung-Lin Yeh and Szu-Wei Fu and Chien-Feng Liao and Elena Rastorgueva and François Grondin and William Aris and Hwidong Na and Yan Gao and Renato De Mori and Yoshua Bengio},
+      year={2021},
+      eprint={2106.04624},
+      archivePrefix={arXiv},
+      primaryClass={eess.AS}
+}
+```
+5. [SUPERB: Speech Processing Universal PERformance Benchmark](https://arxiv.org/abs/2105.01051)
+```latex
+@inproceedings{yang21c_interspeech,
+  author={Shu-wen Yang and Po-Han Chi and Yung-Sung Chuang and Cheng-I Jeff Lai and Kushal Lakhotia and Yist Y. Lin and Andy T. Liu and Jiatong Shi and Xuankai Chang and Guan-Ting Lin and Tzu-Hsien Huang and Wei-Cheng Tseng and Ko-tik Lee and Da-Rong Liu and Zili Huang and Shuyan Dong and Shang-Wen Li and Shinji Watanabe and Abdelrahman Mohamed and Hung-yi Lee},
+  title={{SUPERB: Speech Processing Universal PERformance Benchmark}},
+  year=2021,
+  booktitle={Proc. Interspeech 2021},
+  pages={1194--1198},
+  doi={10.21437/Interspeech.2021-1775}
+}
+```
+6. [FaceNet: A Unified Embedding for Face Recognition and Clustering](https://arxiv.org/abs/1503.03832)
+```latex
+@INPROCEEDINGS{7298682,
+  author={Schroff, Florian and Kalenichenko, Dmitry and Philbin, James},
+  booktitle={2015 IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, 
+  title={FaceNet: A unified embedding for face recognition and clustering}, 
+  year={2015},
+  volume={},
+  number={},
+  pages={815-823},
+  keywords={Face;Face recognition;Training;Accuracy;Artificial neural networks;Standards;Principal component analysis},
+  doi={10.1109/CVPR.2015.7298682}}
+
+```
+7. [Learning local feature descriptors with triplets and shallow convolutional neural networks](https://www.researchgate.net/publication/317192886_Learning_local_feature_descriptors_with_triplets_and_shallow_convolutional_neural_networks)
+```latex
+@inproceedings{inproceedings,
+author = {Balntas, Vassileios and Riba, Edgar and Ponsa, Daniel and Mikolajczyk, Krystian},
+year = {2016},
+month = {01},
+pages = {119.1-119.11},
+title = {Learning local feature descriptors with triplets and shallow convolutional neural networks},
+doi = {10.5244/C.30.119}
+}
+```
+8. [LibriTTS: A Corpus Derived from LibriSpeech for Text-to-Speech](https://arxiv.org/abs/1904.02882)
+```latex
+@misc{zen2019libritts,
+      title={LibriTTS: A Corpus Derived from LibriSpeech for Text-to-Speech}, 
+      author={Heiga Zen and Viet Dang and Rob Clark and Yu Zhang and Ron J. Weiss and Ye Jia and Zhifeng Chen and Yonghui Wu},
+      year={2019},
+      eprint={1904.02882},
+      archivePrefix={arXiv},
+      primaryClass={cs.SD}
+}
+```
