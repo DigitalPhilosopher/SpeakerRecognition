@@ -17,6 +17,13 @@ def define_variables(args):
     MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE = get_analytics_variables(
         args)
 
+    if DOWNSAMPLING_TEST == 0:
+        TEST = False
+    if DOWNSAMPLING_TRAIN == 0:
+        TRAIN = False
+    if DOWNSAMPLING_VALID == 0:
+        VALID = False
+
 
 def config():
     global device

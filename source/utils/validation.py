@@ -29,6 +29,9 @@ class ModelValidator:
 
         sv_min_dcf, dd_min_dcf = -1, -1
 
+        if not self.dataloader:
+            return sv_eer, sv_threshold, sv_rates, sv_min_dcf, dd_eer, dd_threshold, dd_rates, dd_min_dcf
+
         model.eval()
 
         embeddings, labels, deepfake_embeddings, deepfake_labels, deepfake_methods = self.generate_embeddings(
