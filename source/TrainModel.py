@@ -56,15 +56,19 @@ def create_dataset(args):
     audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True,
                                   drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_triplet_wav_fn)
 
-    validation_dataset = ValidationDataset(
-        dev_labels, frontend=frontend, downsampling=DOWNSAMPLING_VALID)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                       drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+    validation_dataloader = None
+    if DOWNSAMPLING_VALID > 0:
+        validation_dataset = ValidationDataset(
+            dev_labels, frontend=frontend, downsampling=DOWNSAMPLING_VALID)
+        validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True,
+                                           drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
-    test_dataset = ValidationDataset(
-        test_labels, frontend=frontend, downsampling=DOWNSAMPLING_TEST)
-    test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                 drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+    test_dataloader = None
+    if DOWNSAMPLING_TEST > 0:
+        test_dataset = ValidationDataset(
+            test_labels, frontend=frontend, downsampling=DOWNSAMPLING_TEST)
+        test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True,
+                                     drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
 
 def get_model(args):
