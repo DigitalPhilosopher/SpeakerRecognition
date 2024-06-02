@@ -13,6 +13,7 @@ class s3prl_ECAPA_TDNN(nn.Module, ABC):
         self.frontend.to(device)
 
         # Freeze the frontend parameters
+        self.frozen = frozen
         if frozen:
             for param in self.frontend.parameters():
                 param.requires_grad = False
@@ -37,7 +38,10 @@ class s3prl_ECAPA_TDNN(nn.Module, ABC):
         for waveform in batch_wavefiles:
             waveform = waveform.unsqueeze(
                 0) if waveform.dim() == 1 else waveform
-            with torch.no_grad():
+            if self.frozen:
+                with torch.no_grad():
+                    features = self.frontend(waveform)['hidden_states'][-1]
+            else:
                 features = self.frontend(waveform)['hidden_states'][-1]
             wavlm_features.append(features)
 
