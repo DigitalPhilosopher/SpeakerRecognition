@@ -277,39 +277,51 @@ python source/Experiments.py --experiments experiments.txt
 # Results
 
 ## Speaker Verification
-| Front-End         | Triplet Mining   | Dataset    |   Speaker Verification EER |
-|:------------------|:-----------------|:-----------|---------------------------:|
-| MFCC              | Deepfake         | training   |                   0.727663 |
-| MFCC              | Deepfake         | validation |                   0.721183 |
-| MFCC              | Deepfake         | test       |                   0.728241 |
-| MFCC              | Genuine          | training   |                   0.701033 |
-| MFCC              | Genuine          | validation |                   0.701497 |
-| MFCC              | Genuine          | test       |                   0.707249 |
-| WavLM-Base/Frozen | Deepfake         | training   |               **0.669932** |
-| WavLM-Base/Frozen | Deepfake         | validation |               **0.667618** |
-| WavLM-Base/Frozen | Deepfake         | test       |               **0.671599** |
-| WavLM-Base/Frozen | Genuine          | training   |                   0.711452 |
-| WavLM-Base/Frozen | Genuine          | validation |                   0.710852 |
-| WavLM-Base/Frozen | Genuine          | test       |                   0.713652 |
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| MFCC               | Deepfake         | training   |                   0.727663 |
+| MFCC               | Deepfake         | validation |                   0.721183 |
+| MFCC               | Deepfake         | test       |                   0.728241 |
+| MFCC               | Genuine          | training   |                   0.701033 |
+| MFCC               | Genuine          | validation |                   0.701497 |
+| MFCC               | Genuine          | test       |                   0.707249 |
+| WavLM-Base/Frozen  | Deepfake         | training   |                   0.669932 |
+| WavLM-Base/Frozen  | Deepfake         | validation |                   0.667618 |
+| WavLM-Base/Frozen  | Deepfake         | test       |                   0.671599 |
+| WavLM-Base/Frozen  | Genuine          | training   |                   0.711452 |
+| WavLM-Base/Frozen  | Genuine          | validation |                   0.710852 |
+| WavLM-Base/Frozen  | Genuine          | test       |                   0.713652 |
+| WavLM-Large/Frozen | Deepfake         | training   |                   0.633382 |
+| WavLM-Large/Frozen | Deepfake         | validation |                   0.643552 |
+| WavLM-Large/Frozen | Deepfake         | test       |               **0.64387**  |
+| WavLM-Large/Frozen | Genuine          | training   |               **0.636669** |
+| WavLM-Large/Frozen | Genuine          | validation |               **0.629064** |
+| WavLM-Large/Frozen | Genuine          | test       |                   0.651273 |
 
 - **WavLM-Base/Frozen** front-end generally outperforms **MFCC** in terms of EER for both deepfake and genuine datasets, particularly with deepfake data.
 - **Genuine datasets** show slightly higher EER compared to deepfake datasets with WavLM, suggesting that deepfake datasets may be easier to verify for this model.
 
 ## Deepfake Detection
-| Front-End         | Triplet Mining   | Dataset    |   Deepfake Detection EER |
-|:------------------|:-----------------|:-----------|-------------------------:|
-| MFCC              | Deepfake         | training   |                 0.670413 |
-| MFCC              | Deepfake         | validation |                 0.663193 |
-| MFCC              | Deepfake         | test       |                 0.672118 |
-| MFCC              | Genuine          | training   |             **0.538294** |
-| MFCC              | Genuine          | validation |             **0.544037** |
-| MFCC              | Genuine          | test       |                 0.543519 |
-| WavLM-Base/Frozen | Deepfake         | training   |                 0.739727 |
-| WavLM-Base/Frozen | Deepfake         | validation |                 0.739647 |
-| WavLM-Base/Frozen | Deepfake         | test       |                 0.748872 |
-| WavLM-Base/Frozen | Genuine          | training   |                 0.541659 |
-| WavLM-Base/Frozen | Genuine          | validation |                 0.55832  |
-| WavLM-Base/Frozen | Genuine          | test       |             **0.536989** |
+| Front-End          | Triplet Mining   | Dataset    |   Deepfake Detection EER |
+|:-------------------|:-----------------|:-----------|-------------------------:|
+| MFCC               | Deepfake         | training   |                 0.670413 |
+| MFCC               | Deepfake         | validation |                 0.663193 |
+| MFCC               | Deepfake         | test       |                 0.672118 |
+| MFCC               | Genuine          | training   |             **0.538294** |
+| MFCC               | Genuine          | validation |             **0.544037** |
+| MFCC               | Genuine          | test       |                 0.543519 |
+| WavLM-Base/Frozen  | Deepfake         | training   |                 0.739727 |
+| WavLM-Base/Frozen  | Deepfake         | validation |                 0.739647 |
+| WavLM-Base/Frozen  | Deepfake         | test       |                 0.748872 |
+| WavLM-Base/Frozen  | Genuine          | training   |                 0.541659 |
+| WavLM-Base/Frozen  | Genuine          | validation |                 0.55832  |
+| WavLM-Base/Frozen  | Genuine          | test       |             **0.536989** |
+| WavLM-Large/Frozen | Deepfake         | training   |                 0.660818 |
+| WavLM-Large/Frozen | Deepfake         | validation |                 0.669061 |
+| WavLM-Large/Frozen | Deepfake         | test       |                 0.674733 |
+| WavLM-Large/Frozen | Genuine          | training   |                 0.565944 |
+| WavLM-Large/Frozen | Genuine          | validation |                 0.572612 |
+| WavLM-Large/Frozen | Genuine          | test       |                 0.575025 |
 
 - **MFCC** front-end shows significantly better performance in detecting deepfakes with genuine datasets compared to the **WavLM-Base/Frozen**.
 - The **Genuine dataset** consistently performs better in deepfake detection across both front-ends, highlighting that genuine audio may provide more reliable features for detecting anomalies.
