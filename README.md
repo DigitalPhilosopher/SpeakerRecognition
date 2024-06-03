@@ -298,7 +298,7 @@ python source/Experiments.py --experiments experiments.txt
 | WavLM-Large/Frozen | Genuine          | validation |               **0.629064** |
 | WavLM-Large/Frozen | Genuine          | test       |                   0.651273 |
 
-- **WavLM-Base/Frozen** front-end generally outperforms **MFCC** in terms of EER for both deepfake and genuine datasets, particularly with deepfake data.
+- **WavLM-Large/Frozen** front-end generally outperforms **MFCC** and **WavLM-Base/Frozen** in terms of EER for both deepfake and genuine datasets, particularly with deepfake data.
 - **Genuine datasets** show slightly higher EER compared to deepfake datasets with WavLM, suggesting that deepfake datasets may be easier to verify for this model.
 
 ## Deepfake Detection
@@ -323,7 +323,7 @@ python source/Experiments.py --experiments experiments.txt
 | WavLM-Large/Frozen | Genuine          | validation |                 0.572612 |
 | WavLM-Large/Frozen | Genuine          | test       |                 0.575025 |
 
-- **MFCC** front-end shows significantly better performance in detecting deepfakes with genuine datasets compared to the **WavLM-Base/Frozen**.
+- **MFCC** front-end shows significantly better performance in detecting deepfakes with genuine datasets compared to the **WavLM-Base/Frozen** and **WavLM-Large/Frozen**.
 - The **Genuine dataset** consistently performs better in deepfake detection across both front-ends, highlighting that genuine audio may provide more reliable features for detecting anomalies.
 
 ## Conclusion
