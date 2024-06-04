@@ -329,8 +329,21 @@ python source/Experiments.py --experiments experiments.txt
 ## Conclusion
 The choice of front-end and dataset significantly impacts the performance of both speaker verification and deepfake detection systems.
 
-- **WavLM-Base/Frozen** front-end performs better in speaker verification, especially with deepfake datasets.
+- **WavLM-Large/Frozen** front-end performs better in speaker verification, especially with deepfake datasets.
 - **MFCC** front-end excels in deepfake detection, particularly when using genuine datasets.
+
+However, the evaluation of the trained models suggest, that the datasets is not sophisticated enough, to train a model for automatic speaker verification on them. With the inability to train speaker verification, the detection of deepfakes using feature embeddings of authentic audio samples is also not feasible.
+
+There are some possible alterations, that could result in better performance in speaker verification, as well as deepfake detection:
+
+- [ ] Train the model on different datasets
+  - [ ] VoxCeleb
+  - [ ] ASVSpoof 2014
+  - [ ] Full LibriTTS Dataset
+- [ ] Use the pretrained WavLM-Large/ECAPA-TDNN Model from Espnet-SPK and fine-tune to deepfake detecion using the BSI dataset
+- [ ] Use pretrained Models, to fine-tune on single speaker verification and deepfake detection
+- [ ] Change the trained model to use two embeddings at the same time. Instead of using a mono audio spur, this could use a dual audio input for audio in question and real audio. This would not be trained using triplet loss.
+
 
 # References
 
