@@ -291,6 +291,9 @@ python source/Experiments.py --experiments experiments.txt
 | WavLM-Base/Frozen  | Genuine          | training   |                   0.711452 |
 | WavLM-Base/Frozen  | Genuine          | validation |                   0.710852 |
 | WavLM-Base/Frozen  | Genuine          | test       |                   0.713652 |
+| WavLM-Base/Joint   | Deepfake         | training   |                   0.676053 |
+| WavLM-Base/Joint   | Deepfake         | validation |                   0.6809   |
+| WavLM-Base/Joint   | Deepfake         | test       |                   0.679986 |
 | WavLM-Base/Joint   | Genuine          | training   |               **0.563248** |
 | WavLM-Base/Joint   | Genuine          | validation |               **0.565732** |
 | WavLM-Base/Joint   | Genuine          | test       |               **0.553168** |
@@ -319,6 +322,9 @@ python source/Experiments.py --experiments experiments.txt
 | WavLM-Base/Frozen  | Genuine          | training   |                 0.541659 |
 | WavLM-Base/Frozen  | Genuine          | validation |                 0.55832  |
 | WavLM-Base/Frozen  | Genuine          | test       |                 0.536989 |
+| WavLM-Base/Joint   | Deepfake         | training   |                 0.719853 |
+| WavLM-Base/Joint   | Deepfake         | validation |                 0.723511 |
+| WavLM-Base/Joint   | Deepfake         | test       |                 0.732477 |
 | WavLM-Base/Joint   | Genuine          | training   |             **0.524131** |
 | WavLM-Base/Joint   | Genuine          | validation |             **0.531101** |
 | WavLM-Base/Joint   | Genuine          | test       |             **0.528507** |
