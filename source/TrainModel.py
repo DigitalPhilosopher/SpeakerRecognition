@@ -7,19 +7,19 @@ from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_
 import torch.optim as optim
 from torch.nn import TripletMarginWithDistanceLoss
 from torch.utils.data import DataLoader
-from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn
+from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn, BSILoader
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 
 
 def define_variables(args):
-    global MODEL, FOLDER, TAGS
+    global MODEL, DATASET, FOLDER, TAGS
     global LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE
     global MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, WEIGHT_DECAY, AMSGRAD
     global DOWNSAMPLING_TRAIN, DOWNSAMPLING_VALID, DOWNSAMPLING_TEST
 
-    MODEL, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_training_variables(
+    MODEL, DATASET, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_training_variables(
         args)
 
 
@@ -51,22 +51,26 @@ def create_dataset(args):
     else:
         def frontend(x): return x
 
-    audio_dataset = tripletLossDataset(
-        train_labels, frontend=frontend, downsampling=DOWNSAMPLING_TRAIN)
+    loader = DATASET.split(".")[0]
+    if loader == "BSI":
+        loader = BSILoader
+
+    audio_dataset = tripletLossDataset(loader=loader(
+        train_labels, frontend, DOWNSAMPLING_TRAIN))
     audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True,
                                   drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_triplet_wav_fn)
 
     validation_dataloader = None
     if DOWNSAMPLING_VALID > 0:
         validation_dataset = ValidationDataset(
-            dev_labels, frontend=frontend, downsampling=DOWNSAMPLING_VALID)
+            loader=loader(dev_labels, frontend, DOWNSAMPLING_VALID))
         validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True,
                                            drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
     test_dataloader = None
     if DOWNSAMPLING_TEST > 0:
-        test_dataset = ValidationDataset(
-            test_labels, frontend=frontend, downsampling=DOWNSAMPLING_TEST)
+        test_dataset = ValidationDataset(loader=loader(
+            test_labels, frontend, DOWNSAMPLING_TEST))
         test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True,
                                      drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 

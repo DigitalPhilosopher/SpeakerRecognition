@@ -79,7 +79,7 @@ def get_training_arguments():
 
 
 def get_training_variables(args):
-    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
+    MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
         args)
     DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_downsampling_variables(
         args)
@@ -121,14 +121,14 @@ def get_training_variables(args):
     TAGS["Model"] = "joint"
     TAGS["Triplet Mining Strategy"] = "Random Triplet Mining"
 
-    if args.dataset == "genuine":
+    if DATASET.split(".")[1] == "genuine":
         FOLDER += "/Genuine"
         TAGS["Dataset"] = "Genuine"
     else:
         FOLDER += "/Deepfake"
         TAGS["Dataset"] = "Deepfake"
 
-    return MODEL, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID
+    return MODEL, DATASET, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, EPOCHS, VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID
 
 
 def get_inference_arguments():
@@ -164,7 +164,7 @@ def get_inference_arguments():
 
 
 def get_inference_variables(args):
-    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
+    MODEL, _, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
         args)
 
     REFERENCE_AUDIO = args.reference_audio
@@ -228,7 +228,7 @@ def get_analytics_arguments():
 
 
 def get_analytics_variables(args):
-    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
+    MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
         args)
     DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_downsampling_variables(
         args)
@@ -242,7 +242,7 @@ def get_analytics_variables(args):
     NO_GENUINE = not args.analyze_genuine
     NO_DEEPFAKE = not args.analyze_deepfake
 
-    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE
+    return MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE
 
 
 def add_general_arguments(parser):
@@ -251,7 +251,7 @@ def add_general_arguments(parser):
         "--dataset",
         type=str,
         required=True,
-        help="Which dataset to use (genuine | deepfake)"
+        help="Which dataset to use (LibriSpeech.genuine | VoxCeleb.genuine | BSI.genuine | BSI.deepfake)"
     )
 
     # Frontend
@@ -351,12 +351,14 @@ def get_general_variables(args):
 
     MODEL += "_ECAPA-TDNN_Random-Triplet-Mining"
 
-    if args.dataset == "genuine":
-        MODEL += "_Genuine"
+    DATASET = args.dataset
+    MODEL += "_" + DATASET.split(".")[0]
+    if DATASET.split(".")[1] == "genuine":
+        MODEL += "-Genuine"
     else:
-        MODEL += "_Deepfake"
+        MODEL += "-Deepfake"
 
-    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE
+    return MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE
 
 
 def get_downsampling_variables(args):

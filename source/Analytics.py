@@ -1,7 +1,7 @@
 import sys
 import os
 import warnings
-from dataloader import ValidationDataset, collate_valid_fn
+from dataloader import ValidationDataset, collate_valid_fn, BSILoader
 from utils import load_deepfake_dataset, get_device, get_analytics_arguments, get_analytics_variables, ModelValidator
 import torch
 from torch.utils.data import DataLoader
@@ -12,9 +12,9 @@ import pandas as pd
 
 
 def define_variables(args):
-    global MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE
+    global MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE
 
-    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE = get_analytics_variables(
+    MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE = get_analytics_variables(
         args)
 
 
@@ -37,9 +37,13 @@ def create_dataset(args):
     else:
         def frontend(x): return x
 
+    loader = DATASET.split(".")[0]
+    if loader == "BSI":
+        loader = BSILoader
+
     if TRAIN:
-        audio_dataset = ValidationDataset(
-            train_labels, frontend=frontend, downsampling=DOWNSAMPLING_TRAIN)
+        audio_dataset = ValidationDataset(loader=loader(
+            train_labels, frontend, DOWNSAMPLING_TRAIN))
         if NO_DEEPFAKE:
             audio_dataset.data_list = audio_dataset.data_list[
                 audio_dataset.data_list["is_genuine"] == 1]
@@ -48,7 +52,7 @@ def create_dataset(args):
 
     if VALID:
         validation_dataset = ValidationDataset(
-            dev_labels, frontend=frontend, downsampling=DOWNSAMPLING_VALID)
+            loader=loader(dev_labels, frontend, DOWNSAMPLING_VALID))
         if NO_DEEPFAKE:
             validation_dataset.data_list = validation_dataset.data_list[
                 validation_dataset.data_list["is_genuine"] == 1]
@@ -56,8 +60,8 @@ def create_dataset(args):
                                            drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
     if TEST:
-        test_dataset = ValidationDataset(
-            test_labels, frontend=frontend, downsampling=DOWNSAMPLING_TEST)
+        test_dataset = ValidationDataset(loader=loader(
+            test_labels, frontend, DOWNSAMPLING_TEST))
         if NO_DEEPFAKE:
             test_dataset.data_list = test_dataset.data_list[test_dataset.data_list["is_genuine"] == 1]
         test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True,

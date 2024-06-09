@@ -72,7 +72,7 @@ options:
                         Downsample validation data by a factor (default: 0 - no downsampling)
   --downsample_test DOWNSAMPLE_TEST
                         Downsample test data by a factor (default: 0 - no downsampling)
-  --dataset DATASET     Which dataset to use (genuine | deepfake)
+  --dataset DATASET     Which dataset to use (LibriSpeech.genuine | VoxCeleb.genuine | BSI.genuine | BSI.deepfake)
   --mfccs MFCCS         Number of MFCC features to extract (default: 13)
   --sample_rate SAMPLE_RATE
                         Sample rate for the audio data (default: 16000)
@@ -102,24 +102,24 @@ Below are some examples to help you get started with training the model using di
 
 ```bash
 # Frontend: MFCC
-python source/TrainModel.py --frontend mfcc --dataset genuine --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.2 --mfccs 80 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend mfcc --dataset deepfake --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.2 --mfccs 80 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend mfcc --dataset BSI.genuine --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.2 --mfccs 80 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend mfcc --dataset BSI.deepfake --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.2 --mfccs 80 --downsample_valid 25 --downsample_test 50
 
 # Frontend: WavLM Base with frozen parameters
-python source/TrainModel.py --frontend wavlm_base --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend wavlm_base --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --dataset BSI.genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --dataset BSI.deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
 
 # Frontend: WavLM Base with jointly trained parameters
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
 
 # Frontend: WavLM Large with frozen parameters
-python source/TrainModel.py --frontend wavlm_large --dataset genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend wavlm_large --dataset deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_large --dataset BSI.genuine --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_large --dataset BSI.deepfake --batch_size 8 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
 
 # Frontend: WavLM Base with jointly trained parameters
-python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset genuine --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
-python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset deepfake --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset BSI.genuine --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset BSI.deepfake --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
 ```
 
 **Display training results**
@@ -149,7 +149,7 @@ options:
                         Audio in question to be speaker
   --threshold THRESHOLD
                         Threshold that can not be passed for it to beeing a genuine audio
-  --dataset DATASET     Which dataset to use (genuine | deepfake)
+  --dataset DATASET     Which dataset to use (LibriSpeech.genuine | VoxCeleb.genuine | BSI.genuine | BSI.deepfake)
   --mfccs MFCCS         Number of MFCC features to extract (default: 13)
   --sample_rate SAMPLE_RATE
                         Sample rate for the audio data (default: 16000)
@@ -166,24 +166,24 @@ Below are some examples to help you get started with basic inference on the trai
 
 ```bash
 # Frontend: MFCC
-python source/Inference.py --frontend mfcc --dataset genuine --mfccs 80 --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
-python source/Inference.py --frontend mfcc --dataset deepfake --mfccs 80 --reference_audio ..data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend mfcc --dataset BSI.genuine --mfccs 80 --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend mfcc --dataset BSI.deepfake --mfccs 80 --reference_audio ..data/reference.wav --audio_in_question ../data/question.wav
 
 # Frontend: WavLM Base with frozen parameters
-python source/Inference.py --frontend wavlm_base --dataset genuine --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
-python source/Inference.py --frontend wavlm_base --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_base --dataset BSI.genuine --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_base --dataset BSI.deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
 
 # Frontend: WavLM Base with jointly trained parameters
-python source/Inference.py --frontend wavlm_base --frozen 0 --dataset genuine  --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
-python source/Inference.py --frontend wavlm_base --frozen 0 --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_base --frozen 0 --dataset BSI.genuine  --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
 
 # Frontend: WavLM Large with frozen parameters
-python source/Inference.py --frontend wavlm_large --dataset genuine --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
-python source/Inference.py --frontend wavlm_large --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_large --dataset BSI.genuine --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_large --dataset BSI.deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
 
 # Frontend: WavLM Large with jointly trained parameters
-python source/Inference.py --frontend wavlm_large --frozen 0 --dataset genuine  --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
-python source/Inference.py --frontend wavlm_large --frozen 0 --dataset deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_large --frozen 0 --dataset BSI.genuine  --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
+python source/Inference.py --frontend wavlm_large --frozen 0 --dataset BSI.deepfake --reference_audio ../data/reference.wav --audio_in_question ../data/question.wav
 ```
 
 
@@ -210,7 +210,7 @@ options:
                         Downsample validation data by a factor (default: 0 - no downsampling)
   --downsample_test DOWNSAMPLE_TEST
                         Downsample test data by a factor (default: 0 - no downsampling)
-  --dataset DATASET     Which dataset to use (genuine | deepfake)
+  --dataset DATASET     Which dataset to use (LibriSpeech.genuine | VoxCeleb.genuine | BSI.genuine | BSI.deepfake)
   --mfccs MFCCS         Number of MFCC features to extract (default: 13)
   --sample_rate SAMPLE_RATE
                         Sample rate for the audio data (default: 16000)
@@ -233,24 +233,24 @@ Below are some examples to help you get started with starting the analytics on t
 
 ```bash
 # Frontend: MFCC
-python source/Analytics.py --frontend mfcc --dataset genuine --mfccs 80 --batch_size 16 --downsample_train 1000
-python source/Analytics.py --frontend mfcc --dataset deepfake --mfccs 80 --batch_size 16 --downsample_train 1000
+python source/Analytics.py --frontend mfcc --dataset BSI.genuine --mfccs 80 --batch_size 16 --downsample_train 1000
+python source/Analytics.py --frontend mfcc --dataset BSI.deepfake --mfccs 80 --batch_size 16 --downsample_train 1000
 
 # Frontend: WavLM Base with frozen parameters
-python source/Analytics.py --frontend wavlm_base --dataset genuine --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_base --dataset deepfake --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --dataset BSI.genuine --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --dataset BSI.deepfake --batch_size 8 --downsample_train 1000
 
 # Frontend: WavLM Base with jointly trained parameters
-python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset genuine --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset deepfake --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset BSI.genuine --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --batch_size 8 --downsample_train 1000
 
 # Frontend: WavLM Large with frozen parameters
-python source/Analytics.py --frontend wavlm_large --dataset genuine --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_large --dataset deepfake --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --dataset BSI.genuine --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --dataset BSI.deepfake --batch_size 8 --downsample_train 1000
 
 # Frontend: WavLM Large with jointly trained parameters
-python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset genuine --batch_size 8 --downsample_train 1000
-python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset deepfake --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset BSI.genuine --batch_size 8 --downsample_train 1000
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset BSI.deepfake --batch_size 8 --downsample_train 1000
 ```
 
 
@@ -352,7 +352,9 @@ There are some possible alterations, that could result in better performance in 
   - [ ] ASVSpoof 2014
   - [ ] Full LibriTTS Dataset
 - [ ] Use the pretrained WavLM-Large/ECAPA-TDNN Model from Espnet-SPK and fine-tune to deepfake detecion using the BSI dataset
-- [ ] Use pretrained Models, to fine-tune on single speaker verification and deepfake detection
+- [ ] Use pretrained Models, to fine-tune on
+  - [ ] single speaker verification and
+  - [ ] deepfake detection
 - [ ] Change the trained model to use two embeddings at the same time. Instead of using a mono audio spur, this could use a dual audio input for audio in question and real audio. This would not be trained using triplet loss.
 
 
