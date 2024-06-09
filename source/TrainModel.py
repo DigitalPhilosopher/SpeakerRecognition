@@ -40,9 +40,10 @@ def create_dataset(args):
 
     train_labels, dev_labels, test_labels = load_deepfake_dataset()
 
-    if args.dataset == "genuine":
+    data = DATASET.split(".")[1]
+    if data == "genuine":
         tripletLossDataset = RandomTripletLossDataset
-    elif args.dataset == "deepfake":
+    elif data == "deepfake":
         tripletLossDataset = DeepfakeRandomTripletLossDataset
 
     if args.frontend == "mfcc":

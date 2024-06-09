@@ -1,7 +1,7 @@
 import sys
 import os
 import warnings
-from dataloader import read_audio
+from dataloader import BSILoader
 from utils import get_device, get_inference_arguments, get_inference_variables, compute_distance
 import torch
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
@@ -10,9 +10,9 @@ from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 
 
 def define_variables(args):
-    global MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
+    global MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
 
-    MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO = get_inference_variables(
+    MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO = get_inference_variables(
         args)
 
 
@@ -33,8 +33,12 @@ def create_dataset(args):
     else:
         def frontend(x): return x
 
-    reference = read_audio(REFERENCE_AUDIO, frontend).unsqueeze(0)
-    question = read_audio(QUESTION_AUDIO, frontend).unsqueeze(0)
+    loader = DATASET.split(".")[0]
+    if loader == "BSI":
+        loader = BSILoader([], frontend, 0)
+
+    reference = loader.read_audio(REFERENCE_AUDIO, frontend).unsqueeze(0)
+    question = loader.read_audio(QUESTION_AUDIO, frontend).unsqueeze(0)
 
 
 def get_model(args):

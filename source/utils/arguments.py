@@ -164,14 +164,14 @@ def get_inference_arguments():
 
 
 def get_inference_variables(args):
-    MODEL, _, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
+    MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
         args)
 
     REFERENCE_AUDIO = args.reference_audio
     QUESTION_AUDIO = args.audio_in_question
     THRESHOLD = args.threshold
 
-    return MODEL, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
+    return MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
 
 
 def get_analytics_arguments():
