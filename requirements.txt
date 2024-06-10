@@ -8,6 +8,7 @@ tabulate
 # Data Analysis and Processing
 pandas==2.2.2
 matplotlib==3.8.4
+datasets
 
 # Speech Processing
 speechbrain==1.0.0

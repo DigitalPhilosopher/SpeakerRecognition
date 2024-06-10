@@ -9,25 +9,10 @@ import gc
 from .distance import l2_normalize
 
 
-def load_genuine_dataset():
-    labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, _ = get_label_files(
-        use_bsi_tts=False,
-        use_bsi_vocoder=False,
-        use_bsi_vc=False,
-        use_bsi_genuine=True,
-        use_bsi_ttsvctk=False,
-        use_bsi_ttslj=False,
-        use_bsi_ttsother=False,
-        use_bsi_vocoderlj=False,
-        use_wavefake=False,
-        use_LibriSeVoc=False,
-        use_lj=False,
-        use_asv2019=False,
-    )
-    return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
+def load_deepfake_dataset(dataset):
+    if dataset == "LibriSpeech":
+        return [{"name": "clean", "split": "train.100"}, {"name": "clean", "split": "train.360"}], [{"name": "clean", "split": "dev"}], [{"name": "clean", "split": "test"}]
 
-
-def load_deepfake_dataset():
     labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, _ = get_label_files(
         use_bsi_tts=True,
         use_bsi_vocoder=False,

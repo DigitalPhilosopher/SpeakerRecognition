@@ -1,7 +1,7 @@
 import sys
 import os
 import warnings
-from dataloader import ValidationDataset, collate_valid_fn, BSILoader
+from dataloader import ValidationDataset, collate_valid_fn, BSILoader, LibriSpeechLoader
 from utils import load_deepfake_dataset, get_device, get_analytics_arguments, get_analytics_variables, ModelValidator
 import torch
 from torch.utils.data import DataLoader
@@ -29,7 +29,8 @@ def config():
 def create_dataset(args):
     global audio_dataloader, validation_dataloader, test_dataloader
 
-    train_labels, dev_labels, test_labels = load_deepfake_dataset()
+    train_labels, dev_labels, test_labels = load_deepfake_dataset(
+        DATASET.split(".")[0])
 
     if args.frontend == "mfcc":
         frontend = MFCCTransform(
@@ -40,6 +41,8 @@ def create_dataset(args):
     loader = DATASET.split(".")[0]
     if loader == "BSI":
         loader = BSILoader
+    elif loader == "LibriSpeech":
+        loader = LibriSpeechLoader
 
     if TRAIN:
         audio_dataset = ValidationDataset(loader=loader(

@@ -1,19 +1,19 @@
 # Training
 ## MFCC
-python source/TrainModel.py --frontend mfcc --dataset BSI.genuine --batch_size 16 --epochs 1 --validation_rate 1 --margin 0.2 --mfccs 13 --downsample_train 2 --downsample_valid 2 --downsample_test 2
-python source/TrainModel.py --frontend mfcc --dataset BSI.deepfake --batch_size 16 --epochs 1 --validation_rate 1 --margin 0.2 --mfccs 13 --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/TrainModel.py --frontend mfcc --dataset BSI.genuine --batch_size 32 --epochs 1 --validation_rate 1 --margin 0.2 --mfccs 13 --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/TrainModel.py --frontend mfcc --dataset BSI.deepfake --batch_size 32 --epochs 1 --validation_rate 1 --margin 0.2 --mfccs 13 --downsample_train 2 --downsample_valid 2 --downsample_test 2
 
 ## WavLM Base Frozen
-python source/TrainModel.py --frontend wavlm_base --dataset BSI.genuine --batch_size 8 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
-python source/TrainModel.py --frontend wavlm_base --dataset BSI.deepfake --batch_size 8 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/TrainModel.py --frontend wavlm_base --dataset BSI.genuine --batch_size 16 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/TrainModel.py --frontend wavlm_base --dataset BSI.deepfake --batch_size 16 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
 
 ## WavLM Base Joint
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.genuine --batch_size 8 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --batch_size 8 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.genuine --batch_size 4 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --batch_size 4 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
 
 ## WavLM Large Frozen
-python source/TrainModel.py --frontend wavlm_large --dataset BSI.genuine --batch_size 2 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
-python source/TrainModel.py --frontend wavlm_large --dataset BSI.deepfake --batch_size 2 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/TrainModel.py --frontend wavlm_large --dataset BSI.genuine --batch_size 16 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/TrainModel.py --frontend wavlm_large --dataset BSI.deepfake --batch_size 16 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
 
 ## WavLM Large Joint
 python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset BSI.genuine --batch_size 2 --epochs 1 --validation_rate 1 --margin 0.2 --downsample_train 2 --downsample_valid 2 --downsample_test 2
@@ -22,21 +22,21 @@ python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset BSI.deep
 
 # Analytics
 ## MFCC
-python source/Analytics.py --frontend mfcc --dataset BSI.genuine --mfccs 13 --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
-python source/Analytics.py --frontend mfcc --dataset BSI.deepfake --mfccs 13 --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend mfcc --dataset BSI.genuine --mfccs 13 --batch_size 32 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend mfcc --dataset BSI.deepfake --mfccs 13 --batch_size 32 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
 
 ## WavLM Base Frozen
-python source/Analytics.py --frontend wavlm_base --dataset BSI.genuine --batch_size 8 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
-python source/Analytics.py --frontend wavlm_base --dataset BSI.deepfake --batch_size 8 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend wavlm_base --dataset BSI.genuine --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend wavlm_base --dataset BSI.deepfake --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
 
 ## WavLM Base Joint
-python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset BSI.genuine --batch_size 8 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
-python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --batch_size 8 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset BSI.genuine --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
 
 ### WavLM Large Frozen
-python source/Analytics.py --frontend wavlm_large --dataset BSI.genuine --batch_size 2 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
-python source/Analytics.py --frontend wavlm_large --dataset BSI.deepfake --batch_size 2 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend wavlm_large --dataset BSI.genuine --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend wavlm_large --dataset BSI.deepfake --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
 
 ## WavLM Large Joint
-python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset BSI.genuine --batch_size 2 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
-python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset BSI.deepfake --batch_size 2 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset BSI.genuine --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset BSI.deepfake --batch_size 16 --train --valid --test --downsample_train 2 --downsample_valid 2 --downsample_test 2
