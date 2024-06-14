@@ -57,7 +57,7 @@ class ModelValidator:
                     prefix + 'minDCF - Speaker Verification': sv_min_dcf
                 }, step=step)
 
-        if deepfake_eer:
+        if deepfake_eer and len(deepfake_embeddings) > 0:
             genuine_deepfake_scores, genuine_deepfake_labels, method_scores = self.generate_deepfake_pairwise_scores(
                 labels, embeddings, deepfake_labels, deepfake_embeddings, deepfake_methods)
             dd_eer, dd_threshold = self.compute_eer(

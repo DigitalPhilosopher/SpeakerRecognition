@@ -21,9 +21,6 @@ class Loader(Dataset, ABC):
             self.genuine = self.data_list[self.data_list["is_genuine"] == 1].reset_index(
                 drop=True)
 
-        print(directory)
-        print(self.data_list.head())
-
     @ abstractmethod
     def read_data(self, directory):
         pass
