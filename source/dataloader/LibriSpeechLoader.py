@@ -5,7 +5,7 @@ import os
 
 class LibriSpeechLoader(Loader):
     def read_data(self, directory):
-        base = "/mnt/e/LibriSpeech/"  # TODO clean this
+        base = f"{os.getcwd()}/../data/LibriSpeech/"
         data_list = []
         for set in directory:
             split = set['split'].split(".")

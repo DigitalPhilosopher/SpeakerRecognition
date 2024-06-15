@@ -1,0 +1,32 @@
+# Training
+## MFCC
+python source/TrainModel.py --frontend mfcc --dataset LibriSpeech.genuine --batch_size 32 --epochs 20 --validation_rate 5 --margin 0.2 --mfccs 80 --downsample_valid 25 --downsample_test 50
+
+## WavLM Base Frozen
+python source/TrainModel.py --frontend wavlm_base --dataset LibriSpeech.genuine --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+
+## WavLM Base Joint
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset LibriSpeech.genuine --batch_size 4 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+
+## WavLM Large Frozen
+python source/TrainModel.py --frontend wavlm_large --dataset LibriSpeech.genuine --batch_size 16 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+
+## WavLM Large Joint
+python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset LibriSpeech.genuine --batch_size 2 --epochs 20 --validation_rate 5 --margin 0.2 --downsample_valid 25 --downsample_test 50
+
+
+# Analytics
+## MFCC
+python source/Analytics.py --frontend mfcc --dataset LibriSpeech.genuine --mfccs 80 --batch_size 32 --train --valid --test --downsample_train 1000
+
+## WavLM Base Frozen
+python source/Analytics.py --frontend wavlm_base --dataset LibriSpeech.genuine --batch_size 16 --train --valid --test --downsample_train 1000
+
+## WavLM Base Joint
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset LibriSpeech.genuine --batch_size 16 --train --valid --test --downsample_train 1000
+
+## WavLM Large Frozen
+python source/Analytics.py --frontend wavlm_large --dataset LibriSpeech.genuine --batch_size 16 --train --valid --test --downsample_train 1000
+
+## WavLM Large Joint
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset LibriSpeech.genuine --batch_size 16 --train --valid --test --downsample_train 1000

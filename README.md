@@ -47,9 +47,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Add a symbolic link to extraction utils (This is the code given by the Federal Office for Information Security)
+4. Add a symbolic link or copy data to data dir
 ```bash
-ln -s /path/to/extraction_utils source/extraction_utils
+ln -s /path/to/BSI_DATASET data/BSI
+ln -s /path/to/LibriSpeech data/LibriSpeech
 ```
 
 # Train Model

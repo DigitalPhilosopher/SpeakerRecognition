@@ -11,7 +11,17 @@ from .distance import l2_normalize
 
 def load_deepfake_dataset(dataset):
     if dataset == "LibriSpeech":
-        return [{"name": "clean", "split": "train.100"}, {"name": "clean", "split": "train.360"}], [{"name": "clean", "split": "dev"}], [{"name": "clean", "split": "test"}]
+        return [
+            {"name": "clean", "split": "train.100"},
+            {"name": "clean", "split": "train.360"},
+            # {"name": "other", "split": "train.500"}
+        ], [
+            {"name": "clean", "split": "dev"},
+            # {"name": "other", "split": "dev"}
+        ], [
+            {"name": "clean", "split": "test"},
+            # {"name": "other", "split": "test"}
+        ]
 
     labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, _ = get_label_files(
         use_bsi_tts=True,
