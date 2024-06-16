@@ -13,7 +13,7 @@ def load_deepfake_dataset(dataset):
     if dataset == "LibriSpeech":
         return [
             {"name": "clean", "split": "train.100"},
-            {"name": "clean", "split": "train.360"},
+            # {"name": "clean", "split": "train.360"},
             # {"name": "other", "split": "train.500"}
         ], [
             {"name": "clean", "split": "dev"},
