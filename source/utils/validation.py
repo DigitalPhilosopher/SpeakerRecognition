@@ -1,6 +1,7 @@
 import torch
 import time
 import numpy as np
+import pandas as pd
 import mlflow
 import mlflow.pytorch
 from collections import defaultdict
@@ -11,13 +12,25 @@ from tqdm import tqdm
 from .distance import compute_distance, l2_normalize
 
 
+def get_valid_sets(name):
+    valid_set = []
+    df_valid_set = []
+
+    if name == "LibriSpeech":
+        valid_set = pd.read_csv("../validation_sets/LibriSpeech/valid.csv")
+
+    return valid_set, df_valid_set
+
+
 class ModelValidator:
 
     ##### INIT #####
 
-    def __init__(self, valid_dataloader, device):
+    def __init__(self, valid_dataloader, device, valid_set=[], df_valid_set=[]):
         self.dataloader = valid_dataloader
         self.device = device
+        self.valid_set = valid_set
+        self.df_valid_set = df_valid_set
 
     ##### VALIDATION #####
     def validate_model(self, model, step=-1, speaker_eer=True, deepfake_eer=True, mlflow_logging=True, prefix=""):
@@ -34,11 +47,15 @@ class ModelValidator:
 
         model.eval()
 
-        embeddings, labels, deepfake_embeddings, deepfake_labels, deepfake_methods = self.generate_embeddings(
+        embeddings, labels, utterances, deepfake_embeddings, deepfake_labels, deepfake_utterances, deepfake_methods = self.generate_embeddings(
             model)
 
         if speaker_eer:
-            scores, score_labels = self.pairwise_scores(embeddings, labels)
+            if len(self.valid_set) > 0:
+                scores, score_labels = self.pairwise_scores_with_set(
+                    embeddings, utterances, self.valid_set)
+            else:
+                scores, score_labels = self.pairwise_scores(embeddings, labels)
             sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
             sv_min_dcf = self.compute_min_dcf(scores, score_labels)
             TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
@@ -101,14 +118,16 @@ class ModelValidator:
     def generate_embeddings(self, model):
         embeddings = []
         labels = []
+        utterances = []
 
         deepfake_embeddings = []
         deepfake_labels = []
+        deepfake_utterances = []
         deepfake_methods = []
 
         with torch.no_grad():
             for data in tqdm(self.dataloader, desc="Generating embeddings"):
-                inputs, targets, is_genuine, method = data
+                inputs, targets, utterance_ids, is_genuine, method = data
                 inputs = inputs.to(self.device)
                 outputs = model(inputs)
                 embedding_output = outputs.data.cpu()
@@ -117,10 +136,13 @@ class ModelValidator:
                 # Separate embeddings and labels for genuine and deepfake
                 embeddings.extend(embedding_output[genuine_indices])
                 labels.extend(targets[genuine_indices])
+                utterances.extend(utterance_ids[genuine_indices])
+
                 deepfake_embeddings.extend(embedding_output[~genuine_indices])
                 deepfake_labels.extend(targets[~genuine_indices])
+                deepfake_utterances.extend(utterance_ids[~genuine_indices])
                 deepfake_methods.extend(method[~genuine_indices])
-        return embeddings, labels, deepfake_embeddings, deepfake_labels, deepfake_methods
+        return embeddings, labels, utterances, deepfake_embeddings, deepfake_labels, deepfake_utterances, deepfake_methods
 
     def generate_deepfake_pairwise_scores(self, labels, embeddings, deepfake_labels, deepfake_embeddings, deepfake_methods):
         unique_labels = list(set(labels))
@@ -153,7 +175,7 @@ class ModelValidator:
 
         return genuine_deepfake_scores, genuine_deepfake_labels, method_scores
 
-    def pairwise_scores(self, embeddings, labels):
+    def pairwise_scores(self, embeddings, labels, valid_set=[]):
         scores = []
         score_labels = []
         # Compute pairwise scores
@@ -161,6 +183,23 @@ class ModelValidator:
             scores.append(compute_distance(
                 l2_normalize(emb1), l2_normalize(emb2)))
             score_labels.append(1 if lbl1 == lbl2 else 0)
+        return np.array(scores), np.array(score_labels)
+
+    def pairwise_scores_with_set(self, embeddings, utterances, pairs_df):
+        scores = []
+        score_labels = []
+
+        # Create a dictionary for fast lookup of embeddings by utterance ID
+        embedding_dict = dict(zip(utterances, embeddings))
+
+        # Loop through each row in the pairs_df
+        for _, row in tqdm(pairs_df.iterrows(), desc="Computing pairwise scores", total=pairs_df.shape[0]):
+            emb1 = embedding_dict[row['utterance']]
+            emb2 = embedding_dict[row['utterance_to_check']]
+            scores.append(compute_distance(
+                l2_normalize(emb1), l2_normalize(emb2)))
+            score_labels.append(row['is_same_speaker'])
+
         return np.array(scores), np.array(score_labels)
 
     def compute_eer(self, scores, score_labels):

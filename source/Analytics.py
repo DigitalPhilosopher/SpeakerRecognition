@@ -2,7 +2,7 @@ import sys
 import os
 import warnings
 from dataloader import ValidationDataset, collate_valid_fn, BSILoader, LibriSpeechLoader
-from utils import load_deepfake_dataset, get_device, get_analytics_arguments, get_analytics_variables, ModelValidator
+from utils import load_deepfake_dataset, get_device, get_analytics_arguments, get_analytics_variables, ModelValidator, get_valid_sets
 import torch
 from torch.utils.data import DataLoader
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
@@ -51,7 +51,7 @@ def create_dataset(args):
             audio_dataset.data_list = audio_dataset.data_list[
                 audio_dataset.data_list["is_genuine"] == 1]
         audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                      drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+                                      drop_last=False, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
     if VALID:
         validation_dataset = ValidationDataset(
@@ -60,7 +60,7 @@ def create_dataset(args):
             validation_dataset.data_list = validation_dataset.data_list[
                 validation_dataset.data_list["is_genuine"] == 1]
         validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                           drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+                                           drop_last=False, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
     if TEST:
         test_dataset = ValidationDataset(loader=loader(
@@ -68,7 +68,7 @@ def create_dataset(args):
         if NO_DEEPFAKE:
             test_dataset.data_list = test_dataset.data_list[test_dataset.data_list["is_genuine"] == 1]
         test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                     drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
+                                     drop_last=False, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
 
 def get_model(args):
@@ -118,9 +118,10 @@ def analyze():
 
 
 def get_analytics(dataset_name, dataloader):
+    valid_set, df_valid_set = get_valid_sets(DATASET.split(".")[0])
     print(
         f"Starting to validate the {dataset_name} (model={MODEL}, speaker_eer={(not NO_GENUINE)}, deepfake_eer={(not NO_DEEPFAKE)})")
-    validator = ModelValidator(dataloader, device)
+    validator = ModelValidator(dataloader, device, valid_set, df_valid_set)
     sv_eer, sv_threshold, sv_rates, sv_minDCF, dd_eer, dd_threshold, dd_rates, dd_minDCF = validator.validate_model(
         model=model, speaker_eer=(not NO_GENUINE), deepfake_eer=(not NO_DEEPFAKE), mlflow_logging=False)
 
