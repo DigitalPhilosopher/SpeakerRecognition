@@ -2,7 +2,7 @@ import sys
 import os
 import warnings
 from dataloader import ValidationDataset, collate_valid_fn, BSILoader, LibriSpeechLoader
-from utils import load_deepfake_dataset, get_device, get_analytics_arguments, get_analytics_variables, ModelValidator, get_valid_sets
+from utils import load_deepfake_dataset, get_device, get_analytics_arguments, get_analytics_variables, ModelValidator, get_valid_sets, get_train_sets, get_test_sets
 import torch
 from torch.utils.data import DataLoader
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
@@ -99,16 +99,21 @@ def analyze():
     all_analytics = []
 
     if TRAIN:
-        train_analytics = get_analytics("training dataset", audio_dataloader)
+        _set, df_set = get_train_sets(DATASET.split(".")[0])
+        train_analytics = get_analytics(
+            "training dataset", audio_dataloader, _set, df_set)
         print_analytics("Training Dataset", train_analytics)
         all_analytics.append(train_analytics)
     if VALID:
+        _set, df_set = get_valid_sets(DATASET.split(".")[0])
         valid_analytics = get_analytics(
-            "validation dataset", validation_dataloader)
+            "validation dataset", validation_dataloader, _set, df_set)
         print_analytics("Validation Dataset", valid_analytics)
         all_analytics.append(valid_analytics)
     if TEST:
-        test_analytics = get_analytics("test dataset", test_dataloader)
+        _set, df_set = get_test_sets(DATASET.split(".")[0])
+        test_analytics = get_analytics(
+            "test dataset", test_dataloader, _set, df_set)
         print_analytics("Test Dataset", test_analytics)
         all_analytics.append(test_analytics)
 
@@ -117,11 +122,10 @@ def analyze():
         save_analytics_to_csv(all_analytics_df, "../data/analytics.csv")
 
 
-def get_analytics(dataset_name, dataloader):
-    valid_set, df_valid_set = get_valid_sets(DATASET.split(".")[0])
+def get_analytics(dataset_name, dataloader, _set, df_set):
     print(
         f"Starting to validate the {dataset_name} (model={MODEL}, speaker_eer={(not NO_GENUINE)}, deepfake_eer={(not NO_DEEPFAKE)})")
-    validator = ModelValidator(dataloader, device, valid_set, df_valid_set)
+    validator = ModelValidator(dataloader, device, _set, df_set)
     sv_eer, sv_threshold, sv_rates, sv_minDCF, dd_eer, dd_threshold, dd_rates, dd_minDCF = validator.validate_model(
         model=model, speaker_eer=(not NO_GENUINE), deepfake_eer=(not NO_DEEPFAKE), mlflow_logging=False)
 

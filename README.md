@@ -277,7 +277,19 @@ python source/Experiments.py --experiments experiments.txt
 
 # Results
 
-## Speaker Verification
+## LibriSpeech train-100
+| Front-End         | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:------------------|:-----------------|:-----------|---------------------------:|
+| MFCC              | Genuine          | training   |                   0.664284 |
+| MFCC              | Genuine          | validation |                   0.600074 |
+| MFCC              | Genuine          | test       |                   0.594275 |
+| WavLM-Base/Frozen | Genuine          | training   |                   0.767511 |
+| WavLM-Base/Frozen | Genuine          | validation |                   0.689974 |
+| WavLM-Base/Frozen | Genuine          | test       |                   0.64542  |
+
+## BSI-Dataset
+
+### Speaker Verification
 | Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
 |:-------------------|:-----------------|:-----------|---------------------------:|
 | MFCC               | Deepfake         | training   |                   0.727663 |
@@ -308,7 +320,7 @@ python source/Experiments.py --experiments experiments.txt
 - **WavLM-Base/Joint** front-end generally outperforms other front-emds in terms of EER for both deepfake and genuine datasets.
 - **Genuine datasets** show slightly higher EER compared to deepfake datasets with WavLM.
 
-## Deepfake Detection
+### Deepfake Detection
 | Front-End          | Triplet Mining   | Dataset    |   Deepfake Detection EER |
 |:-------------------|:-----------------|:-----------|-------------------------:|
 | MFCC               | Deepfake         | training   |                 0.670413 |
@@ -339,7 +351,7 @@ python source/Experiments.py --experiments experiments.txt
 - **WavLM-Base/Joint** front-end shows better performance in detecting deepfakes with **Genuine** datasets.
 - The **Genuine** dataset consistently performs better in deepfake detection across all front-ends, highlighting that genuine audio may provide more reliable features for detecting anomalies.
 
-## Conclusion
+### Conclusion
 The choice of front-end and dataset significantly impacts the performance of both speaker verification and deepfake detection systems.
 
 - **WavLM-Base/Joint** front-end performs better in speaker verification, especially with genuine datasets.
@@ -351,7 +363,7 @@ There are some possible alterations, that could result in better performance in 
 - [ ] Train the model on different datasets
   - [ ] VoxCeleb
   - [ ] ASVSpoof 2014
-  - [ ] Full LibriTTS Dataset
+  - [ ] Full LibriSpeech Dataset
 - [ ] Use the pretrained WavLM-Large/ECAPA-TDNN Model from Espnet-SPK and fine-tune to deepfake detecion using the BSI dataset
 - [ ] Use pretrained Models, to fine-tune on
   - [ ] single speaker verification and

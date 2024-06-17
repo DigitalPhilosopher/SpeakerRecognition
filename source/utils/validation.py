@@ -22,6 +22,26 @@ def get_valid_sets(name):
     return valid_set, df_valid_set
 
 
+def get_train_sets(name):
+    valid_set = []
+    df_valid_set = []
+
+    if name == "LibriSpeech":
+        valid_set = pd.read_csv("../validation_sets/LibriSpeech/train.csv")
+
+    return valid_set, df_valid_set
+
+
+def get_test_sets(name):
+    valid_set = []
+    df_valid_set = []
+
+    if name == "LibriSpeech":
+        valid_set = pd.read_csv("../validation_sets/LibriSpeech/test.csv")
+
+    return valid_set, df_valid_set
+
+
 class ModelValidator:
 
     ##### INIT #####
