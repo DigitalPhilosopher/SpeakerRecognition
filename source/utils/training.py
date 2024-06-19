@@ -22,6 +22,14 @@ def load_deepfake_dataset(dataset):
             {"name": "clean", "split": "test"},
             # {"name": "other", "split": "test"}
         ]
+    if dataset == "VoxCeleb":
+        return [
+            {"name": "VoxCeleb2", "split": "dev"},
+        ], [
+            {"name": "VoxCeleb2", "split": "test"},
+        ], [ 
+            {"name": "VoxCeleb2", "split": "test"},
+        ]
 
     labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, _ = get_label_files(
         use_bsi_tts=True,

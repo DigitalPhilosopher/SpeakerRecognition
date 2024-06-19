@@ -10,7 +10,6 @@ class VoxCelebLoader(Loader):
         for set in directory:
             split = set['split']
             dir = f"{base}/{set['name']}/{set['split']}/aac"
-            print(dir)
             for root, dirs, files in os.walk(dir):
                 for file in files:
                     if not file.endswith(".m4a"):
