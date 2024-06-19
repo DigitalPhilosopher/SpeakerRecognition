@@ -1,7 +1,7 @@
 import sys
 import os
 import warnings
-from dataloader import ValidationDataset, collate_valid_fn, BSILoader, LibriSpeechLoader
+from dataloader import ValidationDataset, collate_valid_fn, BSILoader, LibriSpeechLoader, VoxCelebLoader
 from utils import load_deepfake_dataset, get_device, get_analytics_arguments, get_analytics_variables, ModelValidator, get_valid_sets, get_train_sets, get_test_sets
 import torch
 from torch.utils.data import DataLoader
@@ -43,6 +43,8 @@ def create_dataset(args):
         loader = BSILoader
     elif loader == "LibriSpeech":
         loader = LibriSpeechLoader
+    elif loader == "VoxCeleb":
+        loader = VoxCelebLoader
 
     if TRAIN:
         audio_dataset = ValidationDataset(loader=loader(

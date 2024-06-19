@@ -7,7 +7,7 @@ from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_
 import torch.optim as optim
 from torch.nn import TripletMarginWithDistanceLoss
 from torch.utils.data import DataLoader
-from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn, BSILoader, LibriSpeechLoader
+from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn, BSILoader, LibriSpeechLoader, VoxCelebLoader
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
@@ -58,6 +58,8 @@ def create_dataset(args):
         loader = BSILoader
     elif loader == "LibriSpeech":
         loader = LibriSpeechLoader
+    elif loader == "VoxCeleb":
+        loader = VoxCelebLoader
 
     audio_dataset = tripletLossDataset(loader=loader(
         train_labels, frontend, DOWNSAMPLING_TRAIN))
