@@ -4,3 +4,4 @@ from .RandomTripletLossDataset import RandomTripletLossDataset, DeepfakeRandomTr
 from .ValidationDataset import ValidationDataset, collate_valid_fn
 from .BSILoader import BSILoader
 from .LibriSpeechLoader import LibriSpeechLoader
+from .VoxCelebLoader import VoxCelebLoader
