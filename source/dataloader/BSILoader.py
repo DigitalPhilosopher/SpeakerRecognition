@@ -3,6 +3,7 @@ from typing import List, Tuple
 import pandas as pd
 from .Loader import Loader
 from extraction_utils.data_utils import read_label_file
+# from scripts.data_utils import read_label_file
 
 
 def extract_speaker_id(file_path):

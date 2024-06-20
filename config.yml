@@ -1,0 +1,3 @@
+dataset_base_path: /datadisk/AudioDFDatasets
+saved_models_path: /home/bsi/Dokumente/audio_evaluation_toolbox/saved_models
+verbose: false
