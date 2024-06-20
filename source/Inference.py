@@ -1,18 +1,21 @@
 import sys
 import os
 import warnings
+import torch
+from torch.nn import TripletMarginWithDistanceLoss
+
 from dataloader import BSILoader, LibriSpeechLoader
 from utils import get_device, get_inference_arguments, get_inference_variables, compute_distance
-import torch
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
+from source.utils.distance import  l2_normalize
 
 
 def define_variables(args):
-    global MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
+    global MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO, QUESTION_AUDIO2
 
-    MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO = get_inference_variables(
+    MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO, QUESTION_AUDIO2 = get_inference_variables(
         args)
 
 
@@ -25,7 +28,7 @@ def config():
 
 
 def create_dataset(args):
-    global reference, question
+    global reference, question, question2
 
     if args.frontend == "mfcc":
         frontend = MFCCTransform(
@@ -43,6 +46,10 @@ def create_dataset(args):
 
     reference = loader.read_audio(REFERENCE_AUDIO).unsqueeze(0)
     question = loader.read_audio(QUESTION_AUDIO).unsqueeze(0)
+    if QUESTION_AUDIO2 is not None:
+        question2 = loader.read_audio(QUESTION_AUDIO2).unsqueeze(0)
+    else:
+        question2 = None
 
 
 def get_model(args):
@@ -70,20 +77,35 @@ def get_model(args):
 
 
 def infer():
+
+    triplet_loss = TripletMarginWithDistanceLoss(
+        distance_function=compute_distance, margin=1)
+
     # reference_embedding = model(reference.to(device)).cpu().detach().numpy()
     # question_embedding = model(question.to(device)).cpu().detach().numpy()
 
     reference_embedding = model(reference.to(device))#.cpu().detach().numpy()
     question_embedding = model(question.to(device))#.cpu().detach().numpy()
+    if question2 is not None:
+        question2_embedding = model(question2.to(device))  # .cpu().detach().numpy()
 
-    print("!!!!!!!!!!reference_embedding.shape", reference_embedding.shape)
-    print("!!!!!!!!!!question_embedding.shape", question_embedding.shape)
+    print("!!!!!!!!!!reference_embedding", reference_embedding)
+    print("!!!!!!!!!!question_embedding", question_embedding)
 
     distance = compute_distance(reference_embedding, question_embedding)
+    distance_normalized = compute_distance(l2_normalize(reference_embedding), l2_normalize(question_embedding))
+
+    if question2 is not None:
+        print("!!!!!!!!!!question2_embedding", question2_embedding)
+        print("!!!!!!!!!!question2_embedding", question2_embedding)
+        loss = triplet_loss(
+            l2_normalize(reference_embedding), l2_normalize(question_embedding), l2_normalize(question2_embedding))
+        print(f"!!!!!!!Loss: {loss}")
 
     print(f"Analyzing Audio {QUESTION_AUDIO} using model {MODEL}")
     print(f" > Reference audio: {REFERENCE_AUDIO}")
     print(f" > Distance between audio files: {distance}")
+    print(f" > Normalized Distance between audio files: {distance_normalized}")
     if distance > THRESHOLD:
         print(f"\n => DECLINE: NOT THE SAME SPEAKER")
     else:

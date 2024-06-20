@@ -12,9 +12,9 @@ import pandas as pd
 
 
 def define_variables(args):
-    global MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE
+    global MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, MAX_AUDIOS_TRAIN, MAX_AUDIOS_TEST, MAX_AUDIOS_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE, NO_VALID_SET
 
-    MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE = get_analytics_variables(
+    MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, MAX_AUDIOS_TRAIN, MAX_AUDIOS_TEST, MAX_AUDIOS_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE, NO_VALID_SET = get_analytics_variables(
         args)
 
 
@@ -32,6 +32,7 @@ def create_dataset(args):
     train_labels, dev_labels, test_labels = load_deepfake_dataset(
         DATASET.split(".")[0])
 
+
     if args.frontend == "mfcc":
         frontend = MFCCTransform(
             number_output_parameters=MFCCS, sample_rate=SAMPLE_RATE)
@@ -48,7 +49,7 @@ def create_dataset(args):
 
     if TRAIN:
         audio_dataset = ValidationDataset(loader=loader(
-            train_labels, frontend, DOWNSAMPLING_TRAIN))
+            train_labels, frontend, DOWNSAMPLING_TRAIN, MAX_AUDIOS_TRAIN))
         if NO_DEEPFAKE:
             audio_dataset.data_list = audio_dataset.data_list[
                 audio_dataset.data_list["is_genuine"] == 1]
@@ -57,7 +58,7 @@ def create_dataset(args):
 
     if VALID:
         validation_dataset = ValidationDataset(
-            loader=loader(dev_labels, frontend, DOWNSAMPLING_VALID))
+            loader=loader(dev_labels, frontend, DOWNSAMPLING_VALID, MAX_AUDIOS_VALID))
         if NO_DEEPFAKE:
             validation_dataset.data_list = validation_dataset.data_list[
                 validation_dataset.data_list["is_genuine"] == 1]
@@ -66,7 +67,7 @@ def create_dataset(args):
 
     if TEST:
         test_dataset = ValidationDataset(loader=loader(
-            test_labels, frontend, DOWNSAMPLING_TEST))
+            test_labels, frontend, DOWNSAMPLING_TEST, MAX_AUDIOS_TEST))
         if NO_DEEPFAKE:
             test_dataset.data_list = test_dataset.data_list[test_dataset.data_list["is_genuine"] == 1]
         test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True,
@@ -102,18 +103,24 @@ def analyze():
 
     if TRAIN:
         _set, df_set = get_train_sets(DATASET.split(".")[0])
+        if NO_VALID_SET:
+            _set = []
         train_analytics = get_analytics(
             "training dataset", audio_dataloader, _set, df_set)
         print_analytics("Training Dataset", train_analytics)
         all_analytics.append(train_analytics)
     if VALID:
         _set, df_set = get_valid_sets(DATASET.split(".")[0])
+        if NO_VALID_SET:
+            _set = []
         valid_analytics = get_analytics(
             "validation dataset", validation_dataloader, _set, df_set)
         print_analytics("Validation Dataset", valid_analytics)
         all_analytics.append(valid_analytics)
     if TEST:
         _set, df_set = get_test_sets(DATASET.split(".")[0])
+        if NO_VALID_SET:
+            _set = []
         test_analytics = get_analytics(
             "test dataset", test_dataloader, _set, df_set)
         print_analytics("Test Dataset", test_analytics)

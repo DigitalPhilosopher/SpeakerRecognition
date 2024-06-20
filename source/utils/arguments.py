@@ -81,7 +81,7 @@ def get_training_arguments():
 def get_training_variables(args):
     MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
         args)
-    DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_downsampling_variables(
+    DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, MAX_AUDIOS_TRAIN, MAX_AUDIOS_TEST, MAX_AUDIOS_VALID, MAX_AUDIOS_TRAIN, MAX_AUDIOS_TEST, MAX_AUDIOS_VALID = get_downsampling_variables(
         args)
 
     LEARNING_RATE = args.learning_rate
@@ -149,6 +149,13 @@ def get_inference_arguments():
         required=True,
         help="Audio in question to be speaker"
     )
+    parser.add_argument(
+        "--audio_in_question2",
+        type=str,
+        required=False,
+        default=None,
+        help="Audio in question to be speaker"
+    )
 
     parser.add_argument(
         "--threshold",
@@ -169,9 +176,10 @@ def get_inference_variables(args):
 
     REFERENCE_AUDIO = args.reference_audio
     QUESTION_AUDIO = args.audio_in_question
+    QUESTION_AUDIO2 = args.audio_in_question2
     THRESHOLD = args.threshold
 
-    return MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO
+    return MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, THRESHOLD, REFERENCE_AUDIO, QUESTION_AUDIO, QUESTION_AUDIO2
 
 
 def get_analytics_arguments():
@@ -196,6 +204,12 @@ def get_analytics_arguments():
         default=True,
         action=argparse.BooleanOptionalAction,
         help="Whether to generate analytics for the test set (default=True)"
+    )
+    parser.add_argument(
+        "--valid_set",
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help="Whether to use a pre-defined set of tuples (from validation_sets/..) or not (default=True)"
     )
 
     parser = add_downsampling_arguments(parser)
@@ -230,7 +244,7 @@ def get_analytics_arguments():
 def get_analytics_variables(args):
     MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE = get_general_variables(
         args)
-    DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID = get_downsampling_variables(
+    DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, MAX_AUDIOS_TRAIN, MAX_AUDIOS_TEST, MAX_AUDIOS_VALID = get_downsampling_variables(
         args)
 
     BATCH_SIZE = args.batch_size
@@ -241,8 +255,9 @@ def get_analytics_variables(args):
 
     NO_GENUINE = not args.analyze_genuine
     NO_DEEPFAKE = not args.analyze_deepfake
+    NO_VALID_SET = not args.valid_set
 
-    return MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE
+    return MODEL, DATASET, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, MAX_AUDIOS_TRAIN, MAX_AUDIOS_TEST, MAX_AUDIOS_VALID, BATCH_SIZE, TRAIN, VALID, TEST, NO_GENUINE, NO_DEEPFAKE, NO_VALID_SET
 
 
 def add_general_arguments(parser):
@@ -327,6 +342,28 @@ def add_downsampling_arguments(parser):
         help="Downsample test data by a factor (default: 0 - no downsampling)"
     )
 
+    parser.add_argument(
+        "--max_audios_train",
+        type=int,
+        required=False,
+        default=0,
+        help="Set maximum audios of each speaker (default: 0 - all audios of each speaker)"
+    )
+    parser.add_argument(
+        "--max_audios_valid",
+        type=int,
+        required=False,
+        default=0,
+        help="Set maximum audios of each speaker (default: 0 - all audios of each speaker)"
+    )
+    parser.add_argument(
+        "--max_audios_test",
+        type=int,
+        required=False,
+        default=0,
+        help="Set maximum audios of each speaker (default: 0 - all audios of each speaker)"
+    )
+
     return parser
 
 
@@ -365,5 +402,8 @@ def get_downsampling_variables(args):
     DOWNSAMPLING_TRAIN = args.downsample_train
     DOWNSAMPLING_TEST = args.downsample_test
     DOWNSAMPLING_VALID = args.downsample_valid
+    MAX_AUDIOS_TRAIN = args.max_audios_train
+    MAX_AUDIOS_TEST = args.max_audios_valid
+    MAX_AUDIOS_VALID = args.max_audios_test
 
-    return DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID
+    return DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST, DOWNSAMPLING_VALID, MAX_AUDIOS_TRAIN, MAX_AUDIOS_TEST, MAX_AUDIOS_VALID

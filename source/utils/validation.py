@@ -195,6 +195,23 @@ class ModelValidator:
 
         return genuine_deepfake_scores, genuine_deepfake_labels, method_scores
 
+    def pariwise_loss(self, embeddings, labels, valid_set=[]):
+        from torch.nn import TripletMarginWithDistanceLoss
+        from source.utils.distance import l2_normalize
+        triplet_loss = TripletMarginWithDistanceLoss(
+            distance_function=compute_distance, margin=1)
+
+        loss = triplet_loss(
+            l2_normalize(reference_embedding), l2_normalize(question_embedding), l2_normalize(question2_embedding))
+        scores = []
+        score_labels = []
+        # Compute pairwise scores
+        for (emb1, lbl1), (emb2, lbl2) in tqdm(combinations(zip(embeddings, labels), 2), desc="Computing pairwise scores"):
+            scores.append(compute_distance(
+                l2_normalize(emb1), l2_normalize(emb2)))
+            score_labels.append(1 if lbl1 == lbl2 else 0)
+        return np.array(scores), np.array(score_labels)
+
     def pairwise_scores(self, embeddings, labels, valid_set=[]):
         scores = []
         score_labels = []
@@ -211,15 +228,15 @@ class ModelValidator:
 
         # Create a dictionary for fast lookup of embeddings by utterance ID
         embedding_dict = dict(zip(utterances, embeddings))
-
         # Loop through each row in the pairs_df
         for _, row in tqdm(pairs_df.iterrows(), desc="Computing pairwise scores", total=pairs_df.shape[0]):
+            if row['utterance'] not in embedding_dict or row['utterance_to_check'] not in embedding_dict:
+                continue
             emb1 = embedding_dict[row['utterance']]
             emb2 = embedding_dict[row['utterance_to_check']]
             scores.append(compute_distance(
                 l2_normalize(emb1), l2_normalize(emb2)))
             score_labels.append(row['is_same_speaker'])
-
         return np.array(scores), np.array(score_labels)
 
     def compute_eer(self, scores, score_labels):
