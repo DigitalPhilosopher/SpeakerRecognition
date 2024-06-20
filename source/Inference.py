@@ -79,7 +79,7 @@ def get_model(args):
 def infer():
 
     triplet_loss = TripletMarginWithDistanceLoss(
-        distance_function=compute_distance, margin=1)
+        distance_function=compute_distance, margin=0.2)
 
     # reference_embedding = model(reference.to(device)).cpu().detach().numpy()
     # question_embedding = model(question.to(device)).cpu().detach().numpy()

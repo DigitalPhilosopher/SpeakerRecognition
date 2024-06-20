@@ -16,7 +16,6 @@ class Loader(Dataset, ABC):
                 downsampling).index
             self.data_list = self.data_list[self.data_list['speaker'].isin(
                 top_speakers)].reset_index(drop=True)
-
         if max_audios > 0:
             # Only use "max_audios" genuine audios per speaker
             genuine_entries = self.data_list[self.data_list['is_genuine'] == True]
@@ -25,10 +24,6 @@ class Loader(Dataset, ABC):
                 lambda x: x.head(max_audios) if len(x) > max_audios else x
             ).reset_index(drop=True)
             non_genuine_entries = self.data_list[self.data_list['is_genuine'] == False]
-
-            print("!!!!!!!1genuine_entries", len(genuine_entries))
-            print("!!!!!!!1filtered_genuine", len(filtered_genuine))
-            print("!!!!!!!non_genuine_entries", len(non_genuine_entries))
             self.data_list = pd.concat([filtered_genuine, non_genuine_entries]).reset_index(drop=True)
 
         self.genuine = []

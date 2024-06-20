@@ -66,6 +66,7 @@ def create_dataset(args):
                                            drop_last=False, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
     if TEST:
+        print("!!!!!!!MAX_AUDIOS_TEST:", MAX_AUDIOS_TEST)
         test_dataset = ValidationDataset(loader=loader(
             test_labels, frontend, DOWNSAMPLING_TEST, MAX_AUDIOS_TEST))
         if NO_DEEPFAKE:
@@ -94,6 +95,8 @@ def get_model(args):
 
     state = torch.load(
         f'../models/{MODEL}_best_model_state.pth')
+    if "state_dict" in state:
+        state = state["state_dict"]
     model.load_state_dict(state)
     model.eval()
 

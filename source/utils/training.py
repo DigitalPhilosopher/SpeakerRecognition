@@ -71,14 +71,26 @@ class ModelTrainer:
     ##### TRAINING #####
 
     def train_epoch(self, epoch, epochs):
+        # max_speaker = 0
+        # speaker_stats = {}
         self.model.train()
         running_loss = 0.0
         progress_bar = tqdm(
             self.dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
-        for anchors, positives, negatives in progress_bar:
+        for anchors, positives, negatives, metadata in progress_bar:
             try:
                 anchors, positives, negatives = anchors.to(
                     self.device), positives.to(self.device), negatives.to(self.device)
+                # for meta in metadata:
+                #     speaker_name = meta["anchor_speaker"]
+                #     if speaker_name not in speaker_stats:
+                #         speaker_stats[speaker_name] = 0
+                #     speaker_stats[speaker_name] += 1
+                # if max(speaker_stats.values()) > max_speaker:
+                #     max_speaker = max(speaker_stats.values())
+                #     sorted_speaker_stats = dict(sorted(speaker_stats.items(), key=lambda item: item[1], reverse=True))
+                #     print(sorted_speaker_stats)
+
                 self.optimizer.zero_grad()
 
                 anchor_outputs = self.model(anchors)

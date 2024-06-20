@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.nn import TripletMarginWithDistanceLoss
 import time
@@ -78,7 +79,19 @@ class ModelValidator:
             else:
                 scores, score_labels = self.pairwise_scores(embeddings, labels)
                 average_loss = self.pariwise_loss(embeddings, labels)
-                print(f"!!!!!!!!!!!!!!!average_loss: {average_loss} \n"*50)
+                print(f"!!!!!!!!!!!!!!!average_loss: {average_loss}")
+                scores_genuine = [scores[i] for i in range(len(scores)) if score_labels[i] == 1]
+                scores_imposter = [scores[i] for i in range(len(scores)) if score_labels[i] == 0]
+                print("!!!!!scores_genuine:", sum(scores_genuine)/len(scores_genuine))
+                print("!!!!!scores_imposter:", sum(scores_imposter)/len(scores_imposter))
+                from source.utils.plot_score_lists import plot_similarity_lists_bar, calc_eer
+                plot_similarity_lists_bar(
+                    [scores_imposter, scores_genuine],
+                    ["False Accept attempt", "Genuine"], do_plot=False,
+                    save_plot_path=os.path.join("..", "logs", "score_plot.png"))
+                eer = calc_eer(scores_genuine, scores_imposter)
+                print("!!!!!eer:", eer)
+
             sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
             sv_min_dcf = self.compute_min_dcf(scores, score_labels)
             TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
@@ -200,7 +213,7 @@ class ModelValidator:
 
     def pariwise_loss(self, embeddings, labels, valid_set=[]) -> float:
         triplet_loss = TripletMarginWithDistanceLoss(
-            distance_function=compute_distance, margin=1)
+            distance_function=compute_distance, margin=0.2)
 
         losses = []
         # Compute pairwise scores
@@ -220,7 +233,6 @@ class ModelValidator:
             scores.append(compute_distance(
                 l2_normalize(emb1), l2_normalize(emb2)))
             score_labels.append(1 if lbl1 == lbl2 else 0)
-            print(f"!!!!!! {scores[-1]} {score_labels[-1]}")
         return np.array(scores), np.array(score_labels)
 
     def pairwise_scores_with_set(self, embeddings, utterances, pairs_df):
