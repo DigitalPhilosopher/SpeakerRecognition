@@ -1,4 +1,5 @@
 import torch
+from torch.nn import TripletMarginWithDistanceLoss
 import time
 import numpy as np
 import pandas as pd
@@ -76,6 +77,8 @@ class ModelValidator:
                     embeddings, utterances, self.valid_set)
             else:
                 scores, score_labels = self.pairwise_scores(embeddings, labels)
+                average_loss = self.pariwise_loss(embeddings, labels)
+                print(f"!!!!!!!!!!!!!!!average_loss: {average_loss} \n"*50)
             sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
             sv_min_dcf = self.compute_min_dcf(scores, score_labels)
             TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
@@ -195,22 +198,19 @@ class ModelValidator:
 
         return genuine_deepfake_scores, genuine_deepfake_labels, method_scores
 
-    def pariwise_loss(self, embeddings, labels, valid_set=[]):
-        from torch.nn import TripletMarginWithDistanceLoss
-        from source.utils.distance import l2_normalize
+    def pariwise_loss(self, embeddings, labels, valid_set=[]) -> float:
         triplet_loss = TripletMarginWithDistanceLoss(
             distance_function=compute_distance, margin=1)
 
-        loss = triplet_loss(
-            l2_normalize(reference_embedding), l2_normalize(question_embedding), l2_normalize(question2_embedding))
-        scores = []
-        score_labels = []
+        losses = []
         # Compute pairwise scores
-        for (emb1, lbl1), (emb2, lbl2) in tqdm(combinations(zip(embeddings, labels), 2), desc="Computing pairwise scores"):
-            scores.append(compute_distance(
-                l2_normalize(emb1), l2_normalize(emb2)))
-            score_labels.append(1 if lbl1 == lbl2 else 0)
-        return np.array(scores), np.array(score_labels)
+        for (emb1, lbl1), (emb2, lbl2), (emb3, lbl3) in tqdm(combinations(zip(embeddings, labels), 3), desc="Compute average loss"):
+            if lbl1 == lbl2 and lbl1 != lbl3:
+                loss = triplet_loss(
+                    l2_normalize(emb1), l2_normalize(emb2),
+                    l2_normalize(emb3))
+                losses.append(loss)
+        return sum(losses) / len(losses)
 
     def pairwise_scores(self, embeddings, labels, valid_set=[]):
         scores = []
@@ -220,6 +220,7 @@ class ModelValidator:
             scores.append(compute_distance(
                 l2_normalize(emb1), l2_normalize(emb2)))
             score_labels.append(1 if lbl1 == lbl2 else 0)
+            print(f"!!!!!! {scores[-1]} {score_labels[-1]}")
         return np.array(scores), np.array(score_labels)
 
     def pairwise_scores_with_set(self, embeddings, utterances, pairs_df):
