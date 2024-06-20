@@ -1,7 +1,7 @@
 import sys
 import os
 import warnings
-from dataloader import BSILoader
+from dataloader import BSILoader, LibriSpeechLoader
 from utils import get_device, get_inference_arguments, get_inference_variables, compute_distance
 import torch
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
@@ -36,10 +36,11 @@ def create_dataset(args):
     loader = DATASET.split(".")[0]
     if loader == "BSI":
         loader = BSILoader([], frontend, 0)
+    elif loader == "LibriSpeech":
+        loader = LibriSpeechLoader([], frontend, 0)
     # reference = loader.read_audio(REFERENCE_AUDIO, frontend).unsqueeze(0) TypeError: Loader.read_audio() takes 2 positional arguments but 3 were given
     # question = loader.read_audio(QUESTION_AUDIO, frontend).unsqueeze(0) TypeError: Loader.read_audio() takes 2 positional arguments but 3 were given
-    print("!!!!!REFERENCE_AUDIO:", REFERENCE_AUDIO)
-    print("!!!!!QUESTION_AUDIO:", QUESTION_AUDIO)
+
     reference = loader.read_audio(REFERENCE_AUDIO).unsqueeze(0)
     question = loader.read_audio(QUESTION_AUDIO).unsqueeze(0)
 
@@ -75,8 +76,8 @@ def infer():
     reference_embedding = model(reference.to(device))#.cpu().detach().numpy()
     question_embedding = model(question.to(device))#.cpu().detach().numpy()
 
-    print("!!!!!!!!!!reference_embedding.shape", reference_embedding)
-    print("!!!!!!!!!!question_embedding.shape", question_embedding)
+    print("!!!!!!!!!!reference_embedding.shape", reference_embedding.shape)
+    print("!!!!!!!!!!question_embedding.shape", question_embedding.shape)
 
     distance = compute_distance(reference_embedding, question_embedding)
 
