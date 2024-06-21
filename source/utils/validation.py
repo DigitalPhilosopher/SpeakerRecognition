@@ -78,8 +78,8 @@ class ModelValidator:
                     embeddings, utterances, self.valid_set)
             else:
                 scores, score_labels = self.pairwise_scores(embeddings, labels)
-                average_loss = self.pariwise_loss(embeddings, labels)
-                print(f"!!!!!!!!!!!!!!!average_loss: {average_loss}")
+                # average_loss = self.pariwise_loss(embeddings, labels)
+                # print(f"!!!!!!!!!!!!!!!average_loss: {average_loss}")
                 scores_genuine = [scores[i] for i in range(len(scores)) if score_labels[i] == 1]
                 scores_imposter = [scores[i] for i in range(len(scores)) if score_labels[i] == 0]
                 print("!!!!!scores_genuine:", sum(scores_genuine)/len(scores_genuine))
