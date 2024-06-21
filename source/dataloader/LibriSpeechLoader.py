@@ -10,7 +10,6 @@ class LibriSpeechLoader(Loader):
         for set in directory:
             split = set['split'].split(".")
             dir = base + split[0] + "-" + set['name']
-            print("!!!dir:", dir)
             if len(split) > 1:
                 dir += "-" + split[1]
             for root, dirs, files in os.walk(dir):

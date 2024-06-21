@@ -16,12 +16,12 @@ from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 
 def define_variables(args):
     global MODEL, MODEL_PATH, DATASET, FOLDER, TAGS
-    global LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, BATCH_SIZE_TEST_EVAL, MAX_AUDIO_LENGTH, EPOCHS, VALIDATION_RATE
+    global LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS, VALIDATION_RATE
     global MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, WEIGHT_DECAY, AMSGRAD
     global DOWNSAMPLING_TRAIN, DOWNSAMPLING_VALID, DOWNSAMPLING_TEST
 
     (MODEL, MODEL_PATH, DATASET, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE,
-     DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, BATCH_SIZE_TEST_EVAL, MAX_AUDIO_LENGTH, EPOCHS,
+     DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS,
      VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST,
      DOWNSAMPLING_VALID) = get_training_variables(args)
 
@@ -67,7 +67,7 @@ def create_dataset(args):
     audio_dataset = tripletLossDataset(loader=loader(
         train_labels, frontend, DOWNSAMPLING_TRAIN), max_length=MAX_AUDIO_LENGTH)
     audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                  drop_last=True, num_workers=16, pin_memory=True, collate_fn=collate_triplet_wav_fn)
+                                  drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet_wav_fn)
 
     validation_dataloader = None
     if DOWNSAMPLING_VALID > 0:
@@ -126,7 +126,7 @@ def main(args):
 
     ##### TRAINING #####
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
-                           optimizer, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS)
+                           optimizer, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps= ACCUMULATION_STEPS)
     trainer.train_model(EPOCHS)
 
 

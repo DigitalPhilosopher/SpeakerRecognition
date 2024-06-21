@@ -26,6 +26,13 @@ def get_training_arguments():
         default=4,
         help="Batch size for training (default: 4)"
     )
+    parser.add_argument(
+        "--accumulation_steps",
+        type=int,
+        required=False,
+        default=1,
+        help="The number of gradient accumulation steps (default: 1)"
+    )
 
     parser.add_argument(
         "--max_length",
@@ -114,6 +121,7 @@ def get_training_variables(args):
     NORM = args.norm
     BATCH_SIZE = args.batch_size
     BATCH_SIZE_TEST_EVAL = args.batch_size_test_eval
+    ACCUMULATION_STEPS = args.accumulation_steps
     MAX_AUDIO_LENGTH = args.max_length
     EPOCHS = args.epochs
     VALIDATION_RATE = args.validation_rate
@@ -157,7 +165,7 @@ def get_training_variables(args):
 
     return (MODEL, MODEL_PATH, DATASET, FOLDER, TAGS, MFCCS, SAMPLE_RATE,
             EMBEDDING_SIZE, DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE,
-            BATCH_SIZE_TEST_EVAL, MAX_AUDIO_LENGTH, EPOCHS, VALIDATION_RATE,
+            BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS, VALIDATION_RATE,
             WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST,
             DOWNSAMPLING_VALID)
 
