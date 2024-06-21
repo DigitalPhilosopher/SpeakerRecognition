@@ -97,9 +97,9 @@ def get_model(args):
             input_size=MFCCS, lin_neurons=EMBEDDING_SIZE, device=device)
     elif args.frontend == "wavlm_base":
         model = WavLM_Base_ECAPA_TDNN(frozen=frozen, device=device)
+
     elif args.frontend == "wavlm_large":
         model = WavLM_Large_ECAPA_TDNN(frozen=frozen, device=device)
-
     # Load pretrained model if MODEL_PATH is provided
     if MODEL_PATH is not None:
         print(f"Loading pretrained model from {MODEL_PATH}")
