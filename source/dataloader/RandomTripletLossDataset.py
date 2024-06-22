@@ -7,6 +7,7 @@ class RandomTripletLossDataset(TripletLossDataset):
         # Get all genuine samples with the same speaker
         speaker_samples = self.genuine[self.genuine["speaker"]
                                        == anchor_data["speaker"]]
+
         # Exclude the anchor sample itself
         positive_samples = speaker_samples[speaker_samples["filename"]
                                            != anchor_data["filename"]]

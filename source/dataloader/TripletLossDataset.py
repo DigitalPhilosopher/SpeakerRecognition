@@ -24,4 +24,9 @@ class TripletLossDataset(AudioDataset, ABC):
         anchor = self.read_audio(anchor_data["filename"])
         positive = self.read_audio(positive_data["filename"])
         negative = self.read_audio(negative_data["filename"])
-        return anchor, positive, negative
+        meta_data = {
+            "anchor_speaker": anchor_data["speaker"],
+            "positive_speaker": positive_data["speaker"],
+            "negative_speaker": negative_data["speaker"],
+        }
+        return anchor, positive, negative, meta_data

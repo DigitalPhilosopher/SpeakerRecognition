@@ -7,6 +7,7 @@ import mlflow.pytorch
 from .validation import ModelValidator
 import gc
 from .distance import l2_normalize
+from utils.distance import compute_distance
 
 
 def load_deepfake_dataset(dataset):
@@ -52,7 +53,9 @@ class ModelTrainer:
 
     ##### INIT #####
 
-    def __init__(self, model, dataloader, valid_dataloader, test_dataloader, device, loss_function, optimizer, MODEL, FOLDER="Default", TAGS={}, validation_rate=5):
+    def __init__(self, model, dataloader, valid_dataloader, test_dataloader,
+                 device, loss_function, optimizer, MODEL,
+                 FOLDER="Default", TAGS={}, accumulation_steps=1, validation_rate=5):
         self.model = model
         self.dataloader = dataloader
         self.test_dataloader = valid_dataloader
@@ -62,6 +65,7 @@ class ModelTrainer:
         self.loss_function = loss_function
         self.optimizer = optimizer
         self.MODEL = MODEL
+        self.accumulation_steps = accumulation_steps
         self.FOLDER = self.create_or_get_experiment(FOLDER)
         self.TAGS = TAGS
         self.best_loss = float('inf')
@@ -70,28 +74,40 @@ class ModelTrainer:
 
     ##### TRAINING #####
 
-    def train_epoch(self, epoch, epochs):
+    def train_epoch(self, epoch, epochs, accumulation_steps=1):
+
         self.model.train()
         running_loss = 0.0
+        last_100_losses = []
         progress_bar = tqdm(
             self.dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
-        for anchors, positives, negatives in progress_bar:
+        for step, [anchors, positives, negatives, metadata] in enumerate(progress_bar):
             try:
                 anchors, positives, negatives = anchors.to(
                     self.device), positives.to(self.device), negatives.to(self.device)
-                self.optimizer.zero_grad()
 
                 anchor_outputs = self.model(anchors)
                 positive_outputs = self.model(positives)
                 negative_outputs = self.model(negatives)
 
+
                 loss = self.loss_function(
                     l2_normalize(anchor_outputs), l2_normalize(positive_outputs), l2_normalize(negative_outputs))
-                loss.backward()
-                self.optimizer.step()
 
+                loss.backward()
+
+                if (step + 1) % accumulation_steps == 0 or (step + 1) == len(self.dataloader):
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
+
+                last_100_losses.append(loss.item())
+                if len(last_100_losses) > 100:
+                    last_100_losses.pop(0)
                 running_loss += loss.item()
-                progress_bar.set_postfix(loss=loss.item())
+
+                progress_bar.set_postfix(loss=loss.item(),
+                                         average_loss=sum(last_100_losses)/len(last_100_losses),
+                                         )
             except Exception as e:
                 print(f"Error during training: {e}")
                 continue
@@ -109,7 +125,7 @@ class ModelTrainer:
 
             for epoch in range(start_epoch-1, epochs):
                 epoch_start_time = time.time()
-                epoch_loss = self.train_epoch(epoch, epochs)
+                epoch_loss = self.train_epoch(epoch, epochs, accumulation_steps=self.accumulation_steps)
                 avg_loss = epoch_loss / len(self.dataloader)
                 self.log_epoch_metrics(avg_loss, epoch_start_time, epoch+1)
 
@@ -119,7 +135,10 @@ class ModelTrainer:
                     self.log_model("best")
 
                 if (epoch + 1) % self.validation_rate == 0:
-                    self.validator.validate_model(self.model, epoch+1)
+                    try:
+                        self.validator.validate_model(self.model, epoch+1)
+                    except Exception as e:
+                        print(f"Error during validation: {e}")
 
                 self.save_model_state(epoch)
 

@@ -1,4 +1,6 @@
+import os
 import torch
+from torch.nn import TripletMarginWithDistanceLoss
 import time
 import numpy as np
 import pandas as pd
@@ -76,6 +78,15 @@ class ModelValidator:
                     embeddings, utterances, self.valid_set)
             else:
                 scores, score_labels = self.pairwise_scores(embeddings, labels)
+                scores_genuine = [scores[i] for i in range(len(scores)) if score_labels[i] == 1]
+                scores_imposter = [scores[i] for i in range(len(scores)) if score_labels[i] == 0]
+                from source.utils.plot_score_lists import plot_similarity_lists_bar, calc_eer
+                plot_similarity_lists_bar(
+                    [scores_imposter, scores_genuine],
+                    ["False Accept attempt", "Genuine"], do_plot=False,
+                    save_plot_path=os.path.join("..", "logs", "score_plot.png"))
+                eer = calc_eer(scores_genuine, scores_imposter)
+
             sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
             sv_min_dcf = self.compute_min_dcf(scores, score_labels)
             TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
@@ -195,6 +206,20 @@ class ModelValidator:
 
         return genuine_deepfake_scores, genuine_deepfake_labels, method_scores
 
+    def pariwise_loss(self, embeddings, labels, valid_set=[]) -> float:
+        triplet_loss = TripletMarginWithDistanceLoss(
+            distance_function=compute_distance, margin=0.2)
+
+        losses = []
+        # Compute pairwise scores
+        for (emb1, lbl1), (emb2, lbl2), (emb3, lbl3) in tqdm(combinations(zip(embeddings, labels), 3), desc="Compute average loss"):
+            if lbl1 == lbl2 and lbl1 != lbl3:
+                loss = triplet_loss(
+                    l2_normalize(emb1), l2_normalize(emb2),
+                    l2_normalize(emb3))
+                losses.append(loss)
+        return sum(losses) / len(losses)
+
     def pairwise_scores(self, embeddings, labels, valid_set=[]):
         scores = []
         score_labels = []
@@ -211,15 +236,15 @@ class ModelValidator:
 
         # Create a dictionary for fast lookup of embeddings by utterance ID
         embedding_dict = dict(zip(utterances, embeddings))
-
         # Loop through each row in the pairs_df
         for _, row in tqdm(pairs_df.iterrows(), desc="Computing pairwise scores", total=pairs_df.shape[0]):
+            if row['utterance'] not in embedding_dict or row['utterance_to_check'] not in embedding_dict:
+                continue
             emb1 = embedding_dict[row['utterance']]
             emb2 = embedding_dict[row['utterance_to_check']]
             scores.append(compute_distance(
                 l2_normalize(emb1), l2_normalize(emb2)))
             score_labels.append(row['is_same_speaker'])
-
         return np.array(scores), np.array(score_labels)
 
     def compute_eer(self, scores, score_labels):

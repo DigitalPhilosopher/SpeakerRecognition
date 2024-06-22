@@ -1,7 +1,23 @@
+# Data
 data
+
+
+# External Code
+extraction_utils/*
+
+
+# Python
 .venv
 __pycache__
+*.egg-info
+
+
+# Training
 mlruns
 *.pth
-extraction_utils
 logs
+nohup.out
+
+
+# IDE
+.idea
