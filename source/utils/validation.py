@@ -78,19 +78,14 @@ class ModelValidator:
                     embeddings, utterances, self.valid_set)
             else:
                 scores, score_labels = self.pairwise_scores(embeddings, labels)
-                # average_loss = self.pariwise_loss(embeddings, labels)
-                # print(f"!!!!!!!!!!!!!!!average_loss: {average_loss}")
                 scores_genuine = [scores[i] for i in range(len(scores)) if score_labels[i] == 1]
                 scores_imposter = [scores[i] for i in range(len(scores)) if score_labels[i] == 0]
-                print("!!!!!scores_genuine:", sum(scores_genuine)/len(scores_genuine))
-                print("!!!!!scores_imposter:", sum(scores_imposter)/len(scores_imposter))
                 from source.utils.plot_score_lists import plot_similarity_lists_bar, calc_eer
                 plot_similarity_lists_bar(
                     [scores_imposter, scores_genuine],
                     ["False Accept attempt", "Genuine"], do_plot=False,
                     save_plot_path=os.path.join("..", "logs", "score_plot.png"))
                 eer = calc_eer(scores_genuine, scores_imposter)
-                print("!!!!!eer:", eer)
 
             sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
             sv_min_dcf = self.compute_min_dcf(scores, score_labels)

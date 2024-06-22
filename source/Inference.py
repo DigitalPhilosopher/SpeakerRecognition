@@ -79,10 +79,10 @@ def infer():
     triplet_loss = TripletMarginWithDistanceLoss(
         distance_function=compute_distance, margin=0.2)
 
-    reference_embedding = model(reference.to(device))#.cpu().detach().numpy()
-    question_embedding = model(question.to(device))#.cpu().detach().numpy()
+    reference_embedding = model(reference.to(device))
+    question_embedding = model(question.to(device))
     if question2 is not None:
-        question2_embedding = model(question2.to(device))  # .cpu().detach().numpy()
+        question2_embedding = model(question2.to(device))
 
     distance = compute_distance(reference_embedding, question_embedding)
     distance_normalized = compute_distance(l2_normalize(reference_embedding), l2_normalize(question_embedding))

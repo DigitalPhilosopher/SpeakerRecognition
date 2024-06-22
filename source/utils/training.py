@@ -94,12 +94,6 @@ class ModelTrainer:
                 loss = self.loss_function(
                     l2_normalize(anchor_outputs), l2_normalize(positive_outputs), l2_normalize(negative_outputs))
 
-                # distance_pos = compute_distance(l2_normalize(anchor_outputs), l2_normalize(positive_outputs))
-                # distance_neg = compute_distance(l2_normalize(anchor_outputs), l2_normalize(negative_outputs))
-                # d_diff = (distance_pos - distance_neg) + 0.2
-                # d_diff = torch.maximum(d_diff, torch.tensor(0.0))
-                # loss = torch.mean(d_diff)
-
                 loss.backward()
 
                 if (step + 1) % accumulation_steps == 0 or (step + 1) == len(self.dataloader):
@@ -110,9 +104,6 @@ class ModelTrainer:
                 if len(last_100_losses) > 100:
                     last_100_losses.pop(0)
                 running_loss += loss.item()
-
-
-
 
                 progress_bar.set_postfix(loss=loss.item(),
                                          average_loss=sum(last_100_losses)/len(last_100_losses),
