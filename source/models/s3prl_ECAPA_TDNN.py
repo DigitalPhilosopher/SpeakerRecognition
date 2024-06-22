@@ -34,29 +34,6 @@ class s3prl_ECAPA_TDNN(nn.Module, ABC):
         self.embedding = ECAPA_TDNN(
             input_size=feature_size, lin_neurons=192, device=device)
         self.device = device
-    #
-    # def forward(self, batch_wavefiles):
-    #     wavlm_features = []
-    #     for waveform in batch_wavefiles:
-    #         waveform = waveform.unsqueeze(
-    #             0) if waveform.dim() == 1 else waveform
-    #         if self.frozen:
-    #             with torch.no_grad():
-    #                 # features = self.frontend(waveform)['hidden_states'][-1]
-    #                 features = self.extract_feat_S3PRL(waveform)['hidden_states'][-1]
-    #         else:
-    #             # features = self.frontend(waveform)['hidden_states'][-1]
-    #             features = self.extract_feat_S3PRL(waveform)['hidden_states'][-1]
-    #         wavlm_features.append(features)
-    #
-    #     # Ensure all tensors are 2D before concatenation
-    #     wavlm_features = [feat.unsqueeze(0) if feat.dim(
-    #     ) == 1 else feat for feat in wavlm_features]
-    #     # Concatenate along the batch dimension
-    #     wavlm_features = torch.cat(wavlm_features, dim=0)
-    #
-    #     embeddings = self.embedding(wavlm_features)
-    #     return embeddings
 
 
     def forward(self, batch_wavefiles):

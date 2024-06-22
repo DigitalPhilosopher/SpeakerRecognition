@@ -41,8 +41,6 @@ def create_dataset(args):
         loader = BSILoader([], frontend, 0)
     elif loader == "LibriSpeech":
         loader = LibriSpeechLoader([], frontend, 0)
-    # reference = loader.read_audio(REFERENCE_AUDIO, frontend).unsqueeze(0) TypeError: Loader.read_audio() takes 2 positional arguments but 3 were given
-    # question = loader.read_audio(QUESTION_AUDIO, frontend).unsqueeze(0) TypeError: Loader.read_audio() takes 2 positional arguments but 3 were given
 
     reference = loader.read_audio(REFERENCE_AUDIO).unsqueeze(0)
     question = loader.read_audio(QUESTION_AUDIO).unsqueeze(0)
@@ -81,26 +79,17 @@ def infer():
     triplet_loss = TripletMarginWithDistanceLoss(
         distance_function=compute_distance, margin=0.2)
 
-    # reference_embedding = model(reference.to(device)).cpu().detach().numpy()
-    # question_embedding = model(question.to(device)).cpu().detach().numpy()
-
     reference_embedding = model(reference.to(device))#.cpu().detach().numpy()
     question_embedding = model(question.to(device))#.cpu().detach().numpy()
     if question2 is not None:
         question2_embedding = model(question2.to(device))  # .cpu().detach().numpy()
 
-    print("!!!!!!!!!!reference_embedding", reference_embedding)
-    print("!!!!!!!!!!question_embedding", question_embedding)
-
     distance = compute_distance(reference_embedding, question_embedding)
     distance_normalized = compute_distance(l2_normalize(reference_embedding), l2_normalize(question_embedding))
 
     if question2 is not None:
-        print("!!!!!!!!!!question2_embedding", question2_embedding)
-        print("!!!!!!!!!!question2_embedding", question2_embedding)
         loss = triplet_loss(
             l2_normalize(reference_embedding), l2_normalize(question_embedding), l2_normalize(question2_embedding))
-        print(f"!!!!!!!Loss: {loss}")
 
     print(f"Analyzing Audio {QUESTION_AUDIO} using model {MODEL}")
     print(f" > Reference audio: {REFERENCE_AUDIO}")
