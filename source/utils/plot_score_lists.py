@@ -6,8 +6,9 @@ import numpy as np
 from matplotlib import pyplot
 from sklearn.metrics import roc_curve
 
+
 def plot_similarity_lists_bar(list_list: List[List[float]], name_list: List[str] = None, do_plot: bool = True,
-                              bins: int = 25, save_plot_path=None, xlabel:str = 'similarity score', normalize_scores:bool = False) -> [List[List[int]], List[float]]:
+                              bins: int = 25, save_plot_path=None, xlabel: str = 'similarity score', normalize_scores: bool = False) -> [List[List[int]], List[float]]:
     """
     This function is used to plot the score distribution given by the similarity lists contained in list_list
     Args:
@@ -33,8 +34,6 @@ def plot_similarity_lists_bar(list_list: List[List[float]], name_list: List[str]
     list_list = filter_out_none(list_list)
     num_bins = 250
 
-
-
     min_l = math.inf
     max_l = -1 * math.inf
     for list_scores in list_list:
@@ -55,7 +54,8 @@ def plot_similarity_lists_bar(list_list: List[List[float]], name_list: List[str]
 
     for i, list_scores in enumerate(list_list):
         if normalize_scores:
-            list_scores = [(x-min_score)/(max_score-min_score) for x in list_scores]
+            list_scores = [(x-min_score)/(max_score-min_score)
+                           for x in list_scores]
         if "genuine" in name_list[i].lower():
             color = color_list_positive[0]
             color_list_positive.pop(0)
@@ -66,13 +66,15 @@ def plot_similarity_lists_bar(list_list: List[List[float]], name_list: List[str]
             color = color_list_neutral[0]
             color_list_neutral.pop(0)
 
-        counts, bins = np.histogram(list_scores, bins=num_bins, range=(min_l, max_l))
+        counts, bins = np.histogram(
+            list_scores, bins=num_bins, range=(min_l, max_l))
         normalize_factor = len(list_scores)
         counts = [(count / normalize_factor) for count in counts]
 
         if max(counts) > max_y:
             max_y = max(counts)
-        pyplot.hist(bins[:-1], bins, weights=counts, color=color, alpha=0.5, label=name_list[i])
+        pyplot.hist(bins[:-1], bins, weights=counts,
+                    color=color, alpha=0.5, label=name_list[i])
     pyplot.ylim(0, max_y)
     # plt.yscale('log')
     pyplot.legend(loc='upper right')
@@ -87,23 +89,23 @@ def plot_similarity_lists_bar(list_list: List[List[float]], name_list: List[str]
 
 
 def calc_eer(
-        score_list_genuine:List[float],
-        score_list_imposter:List[float]
+        score_list_genuine: List[float],
+        score_list_imposter: List[float]
 ) -> float:
     """
-    Calculates the eer based on genuine and imposter lists
+    Calculates the EER based on genuine and imposter lists.
     Args:
-        threshold: the threshold of the asv model to be used
-        target: whether or not the similarity should be calculated to the target speaker (True) or to the soucre speaker (False)
+        score_list_genuine: List of similarity scores for genuine attempts.
+        score_list_imposter: List of similarity scores for imposter attempts.
     Returns:
-        the average matching rate
-
+        The Equal Error Rate (EER).
     """
-    y = [1] * len(score_list_imposter) + [0] * len(score_list_genuine)
+    y = [0] * len(score_list_imposter) + [1] * len(score_list_genuine)
     y_pred = score_list_imposter + score_list_genuine
 
     fpr, tpr, threshold = roc_curve(y, y_pred, pos_label=1)
     fnr = 1 - tpr
     eer_threshold = threshold[np.nanargmin(np.absolute((fnr - fpr)))]
-    EER = (fpr[np.nanargmin(np.absolute((fnr - fpr)))] + fnr[np.nanargmin(np.absolute((fnr - fpr)))]) / 2
+    EER = (fpr[np.nanargmin(np.absolute((fnr - fpr)))] +
+           fnr[np.nanargmin(np.absolute((fnr - fpr)))]) / 2
     return EER

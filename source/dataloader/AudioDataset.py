@@ -1,10 +1,10 @@
-import random
 import torch
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 
+
 class AudioDataset(Dataset):
-    def __init__(self, loader, max_length : int = 0):
+    def __init__(self, loader, max_length: int = 0):
 
         self.loader = loader
         self.max_length = max_length
@@ -16,16 +16,14 @@ class AudioDataset(Dataset):
     def __getitem__(self, idx):
         anchor_data = self.genuine.iloc[idx]
         return self.read_audio(anchor_data["filename"])
+
     def get_genuine_speaker_name_list(self):
         return self.genuine["speaker_name"].tolist()
 
     def read_audio(self, filename):
-        audio = self.loader.read_audio(filename)
-        if self.max_length > 0 and audio.shape[0] > self.max_length:
-            start_sample = random.randint(0, audio.shape[-1] - self.max_length)
-            end_sample = start_sample + self.max_length
-            audio = audio[start_sample:end_sample]
+        audio = self.loader.read_audio(filename, self.max_length)
         return audio
+
 
 def collate_triplet_fn(batch):
     anchors, positives, negatives, metadata = zip(*batch)

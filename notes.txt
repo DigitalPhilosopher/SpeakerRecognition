@@ -1,0 +1,24 @@
+EER -> Label ist falsch
+
+Distancwert * -1 -> 
+
+Testen bis es klappt
+
+batch size muss sehr groß sein 256-512
+    - idee: audios cutten -> 2-3 sekunden (batch size 38)
+    - gradient accumulation (= 1 original)
+
+compute distance falsch berechnet -> Nur 1 skalar
+
+5-7 Epochen lernen um sicherstellen, dass code funktioniert
+
+validation set + downsample funktioniert noch nicht
+
+**
+pythopn
+    - typen definieren
+    - Keine Glloobalen variablen
+
+**
+-> Wie viel bringt der Text für die Wissenschaftliche Arbeit
+

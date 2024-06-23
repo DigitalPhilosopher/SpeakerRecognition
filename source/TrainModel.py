@@ -72,14 +72,14 @@ def create_dataset(args):
     validation_dataloader = None
     if DOWNSAMPLING_VALID > 0:
         validation_dataset = ValidationDataset(
-            loader=loader(dev_labels, frontend, DOWNSAMPLING_VALID))
+            loader=loader(dev_labels, frontend, DOWNSAMPLING_VALID), max_length=MAX_AUDIO_LENGTH)
         validation_dataloader = DataLoader(validation_dataset, batch_size=BATCH_SIZE_TEST_EVAL, shuffle=True,
                                            drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
     test_dataloader = None
     if DOWNSAMPLING_TEST > 0:
         test_dataset = ValidationDataset(loader=loader(
-            test_labels, frontend, DOWNSAMPLING_TEST))
+            test_labels, frontend, DOWNSAMPLING_TEST), max_length=MAX_AUDIO_LENGTH)
         test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE_TEST_EVAL, shuffle=True,
                                      drop_last=True, num_workers=4, pin_memory=True, collate_fn=collate_valid_fn)
 
@@ -126,7 +126,7 @@ def main(args):
 
     ##### TRAINING #####
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
-                           optimizer, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps= ACCUMULATION_STEPS)
+                           optimizer, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS)
     trainer.train_model(EPOCHS)
 
 
