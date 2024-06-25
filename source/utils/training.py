@@ -28,7 +28,7 @@ def load_deepfake_dataset(dataset):
             {"name": "VoxCeleb2", "split": "dev"},
         ], [
             {"name": "VoxCeleb2", "split": "test"},
-        ], [ 
+        ], [
             {"name": "VoxCeleb2", "split": "test"},
         ]
 
@@ -81,15 +81,13 @@ class ModelTrainer:
         last_100_losses = []
         progress_bar = tqdm(
             self.dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
-        for step, [anchors, positives, negatives, metadata] in enumerate(progress_bar):
+        for step, (anchors, positives, negatives, metadata) in enumerate(progress_bar):
             try:
                 anchors, positives, negatives = anchors.to(
                     self.device), positives.to(self.device), negatives.to(self.device)
-
                 anchor_outputs = self.model(anchors)
                 positive_outputs = self.model(positives)
                 negative_outputs = self.model(negatives)
-
 
                 loss = self.loss_function(
                     l2_normalize(anchor_outputs), l2_normalize(positive_outputs), l2_normalize(negative_outputs))
@@ -99,6 +97,7 @@ class ModelTrainer:
                 if (step + 1) % accumulation_steps == 0 or (step + 1) == len(self.dataloader):
                     self.optimizer.step()
                     self.optimizer.zero_grad()
+                    torch.cuda.empty_cache()
 
                 last_100_losses.append(loss.item())
                 if len(last_100_losses) > 100:
@@ -106,10 +105,11 @@ class ModelTrainer:
                 running_loss += loss.item()
 
                 progress_bar.set_postfix(loss=loss.item(),
-                                         average_loss=sum(last_100_losses)/len(last_100_losses),
-                                         )
+                                         average_loss=sum(last_100_losses) / len(last_100_losses))
+
             except Exception as e:
                 print(f"Error during training: {e}")
+                torch.cuda.empty_cache()  # Clear cache in case of error
                 continue
 
         return running_loss
@@ -125,7 +125,8 @@ class ModelTrainer:
 
             for epoch in range(start_epoch-1, epochs):
                 epoch_start_time = time.time()
-                epoch_loss = self.train_epoch(epoch, epochs, accumulation_steps=self.accumulation_steps)
+                epoch_loss = self.train_epoch(
+                    epoch, epochs, accumulation_steps=self.accumulation_steps)
                 avg_loss = epoch_loss / len(self.dataloader)
                 self.log_epoch_metrics(avg_loss, epoch_start_time, epoch+1)
 

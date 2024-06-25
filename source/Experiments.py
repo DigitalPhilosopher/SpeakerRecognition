@@ -5,6 +5,7 @@ import multiprocessing
 import subprocess
 import argparse
 from utils import list_cuda_devices
+import time
 
 
 def main(args):
@@ -80,9 +81,12 @@ def thread_function(name, commands, list_lock):
         with open(f'logs/{name}.log', 'a') as log_file:
             pcommand = ' '.join(command)
             print(
-                f"Starting new process on device {name}: {pcommand}")
+                f"Starting new process on device {name}:\n\t$ {pcommand}")
             log_file.write(
-                f"Starting new process on device {name}: {pcommand}")
+                f"Starting new process on device {name}:\n\t$ {pcommand}")
+
+            start_time = time.time()
+
             # Start the process and wait for it to finish
             process = subprocess.Popen(
                 command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -103,7 +107,15 @@ def thread_function(name, commands, list_lock):
             else:
                 log_file.write("\nProcess finished with errors\n")
 
-            print(f"Finished process on device {name}: {pcommand}")
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+
+            hours, rem = divmod(elapsed_time, 3600)
+            minutes, seconds = divmod(rem, 60)
+
+            print(f"Finished process on device {name}:\n\t$ {pcommand}")
+            print(
+                f"\t-> Elapsed time: {int(hours):02}:{int(minutes):02}:{int(seconds):02}\n")
 
 
 if __name__ == "__main__":

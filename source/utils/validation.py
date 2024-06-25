@@ -78,18 +78,19 @@ class ModelValidator:
                     embeddings, utterances, self.valid_set)
             else:
                 scores, score_labels = self.pairwise_scores(embeddings, labels)
-                scores_genuine = [scores[i] for i in range(
-                    len(scores)) if score_labels[i] == 1]
-                scores_imposter = [scores[i] for i in range(
-                    len(scores)) if score_labels[i] == 0]
-                from utils.plot_score_lists import plot_similarity_lists_bar, calc_eer
-                plot_similarity_lists_bar(
-                    [scores_imposter, scores_genuine],
-                    ["False Accept attempt", "Genuine"], do_plot=False,
-                    save_plot_path=os.path.join("..", "logs", "score_plot.png"))
-                eer = calc_eer(scores_genuine, scores_imposter)
-                print(
-                    f'Plot saved at {os.path.join("..", "logs", "score_plot.png")}')
+
+            scores_genuine = [scores[i] for i in range(
+                len(scores)) if score_labels[i] == 1]
+            scores_imposter = [scores[i] for i in range(
+                len(scores)) if score_labels[i] == 0]
+            from utils.plot_score_lists import plot_similarity_lists_bar, calc_eer
+            plot_similarity_lists_bar(
+                [scores_imposter, scores_genuine],
+                ["False Accept attempt", "Genuine"], do_plot=False,
+                save_plot_path=os.path.join("..", "logs", "score_plot.png"))
+            eer = calc_eer(scores_genuine, scores_imposter)
+            print(
+                f'Plot saved at {os.path.join("..", "logs", "score_plot.png")}')
 
             sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
             sv_min_dcf = self.compute_min_dcf(scores, score_labels)
@@ -246,7 +247,7 @@ class ModelValidator:
                 continue
             emb1 = embedding_dict[row['utterance']]
             emb2 = embedding_dict[row['utterance_to_check']]
-            scores.append(compute_distance(
+            scores.append(1-compute_distance(
                 l2_normalize(emb1), l2_normalize(emb2)))
             score_labels.append(row['is_same_speaker'])
         return np.array(scores), np.array(score_labels)
