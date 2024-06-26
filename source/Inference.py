@@ -9,7 +9,7 @@ from utils import get_device, get_inference_arguments, get_inference_variables, 
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
-from source.utils.distance import  l2_normalize
+from utils.distance import l2_normalize
 
 
 def define_variables(args):
@@ -85,7 +85,8 @@ def infer():
         question2_embedding = model(question2.to(device))
 
     distance = compute_distance(reference_embedding, question_embedding)
-    distance_normalized = compute_distance(l2_normalize(reference_embedding), l2_normalize(question_embedding))
+    distance_normalized = compute_distance(l2_normalize(
+        reference_embedding), l2_normalize(question_embedding))
 
     if question2 is not None:
         loss = triplet_loss(

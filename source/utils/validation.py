@@ -74,7 +74,7 @@ class ModelValidator:
 
         if speaker_eer:
             if len(self.valid_set) > 0:
-                scores, score_labels = self.pairwise_scores_with_set(
+                scores, score_labels, df_results = self.pairwise_scores_with_set(
                     embeddings, utterances, self.valid_set)
             else:
                 scores, score_labels = self.pairwise_scores(embeddings, labels)
@@ -87,10 +87,10 @@ class ModelValidator:
             plot_similarity_lists_bar(
                 [scores_imposter, scores_genuine],
                 ["False Accept attempt", "Genuine"], do_plot=False,
-                save_plot_path=os.path.join("..", "logs", "score_plot.png"))
+                save_plot_path=os.path.join("..", "logs", f"{prefix}score_plot.png"))
             eer = calc_eer(scores_genuine, scores_imposter)
             print(
-                f'Plot saved at {os.path.join("..", "logs", "score_plot.png")}')
+                f'Plot saved at {os.path.join("..", "logs", f"{prefix}score_plot.png")}')
 
             sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
             sv_min_dcf = self.compute_min_dcf(scores, score_labels)
@@ -102,6 +102,12 @@ class ModelValidator:
                 "FP": FP,
                 "FN": FN,
             }
+
+            if len(df_results):
+                df_results["result"] = df_results["distance"].apply(
+                    lambda x: 1 if x > sv_threshold else 0)
+                df_results.to_csv(os.path.join(
+                    "..", "logs", f"{prefix}SV_Results.csv"), index=False)
 
             if mlflow_logging:
                 mlflow.log_metrics({
@@ -250,7 +256,10 @@ class ModelValidator:
             scores.append(1-compute_distance(
                 l2_normalize(emb1), l2_normalize(emb2)))
             score_labels.append(row['is_same_speaker'])
-        return np.array(scores), np.array(score_labels)
+        pairs_df["distance"] = scores
+        pairs_df["distance"] = pairs_df["distance"].apply(
+            lambda x: x[0].item())
+        return np.array(scores), np.array(score_labels), pairs_df
 
     def compute_eer(self, scores, score_labels):
         # Calculate the EER
