@@ -277,17 +277,7 @@ python source/Experiments.py --experiments experiments.txt
 
 # Results
 
-## LibriSpeech train-100
-| Front-End         | Triplet Mining   | Dataset    |   Speaker Verification EER |
-|:------------------|:-----------------|:-----------|---------------------------:|
-| MFCC              | Genuine          | training   |                   0.664284 |
-| MFCC              | Genuine          | validation |                   0.600074 |
-| MFCC              | Genuine          | test       |                   0.594275 |
-| WavLM-Base/Frozen | Genuine          | training   |                   0.767511 |
-| WavLM-Base/Frozen | Genuine          | validation |                   0.689974 |
-| WavLM-Base/Frozen | Genuine          | test       |                   0.64542  |
-
-## BSI-Dataset
+## First Models: BSI-Dataset
 
 ### Speaker Verification
 | Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
@@ -370,6 +360,32 @@ There are some possible alterations, that could result in better performance in 
   - [ ] deepfake detection
 - [ ] Change the trained model to use two embeddings at the same time. Instead of using a mono audio spur, this could use a dual audio input for audio in question and real audio. This would not be trained using triplet loss.
 
+### Lessons Learned
+There were still some errors in the model generation and EER calculation. The loss was not calculated for batches.
+
+## Second Models LibriSpeech train-100
+
+The main reason is to test, if Triplet Loss is able to learn speaker verification
+
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| MFCC               | Genuine          | training   |                  0.0815375 |
+| MFCC               | Genuine          | validation |                  0.0965594 |
+| MFCC               | Genuine          | test       |                  0.110305  |
+| WavLM-Base/Frozen  | Genuine          | training   |                  0.0957287 |
+| WavLM-Base/Frozen  | Genuine          | validation |                  0.145394  |
+| WavLM-Base/Frozen  | Genuine          | test       |                  0.139695  |
+| WavLM-Base/Joint   | Genuine          | training   |              **0.045797**  |
+| WavLM-Base/Joint   | Genuine          | validation |                  0.099889  |
+| WavLM-Base/Joint   | Genuine          | test       |                  0.0961832 |
+| WavLM-Large/Frozen | Genuine          | training   |                  0.0760363 |
+| WavLM-Large/Frozen | Genuine          | validation |                  0.129856  |
+| WavLM-Large/Frozen | Genuine          | test       |                  0.108015  |
+| WavLM-Large/Joint  | Genuine          | training   |              **0.0363362** |
+| WavLM-Large/Joint  | Genuine          | validation |                  0.0836108 |
+| WavLM-Large/Joint  | Genuine          | test       |                  0.0675573 |
+
+Next steps is to train on full LibriSpeech, as well as VoxCeleb (Only WavLm Base Joint)
 
 # References
 

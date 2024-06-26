@@ -1,21 +1,20 @@
 ################################################## LibriSpeech 100 ##################################################
-python source/TrainModel.py --frontend mfcc --dataset LibriSpeech.genuine --batch_size 32 --epochs 20 --validation_rate 50 --margin 0.2 --mfccs 80 --accumulation_steps 16
-python source/TrainModel.py --frontend wavlm_base --dataset LibriSpeech.genuine --batch_size 128 --epochs 20 --validation_rate 50 --margin 0.2 --accumulation_steps 4
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset LibriSpeech.genuine --batch_size 32 --epochs 20 --validation_rate 50 --margin 0.2 --accumulation_steps 16
+python source/TrainModel.py --frontend mfcc --dataset LibriSpeech.genuine --batch_size 32 --epochs 7 --validation_rate 50 --margin 0.2 --mfccs 80 --accumulation_steps 16
+python source/TrainModel.py --frontend wavlm_base --dataset LibriSpeech.genuine --batch_size 128 --epochs 7 --validation_rate 50 --margin 0.2 --accumulation_steps 4
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset LibriSpeech.genuine --batch_size 32 --epochs 7 --validation_rate 50 --learning_rate 0.00001 --margin 0.2 --accumulation_steps 16
+python source/TrainModel.py --frontend wavlm_large --dataset LibriSpeech.genuine --batch_size 128 --epochs 7 --validation_rate 50 --margin 0.2 --accumulation_steps 4
+python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset LibriSpeech.genuine --batch_size 8 --epochs 7 --validation_rate 50 --learning_rate 0.00001 --margin 0.2 --accumulation_steps 64
+
+python source/Analytics.py --frontend mfcc --dataset LibriSpeech.genuine --batch_size 1 --train --valid --test
+python source/Analytics.py --frontend wavlm_base --dataset LibriSpeech.genuine --batch_size 1 --train --valid --test
+python source/Analytics.py --frontend wavlm_base --frozen 0 --dataset LibriSpeech.genuine --batch_size 1 --train --valid --test
+python source/Analytics.py --frontend wavlm_large --dataset LibriSpeech.genuine --batch_size 1 --train --valid --test
+python source/Analytics.py --frontend wavlm_large --frozen 0 --dataset LibriSpeech.genuine --batch_size 1 --train --valid --test
 
 
 ################################################## BSI ##################################################
-
-python source/TrainModel.py --frontend mfcc --dataset BSI.genuine --batch_size 32 --epochs 20 --validation_rate 50 --margin 0.2 --mfccs 80 --accumulation_steps 16
-python source/TrainModel.py --frontend wavlm_base --dataset BSI.genuine --batch_size 128 --epochs 20 --validation_rate 50 --margin 0.2 --accumulation_steps 4
-python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.genuine --batch_size 32 --epochs 20 --validation_rate 50 --margin 0.2 --accumulation_steps 16
-
-
-################################################## LibriSpeech 100 ##################################################
-python source/TrainModel.py --frontend wavlm_large --dataset LibriSpeech.genuine --batch_size 128 --epochs 20 --validation_rate 50 --margin 0.2 --accumulation_steps 4
-python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset LibriSpeech.genuine --batch_size 8 --epochs 20 --validation_rate 50 --margin 0.2 --accumulation_steps 64
-
-
-################################################## BSI ##################################################
-python source/TrainModel.py --frontend wavlm_large --dataset BSI.genuine --batch_size 128 --epochs 20 --validation_rate 50 --margin 0.2 --accumulation_steps 4
-python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset BSI.genuine --batch_size 8 --epochs 20 --validation_rate 50 --margin 0.2 --accumulation_steps 64
+python source/TrainModel.py --frontend mfcc --dataset BSI.genuine --batch_size 32 --epochs 7 --validation_rate 50 --margin 0.2 --mfccs 80 --accumulation_steps 16
+python source/TrainModel.py --frontend wavlm_base --dataset BSI.genuine --batch_size 128 --epochs 7 --validation_rate 50 --margin 0.2 --accumulation_steps 4
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.genuine --batch_size 32 --epochs 7 --validation_rate 50 --margin 0.2 --accumulation_steps 16
+python source/TrainModel.py --frontend wavlm_large --dataset BSI.genuine --batch_size 128 --epochs 7 --validation_rate 50 --margin 0.2 --accumulation_steps 4
+python source/TrainModel.py --frontend wavlm_large --frozen 0 --dataset BSI.genuine --batch_size 8 --epochs 7 --validation_rate 50 --margin 0.2 --accumulation_steps 64
