@@ -14,22 +14,25 @@ def load_deepfake_dataset(dataset):
     if dataset == "LibriSpeech":
         return [
             {"name": "clean", "split": "train.100"},
-            # {"name": "clean", "split": "train.360"},
-            # {"name": "other", "split": "train.500"}
+            {"name": "clean", "split": "train.360"},
+            {"name": "other", "split": "train.500"}
         ], [
             {"name": "clean", "split": "dev"},
-            # {"name": "other", "split": "dev"}
+            {"name": "other", "split": "dev"}
         ], [
             {"name": "clean", "split": "test"},
-            # {"name": "other", "split": "test"}
+            {"name": "other", "split": "test"}
         ]
     if dataset == "VoxCeleb":
         return [
             {"name": "VoxCeleb2", "split": "dev"},
+            {"name": "VoxCeleb1", "split": "dev"},
         ], [
             {"name": "VoxCeleb2", "split": "test"},
+            {"name": "VoxCeleb1", "split": "test"},
         ], [
             {"name": "VoxCeleb2", "split": "test"},
+            {"name": "VoxCeleb1", "split": "test"},
         ]
 
     labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test, _ = get_label_files(

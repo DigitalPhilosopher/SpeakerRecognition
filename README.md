@@ -277,7 +277,7 @@ python source/Experiments.py --experiments experiments.txt
 
 # Results
 
-## First Models: BSI-Dataset
+## 1. Models: BSI-Dataset
 
 ### Speaker Verification
 | Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
@@ -363,7 +363,7 @@ There are some possible alterations, that could result in better performance in 
 ### Lessons Learned
 There were still some errors in the model generation and EER calculation. The loss was not calculated for batches.
 
-## Second Models LibriSpeech train-100
+## 2. Models: LibriSpeech train-100
 
 The main reason is to test, if Triplet Loss is able to learn speaker verification
 
@@ -386,6 +386,14 @@ The main reason is to test, if Triplet Loss is able to learn speaker verificatio
 | WavLM-Large/Joint  | Genuine          | test       |                  0.0675573 |
 
 Next steps is to train on full LibriSpeech, as well as VoxCeleb (Only WavLm Base Joint)
+
+## 3. Models: LibriSpeech Full + VoxCeleb1&2
+
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Genuine          | training   |                  0.0355303 |
+| WavLM-Base/Joint   | Genuine          | validation |                  0.0747318 |
+| WavLM-Base/Joint   | Genuine          | test       |                  0.0675573 |
 
 # References
 
