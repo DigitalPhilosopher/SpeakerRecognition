@@ -20,6 +20,13 @@ def get_training_arguments():
         help="Batch size for training (default: 8)"
     )
     parser.add_argument(
+        "--triplet_mining",
+        type=str,
+        required=False,
+        default="random",
+        help="Triplet mining strategy (random | hard)"
+    )
+    parser.add_argument(
         "--batch_size_test_eval",
         type=int,
         required=False,
@@ -118,6 +125,7 @@ def get_training_variables(args):
     VALIDATION_RATE = args.validation_rate
     WEIGHT_DECAY = args.weight_decay
     AMSGRAD = args.amsgrad
+    TRIPLET_MINING = args.triplet_mining
 
     if args.frontend == "mfcc":
         FOLDER = "MFCC"
@@ -158,7 +166,7 @@ def get_training_variables(args):
             EMBEDDING_SIZE, DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE,
             BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS, VALIDATION_RATE,
             WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST,
-            DOWNSAMPLING_VALID)
+            DOWNSAMPLING_VALID, TRIPLET_MINING)
 
 
 def get_inference_arguments():

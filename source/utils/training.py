@@ -2,13 +2,33 @@ import torch
 from extraction_utils.get_label_files import get_label_files
 from tqdm import tqdm
 import time
+import torch.nn.functional as F
 import mlflow
 import mlflow.pytorch
 from .validation import ModelValidator
 import gc
-from .distance import l2_normalize
-from utils.distance import compute_distance
+import numpy as np
+from .distance import l2_normalize, compute_distance
 
+class MemoryBank:
+    def __init__(self):
+        self.bank = {
+            "embeddings": [],
+            "otherEmbeddings": [],
+            "labels": [],
+            "otherLabels": [],
+        }
+
+    def add(self, anchor, positive, negative, meta_data):
+        self.bank["embeddings"] += anchor
+        self.bank["otherEmbeddings"] += positive
+        self.bank["otherEmbeddings"] += negative
+        self.bank["labels"].append(meta_data["anchor_speaker"])
+        self.bank["otherLabels"].append(meta_data["positive_speaker"])
+        self.bank["otherLabels"].append(meta_data["negative_speaker"])
+
+    def get_memory_bank(self):
+        return self.bank
 
 def load_deepfake_dataset(dataset):
     if dataset == "LibriSpeech":
@@ -52,6 +72,32 @@ def load_deepfake_dataset(dataset):
     return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
 
 
+def hard_triplet_mining(bank: MemoryBank, device, margin=.2):
+    triplets = []
+    
+    for i in range(len(bank["embeddings"])):
+        anchor = bank["embeddings"][i]
+        anchor_label = bank["labels"][i]
+
+        positive_mask = (bank["otherLabels"] == anchor_label)
+        negative_mask = (bank["otherLabels"] != anchor_label)
+
+        if len(positive_mask) == 1:
+            continue
+
+        distances = F.pairwise_distance(anchor.unsqueeze(0), torch.stack(bank["otherEmbeddings"], dim=0))
+        
+        positive_distances = torch.where(torch.from_numpy(~positive_mask).to(device), distances, torch.tensor(float('-inf')))
+        negative_distances = torch.where(torch.from_numpy(~negative_mask).to(device), distances, torch.tensor(float('inf')))
+
+        hardest_positive_idx = positive_distances.argmax()
+        hardest_negative_idx = negative_distances.argmin()
+        
+        triplets.append([i, hardest_positive_idx.item(), hardest_negative_idx.item()])
+
+    return torch.LongTensor(triplets)
+
+
 class ModelTrainer:
 
     ##### INIT #####
@@ -77,8 +123,51 @@ class ModelTrainer:
 
     ##### TRAINING #####
 
-    def train_epoch(self, epoch, epochs, accumulation_steps=1):
+    def train_epoch(self, epoch, epochs, accumulation_steps=1, triplet_mining="random"):
+        if triplet_mining == "random":
+            return self.train_epoch_random(epoch, epochs, accumulation_steps)
+        
+        elif triplet_mining == "hard":
+            return self.train_epoch_hard(epoch, epochs, accumulation_steps)
 
+    def train_epoch_hard(self, epoch, epochs, accumulation_steps):
+        self.model.train()
+        progress_bar = tqdm(
+            self.dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
+        memory_bank = MemoryBank()
+        for step, (anchors, positives, negatives, metadata) in enumerate(progress_bar):
+            anchors, positives, negatives = anchors.to(
+                self.device), positives.to(self.device), negatives.to(self.device)
+            anchor_outputs = l2_normalize(self.model(anchors))
+            positive_outputs = l2_normalize(self.model(positives))
+            negative_outputs = l2_normalize(self.model(negatives))
+            for i in range(len(metadata)):
+                memory_bank.add(anchor_outputs[i], positive_outputs[i], negative_outputs[i], metadata[i])
+
+            if (step + 1) % accumulation_steps == 0 or (step + 1) == len(self.dataloader):
+                bank = memory_bank.get_memory_bank()
+                embeddings = bank["embeddings"]
+                other_embeddings = bank["otherEmbeddings"]
+                triplets = hard_triplet_mining(bank, self.device)
+                if len(triplets) == 0:
+                    continue
+
+                anchor_embeddings = torch.stack([embeddings[i] for i in triplets[:, 0]])
+                positive_embeddings = torch.stack([other_embeddings[i] for i in triplets[:, 1]])
+                negative_embeddings = torch.stack([other_embeddings[i] for i in triplets[:, 2]])
+
+                loss = self.loss_function(anchor_embeddings, positive_embeddings, negative_embeddings)
+
+                loss.backward()
+                
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+
+                memory_bank = MemoryBank() 
+                torch.cuda.empty_cache()
+
+    
+    def train_epoch_random(self, epoch, epochs, accumulation_steps):
         self.model.train()
         running_loss = 0.0
         last_100_losses = []
@@ -117,7 +206,7 @@ class ModelTrainer:
 
         return running_loss
 
-    def train_model(self, epochs, start_epoch=1):
+    def train_model(self, epochs, start_epoch=1, triplet_mining="random"):
         try:
             mlflow.start_run(run_name=self.MODEL, experiment_id=self.FOLDER)
             self.log_params(epochs)
@@ -129,7 +218,7 @@ class ModelTrainer:
             for epoch in range(start_epoch-1, epochs):
                 epoch_start_time = time.time()
                 epoch_loss = self.train_epoch(
-                    epoch, epochs, accumulation_steps=self.accumulation_steps)
+                    epoch, epochs, accumulation_steps=self.accumulation_steps, triplet_mining=triplet_mining)
                 avg_loss = epoch_loss / len(self.dataloader)
                 self.log_epoch_metrics(avg_loss, epoch_start_time, epoch+1)
 

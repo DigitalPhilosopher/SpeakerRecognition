@@ -18,12 +18,12 @@ def define_variables(args):
     global MODEL, MODEL_PATH, DATASET, FOLDER, TAGS
     global LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS, VALIDATION_RATE
     global MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, WEIGHT_DECAY, AMSGRAD
-    global DOWNSAMPLING_TRAIN, DOWNSAMPLING_VALID, DOWNSAMPLING_TEST
+    global DOWNSAMPLING_TRAIN, DOWNSAMPLING_VALID, DOWNSAMPLING_TEST, TRIPLET_MINING
 
     (MODEL, MODEL_PATH, DATASET, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE,
      DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS,
      VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST,
-     DOWNSAMPLING_VALID) = get_training_variables(args)
+     DOWNSAMPLING_VALID, TRIPLET_MINING) = get_training_variables(args)
 
 
 def config():
@@ -44,11 +44,12 @@ def create_dataset(args):
     train_labels, dev_labels, test_labels = load_deepfake_dataset(
         DATASET.split(".")[0])
 
+    collate_triplet = collate_triplet_wav_fn
     data = DATASET.split(".")[1]
     if data == "genuine":
         tripletLossDataset = RandomTripletLossDataset
     elif data == "deepfake":
-        tripletLossDataset = DeepfakeRandomTripletLossDataset
+            tripletLossDataset = DeepfakeRandomTripletLossDataset
 
     if args.frontend == "mfcc":
         frontend = MFCCTransform(
@@ -67,7 +68,7 @@ def create_dataset(args):
     audio_dataset = tripletLossDataset(loader=loader(
         train_labels, frontend, DOWNSAMPLING_TRAIN), max_length=MAX_AUDIO_LENGTH)
     audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                  drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet_wav_fn)
+                                  drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet)
 
     validation_dataloader = None
     if DOWNSAMPLING_VALID > 0:
@@ -127,7 +128,7 @@ def main(args):
     ##### TRAINING #####
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
                            optimizer, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS)
-    trainer.train_model(EPOCHS)
+    trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING)
 
 
 if __name__ == "__main__":
