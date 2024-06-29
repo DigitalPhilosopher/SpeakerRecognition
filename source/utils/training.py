@@ -85,7 +85,7 @@ def hard_triplet_mining(bank: MemoryBank, device, margin=.2):
         if len(positive_mask) == 1:
             continue
 
-        distances = F.pairwise_distance(anchor.unsqueeze(0), torch.stack(bank["otherEmbeddings"], dim=0))
+        distances = compute_distance(anchor.unsqueeze(0), torch.stack(bank["otherEmbeddings"]))
         
         positive_distances = torch.where(torch.from_numpy(~positive_mask).to(device), distances, torch.tensor(float('-inf')))
         negative_distances = torch.where(torch.from_numpy(~negative_mask).to(device), distances, torch.tensor(float('inf')))
