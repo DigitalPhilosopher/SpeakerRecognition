@@ -389,11 +389,26 @@ Next steps is to train on full LibriSpeech, as well as VoxCeleb (Only WavLm Base
 
 ## 3. Models: LibriSpeech Full + VoxCeleb1&2
 
+### LibriSpeech Full
 | Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
 |:-------------------|:-----------------|:-----------|---------------------------:|
 | WavLM-Base/Joint   | Genuine          | training   |                  0.0355303 |
 | WavLM-Base/Joint   | Genuine          | validation |                  0.0747318 |
 | WavLM-Base/Joint   | Genuine          | test       |                  0.0675573 |
+
+### VoxCeleb 1&2 (3 Epochs)
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Genuine          | validation |                  0.499964  |
+| WavLM-Base/Joint   | Genuine          | test       |                  0.496923  |
+| WavLM-Base/Joint   | Genuine          | training   |                  0.502123  |
+
+### VoxCeleb 1&2 (7 Epochs)
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+
+
+
 
 # References
 

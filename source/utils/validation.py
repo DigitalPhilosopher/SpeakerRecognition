@@ -20,6 +20,8 @@ def get_valid_sets(name):
 
     if name == "LibriSpeech":
         valid_set = pd.read_csv("../validation_sets/LibriSpeech/valid.csv")
+    elif name == "VoxCeleb":
+        valid_set = pd.read_csv("../validation_sets/VoxCeleb/valid.csv")
 
     return valid_set, df_valid_set
 
@@ -30,6 +32,8 @@ def get_train_sets(name):
 
     if name == "LibriSpeech":
         valid_set = pd.read_csv("../validation_sets/LibriSpeech/train.csv")
+    elif name == "VoxCeleb":
+        valid_set = pd.read_csv("../validation_sets/VoxCeleb/train.csv")
 
     return valid_set, df_valid_set
 
@@ -40,6 +44,8 @@ def get_test_sets(name):
 
     if name == "LibriSpeech":
         valid_set = pd.read_csv("../validation_sets/LibriSpeech/test.csv")
+    elif name == "VoxCeleb":
+        valid_set = pd.read_csv("../validation_sets/VoxCeleb/test.csv")
 
     return valid_set, df_valid_set
 
