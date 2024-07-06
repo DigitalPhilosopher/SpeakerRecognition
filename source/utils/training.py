@@ -131,6 +131,7 @@ class ModelTrainer:
             return self.train_epoch_hard(epoch, epochs, accumulation_steps)
 
     def train_epoch_hard(self, epoch, epochs, accumulation_steps):
+        running_loss = 0.0
         self.model.train()
         progress_bar = tqdm(
             self.dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
@@ -157,6 +158,7 @@ class ModelTrainer:
                 negative_embeddings = torch.stack([other_embeddings[i] for i in triplets[:, 2]])
 
                 loss = self.loss_function(anchor_embeddings, positive_embeddings, negative_embeddings)
+                running_loss += loss.item()
 
                 loss.backward()
                 
@@ -165,6 +167,8 @@ class ModelTrainer:
 
                 memory_bank = MemoryBank() 
                 torch.cuda.empty_cache()
+        
+        return running_loss
 
     
     def train_epoch_random(self, epoch, epochs, accumulation_steps):
