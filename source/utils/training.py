@@ -9,6 +9,7 @@ from .validation import ModelValidator
 import gc
 import numpy as np
 from .distance import l2_normalize, compute_distance
+from dataloader import HardTripletLossDataset
 
 def load_deepfake_dataset(dataset):
     if dataset == "LibriSpeech":
@@ -103,12 +104,15 @@ class ModelTrainer:
 
     ##### TRAINING #####
 
-    def train_epoch(self, epoch, epochs, accumulation_steps=1, triplet_mining="random"):
+    def train_epoch(self, epoch, epochs, accumulation_steps=1, triplet_mining="random", create_dataset=None):
         if triplet_mining == "random":
             return self.train_epoch_random(epoch, epochs, accumulation_steps)
         
         elif triplet_mining == "hard":
             return self.train_epoch_hard(epoch, epochs, accumulation_steps)
+        
+        elif triplet_mining == "hard-offline":
+            return self.train_epoch_hard_offline(epoch, epochs, accumulation_steps, create_dataset)
 
     def train_epoch_hard(self, epoch, epochs, accumulation_steps):
         self.model.train()
@@ -156,13 +160,46 @@ class ModelTrainer:
 
         return running_loss
 
-    
+    def train_epoch_hard_offline(self, epoch, epochs, accumulation_steps, create_dataset=None):
+        self.model.eval()
+        embeddings = []
+        labels = []
+        utterance = []
+        running_loss = 0.0
+
+        progress_bar = tqdm(
+            self.dataloader, desc=f"Epoch {epoch+1}/{epochs}: Pre mining", leave=True)
+        for step, (anchors, _, _, metadata) in enumerate(progress_bar):
+            anchors = anchors.to(self.device)
+            anchor_outputs = self.model(anchors)
+            anchor_outputs = anchor_outputs.data.cpu()
+            
+            embeddings += [item for item in anchor_outputs]
+            labels += [item["anchor_speaker"] for item in metadata]
+            utterance += [item["anchor_utterance"] for item in metadata]
+
+        triplets = hard_triplet_mining(embeddings, labels, embeddings, labels, "cpu")
+        if len(triplets) == 0:
+            return running_loss
+
+        anchor_utterances = [utterance[i] for i in triplets[:, 0]]
+        positive_utterances = [utterance[i] for i in triplets[:, 1]]
+        negative_utterances = [utterance[i] for i in triplets[:, 2]]
+
+        training_dataloader = create_dataset(anchor_utterances, positive_utterances, negative_utterances)
+        torch.cuda.empty_cache()
+
+        return self.train_epoch_triplets(epoch, epochs, accumulation_steps, training_dataloader)
+
     def train_epoch_random(self, epoch, epochs, accumulation_steps):
+        return self.train_epoch_triplets(epoch, epochs, accumulation_steps, self.dataloader)
+
+    def train_epoch_triplets(self, epoch, epochs, accumulation_steps, dataloader):
         self.model.train()
         running_loss = 0.0
         last_100_losses = []
         progress_bar = tqdm(
-            self.dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
+            dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
         for step, (anchors, positives, negatives, metadata) in enumerate(progress_bar):
             try:
                 anchors, positives, negatives = anchors.to(
@@ -176,7 +213,7 @@ class ModelTrainer:
 
                 loss.backward()
 
-                if (step + 1) % accumulation_steps == 0 or (step + 1) == len(self.dataloader):
+                if (step + 1) % accumulation_steps == 0 or (step + 1) == len(dataloader):
                     self.optimizer.step()
                     self.optimizer.zero_grad()
                     torch.cuda.empty_cache()
@@ -196,7 +233,7 @@ class ModelTrainer:
 
         return running_loss
 
-    def train_model(self, epochs, start_epoch=1, triplet_mining="random"):
+    def train_model(self, epochs, start_epoch=1, triplet_mining="random",create_dataset=None):
         try:
             mlflow.start_run(run_name=self.MODEL, experiment_id=self.FOLDER)
             self.log_params(epochs)
@@ -208,7 +245,7 @@ class ModelTrainer:
             for epoch in range(start_epoch-1, epochs):
                 epoch_start_time = time.time()
                 epoch_loss = self.train_epoch(
-                    epoch, epochs, accumulation_steps=self.accumulation_steps, triplet_mining=triplet_mining)
+                    epoch, epochs, accumulation_steps=self.accumulation_steps, triplet_mining=triplet_mining, create_dataset=create_dataset)
                 avg_loss = epoch_loss / len(self.dataloader)
                 self.log_epoch_metrics(avg_loss, epoch_start_time, epoch+1)
 
