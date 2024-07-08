@@ -132,7 +132,8 @@ class ModelTrainer:
             other_embeddings = embeddings + [item for item in positive_outputs] + [item for item in negative_outputs]
             other_labels = labels + [item["positive_speaker"] for item in metadata] + [item["negative_speaker"] for item in metadata]
 
-            triplets = hard_triplet_mining(embeddings, labels, other_embeddings, other_labels, self.device)
+            with torch.no_grad():
+                triplets = hard_triplet_mining(embeddings, labels, other_embeddings, other_labels, self.device)
             if len(triplets) == 0:
                 continue
 
