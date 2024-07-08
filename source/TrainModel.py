@@ -8,7 +8,7 @@ import torch
 import torch.optim as optim
 from torch.nn import TripletMarginWithDistanceLoss
 from torch.utils.data import DataLoader
-from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn, BSILoader, LibriSpeechLoader, VoxCelebLoader
+from dataloader import ValidationDataset, RandomTripletLossDataset, HardTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn, BSILoader, LibriSpeechLoader, VoxCelebLoader
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
@@ -37,9 +37,32 @@ def config():
 
     device = get_device(DEVICE)
 
+def create_dataset_hard_mining(anchor, positive, negative):
+    loader = DATASET.split(".")[0]
+    if loader == "BSI":
+        loader = BSILoader
+    elif loader == "LibriSpeech":
+        loader = LibriSpeechLoader
+    elif loader == "VoxCeleb":
+        loader = VoxCelebLoader
+        
+    if args.frontend == "mfcc":
+        frontend = MFCCTransform(
+            number_output_parameters=MFCCS, sample_rate=SAMPLE_RATE)
+    else:
+        def frontend(x): return x
+
+    audio_dataset = HardTripletLossDataset(loader=loader(
+        train_labels, frontend, DOWNSAMPLING_TRAIN), max_length=MAX_AUDIO_LENGTH)
+    audio_dataset.set_triplets(anchor, positive, negative)
+    audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True,
+                                drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet_wav_fn)
+
+    return audio_dataloader
+
 
 def create_dataset(args):
-    global audio_dataloader, validation_dataloader, test_dataloader
+    global audio_dataloader, validation_dataloader, test_dataloader, train_labels
 
     train_labels, dev_labels, test_labels = load_deepfake_dataset(
         DATASET.split(".")[0])
@@ -49,7 +72,7 @@ def create_dataset(args):
     if data == "genuine":
         tripletLossDataset = RandomTripletLossDataset
     elif data == "deepfake":
-            tripletLossDataset = DeepfakeRandomTripletLossDataset
+        tripletLossDataset = DeepfakeRandomTripletLossDataset
 
     if args.frontend == "mfcc":
         frontend = MFCCTransform(
@@ -128,7 +151,7 @@ def main(args):
     ##### TRAINING #####
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
                            optimizer, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS)
-    trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING)
+    trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING, create_dataset = lambda a, p, n: create_dataset_hard_mining(a, p, n))
 
 
 if __name__ == "__main__":
