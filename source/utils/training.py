@@ -11,6 +11,7 @@ import numpy as np
 from .distance import l2_normalize, compute_distance
 from dataloader import HardTripletLossDataset
 
+
 def load_deepfake_dataset(dataset):
     if dataset == "LibriSpeech":
         return [
@@ -55,7 +56,7 @@ def load_deepfake_dataset(dataset):
 
 def hard_triplet_mining(anchor_embeddings, anchor_labels, combined_embeddings, combined_labels, device, margin=.2):
     triplets = []
-    
+
     for i in range(len(anchor_embeddings)):
         anchor = anchor_embeddings[i]
         anchor_label = anchor_labels[i]
@@ -66,15 +67,19 @@ def hard_triplet_mining(anchor_embeddings, anchor_labels, combined_embeddings, c
         if len(positive_mask) == 1:
             continue
 
-        distances = compute_distance(anchor.unsqueeze(0), torch.stack(combined_embeddings))
-        
-        positive_distances = torch.where(torch.from_numpy(~positive_mask).to(device), distances, torch.tensor(float('-inf')))
-        negative_distances = torch.where(torch.from_numpy(~negative_mask).to(device), distances, torch.tensor(float('inf')))
+        distances = compute_distance(anchor.unsqueeze(
+            0), torch.stack(combined_embeddings))
+
+        positive_distances = torch.where(torch.from_numpy(positive_mask).to(device), distances,
+                                         torch.tensor(float('-inf')))
+        negative_distances = torch.where(torch.from_numpy(negative_mask).to(device), distances,
+                                         torch.tensor(float('inf')))
 
         hardest_positive_idx = positive_distances.argmax()
         hardest_negative_idx = negative_distances.argmin()
-        
-        triplets.append([i, hardest_positive_idx.item(), hardest_negative_idx.item()])
+
+        triplets.append([i, hardest_positive_idx.item(),
+                        hardest_negative_idx.item()])
 
     return torch.LongTensor(triplets)
 
@@ -107,10 +112,10 @@ class ModelTrainer:
     def train_epoch(self, epoch, epochs, accumulation_steps=1, triplet_mining="random", create_dataset=None):
         if triplet_mining == "random":
             return self.train_epoch_random(epoch, epochs, accumulation_steps)
-        
+
         elif triplet_mining == "hard":
             return self.train_epoch_hard(epoch, epochs, accumulation_steps)
-        
+
         elif triplet_mining == "hard-offline":
             return self.train_epoch_hard_offline(epoch, epochs, accumulation_steps, create_dataset)
 
@@ -119,27 +124,33 @@ class ModelTrainer:
         running_loss = 0.0
         last_100_losses = []
         progress_bar = tqdm(
-            self.dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
+            self.dataloader, desc=f"Epoch {epoch + 1}/{epochs}", leave=True)
         for step, (anchors, positives, negatives, metadata) in enumerate(progress_bar):
             anchors, positives, negatives = anchors.to(
                 self.device), positives.to(self.device), negatives.to(self.device)
-            anchor_outputs = self.model(anchors)
-            positive_outputs = self.model(positives)
-            negative_outputs = self.model(negatives)
+            anchor_outputs = self.model(anchors)  # outputshape: [B, 1, 192]
+            positive_outputs = self.model(
+                positives)  # outputshape: [B, 1, 192]
+            negative_outputs = self.model(
+                negatives)  # outputshape: [B, 1, 192]
 
-            embeddings = [item for item in anchor_outputs]
-            labels = [item["anchor_speaker"] for item in metadata]
-            other_embeddings = embeddings + [item for item in positive_outputs] + [item for item in negative_outputs]
-            other_labels = labels + [item["positive_speaker"] for item in metadata] + [item["negative_speaker"] for item in metadata]
-
+            other_embeddings_torch = torch.cat(
+                [anchor_outputs, positive_outputs, negative_outputs], dim=0)
             with torch.no_grad():
-                triplets = hard_triplet_mining(embeddings, labels, other_embeddings, other_labels, self.device)
+                embeddings = [item for item in anchor_outputs]
+                labels = [item["anchor_speaker"] for item in metadata]
+                other_embeddings = embeddings + [item for item in positive_outputs] + [item for item in
+                                                                                       negative_outputs]
+                other_labels = labels + [item["positive_speaker"] for item in metadata] + [item["negative_speaker"] for
+                                                                                           item in metadata]
+                triplets: torch.LongTensor = hard_triplet_mining(embeddings, labels, other_embeddings, other_labels,
+                                                                 self.device)  # outputshape: [B, 3]
             if len(triplets) == 0:
                 continue
 
-            anchor_embeddings = torch.stack([embeddings[i] for i in triplets[:, 0]])
-            positive_embeddings = torch.stack([other_embeddings[i] for i in triplets[:, 1]])
-            negative_embeddings = torch.stack([other_embeddings[i] for i in triplets[:, 2]])
+            anchor_embeddings = anchor_outputs[triplets[:, 0], ::]
+            positive_embeddings = other_embeddings_torch[triplets[:, 1], ::]
+            negative_embeddings = other_embeddings_torch[triplets[:, 2], ::]
 
             loss = self.loss_function(
                 l2_normalize(anchor_embeddings), l2_normalize(positive_embeddings), l2_normalize(negative_embeddings))
@@ -157,7 +168,7 @@ class ModelTrainer:
             running_loss += loss.item()
 
             progress_bar.set_postfix(loss=loss.item(),
-                                        average_loss=sum(last_100_losses) / len(last_100_losses))
+                                     average_loss=sum(last_100_losses) / len(last_100_losses))
 
         return running_loss
 
@@ -169,17 +180,18 @@ class ModelTrainer:
         running_loss = 0.0
 
         progress_bar = tqdm(
-            self.dataloader, desc=f"Epoch {epoch+1}/{epochs}: Pre mining", leave=True)
+            self.dataloader, desc=f"Epoch {epoch + 1}/{epochs}: Pre mining", leave=True)
         for step, (anchors, _, _, metadata) in enumerate(progress_bar):
             anchors = anchors.to(self.device)
             anchor_outputs = self.model(anchors)
             anchor_outputs = anchor_outputs.data.cpu()
-            
+
             embeddings += [item for item in anchor_outputs]
             labels += [item["anchor_speaker"] for item in metadata]
             utterance += [item["anchor_utterance"] for item in metadata]
 
-        triplets = hard_triplet_mining(embeddings, labels, embeddings, labels, "cpu")
+        triplets = hard_triplet_mining(
+            embeddings, labels, embeddings, labels, "cpu")
         if len(triplets) == 0:
             return running_loss
 
@@ -187,7 +199,8 @@ class ModelTrainer:
         positive_utterances = [utterance[i] for i in triplets[:, 1]]
         negative_utterances = [utterance[i] for i in triplets[:, 2]]
 
-        training_dataloader = create_dataset(anchor_utterances, positive_utterances, negative_utterances)
+        training_dataloader = create_dataset(
+            anchor_utterances, positive_utterances, negative_utterances)
         torch.cuda.empty_cache()
 
         return self.train_epoch_triplets(epoch, epochs, accumulation_steps, training_dataloader)
@@ -200,7 +213,7 @@ class ModelTrainer:
         running_loss = 0.0
         last_100_losses = []
         progress_bar = tqdm(
-            dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
+            dataloader, desc=f"Epoch {epoch + 1}/{epochs}", leave=True)
         for step, (anchors, positives, negatives, metadata) in enumerate(progress_bar):
             try:
                 anchors, positives, negatives = anchors.to(
@@ -234,7 +247,7 @@ class ModelTrainer:
 
         return running_loss
 
-    def train_model(self, epochs, start_epoch=1, triplet_mining="random",create_dataset=None):
+    def train_model(self, epochs, start_epoch=1, triplet_mining="random", create_dataset=None):
         try:
             mlflow.start_run(run_name=self.MODEL, experiment_id=self.FOLDER)
             self.log_params(epochs)
@@ -243,25 +256,25 @@ class ModelTrainer:
             if start_epoch != 1:
                 self.load_model_state()
 
-            for epoch in range(start_epoch-1, epochs):
+            for epoch in range(start_epoch - 1, epochs):
                 epoch_start_time = time.time()
                 epoch_loss = self.train_epoch(
-                    epoch, epochs, accumulation_steps=self.accumulation_steps, triplet_mining=triplet_mining, create_dataset=create_dataset)
+                    epoch, epochs, accumulation_steps=self.accumulation_steps, triplet_mining=triplet_mining,
+                    create_dataset=create_dataset)
                 avg_loss = epoch_loss / len(self.dataloader)
-                self.log_epoch_metrics(avg_loss, epoch_start_time, epoch+1)
+                self.log_epoch_metrics(avg_loss, epoch_start_time, epoch + 1)
 
                 if avg_loss < self.best_loss:
                     self.best_loss = avg_loss
                     self.best_model_state = self.model.state_dict()
                     self.log_model("best")
 
+                self.save_model_state(epoch)
                 if (epoch + 1) % self.validation_rate == 0:
                     try:
-                        self.validator.validate_model(self.model, epoch+1)
+                        self.validator.validate_model(self.model, epoch + 1)
                     except Exception as e:
                         print(f"Error during validation: {e}")
-
-                self.save_model_state(epoch)
 
                 gc.collect()
 
