@@ -53,6 +53,45 @@ def load_deepfake_dataset(dataset):
     )
     return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
 
+def compute_distance_chunked(anchor, embeddings, chunk_size=10000):
+    distances = []
+    num_chunks = (len(embeddings) + chunk_size - 1) // chunk_size
+    for i in range(num_chunks):
+        chunk_start = i * chunk_size
+        chunk_end = min((i + 1) * chunk_size, len(embeddings))
+        chunk = embeddings[chunk_start:chunk_end]
+        dist = torch.norm(anchor - chunk, dim=1)
+        distances.append(dist)
+    return torch.cat(distances)
+
+def hard_chunked_triplet_mining(anchor_embeddings, anchor_labels, device, margin=.2):
+    triplets = []
+
+    for i in range(len(anchor_embeddings)):
+        anchor = anchor_embeddings[i]
+        anchor_label = anchor_labels[i]
+
+        positive_mask = (anchor_labels == anchor_label)
+        negative_mask = (anchor_labels != anchor_label)
+
+        if len(positive_mask) == 1:
+            continue
+
+        distances = compute_distance(anchor.unsqueeze(0), torch.stack(anchor_embeddings))
+
+        positive_distances = torch.where(torch.from_numpy(positive_mask).to(device), distances,
+                                         torch.tensor(float('-inf')))
+        negative_distances = torch.where(torch.from_numpy(negative_mask).to(device), distances,
+                                         torch.tensor(float('inf')))
+
+        hardest_positive_idx = positive_distances.argmax()
+        hardest_negative_idx = negative_distances.argmin()
+
+        triplets.append([i, hardest_positive_idx.item(),
+                        hardest_negative_idx.item()])
+
+    return torch.LongTensor(triplets)
+
 
 def hard_triplet_mining(anchor_embeddings, anchor_labels, combined_embeddings, combined_labels, device, margin=.2):
     triplets = []
@@ -173,35 +212,33 @@ class ModelTrainer:
         return running_loss
 
     def train_epoch_hard_offline(self, epoch, epochs, accumulation_steps, create_dataset=None):
-        self.model.eval()
-        embeddings = []
-        labels = []
-        utterance = []
-        running_loss = 0.0
+        with torch.no_grad():
+            embeddings = []
+            labels = []
+            utterances = []
+            running_loss = 0.0
 
-        progress_bar = tqdm(
-            self.dataloader, desc=f"Epoch {epoch + 1}/{epochs}: Pre mining", leave=True)
-        for step, (anchors, _, _, metadata) in enumerate(progress_bar):
-            anchors = anchors.to(self.device)
-            anchor_outputs = self.model(anchors)
-            anchor_outputs = anchor_outputs.data.cpu()
+            progress_bar = tqdm(
+                self.dataloader, desc=f"Epoch {epoch + 1}/{epochs}: Pre mining", leave=True)
+            for step, (anchors, _, _, metadata) in enumerate(progress_bar):
+                anchors = anchors.to(self.device)
+                anchor_outputs = self.model(anchors)  # outputshape: [B, 1, 192]
 
-            embeddings += [item for item in anchor_outputs]
-            labels += [item["anchor_speaker"] for item in metadata]
-            utterance += [item["anchor_utterance"] for item in metadata]
+                embeddings += [item for item in anchor_outputs]
+                labels += [item["anchor_speaker"] for item in metadata]
+                utterances += [item["anchor_utterance"] for item in metadata]
+            
+            triplets: torch.LongTensor = hard_chunked_triplet_mining(embeddings, labels, self.device)  # outputshape: [B, 3]
+            if len(triplets) == 0:
+                return running_loss
 
-        triplets = hard_triplet_mining(
-            embeddings, labels, embeddings, labels, "cpu")
-        if len(triplets) == 0:
-            return running_loss
+            anchor_utterances = [utterances[i] for i in triplets[:, 0]]
+            positive_utterances = [utterances[i] for i in triplets[:, 1]]
+            negative_utterances = [utterances[i] for i in triplets[:, 2]]
 
-        anchor_utterances = [utterance[i] for i in triplets[:, 0]]
-        positive_utterances = [utterance[i] for i in triplets[:, 1]]
-        negative_utterances = [utterance[i] for i in triplets[:, 2]]
-
-        training_dataloader = create_dataset(
-            anchor_utterances, positive_utterances, negative_utterances)
-        torch.cuda.empty_cache()
+            training_dataloader = create_dataset(
+                anchor_utterances, positive_utterances, negative_utterances)
+            torch.cuda.empty_cache()
 
         return self.train_epoch_triplets(epoch, epochs, accumulation_steps, training_dataloader)
 
