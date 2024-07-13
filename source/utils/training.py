@@ -58,7 +58,7 @@ def hard_chunked_triplet_mining(anchor_embeddings, anchor_labels, device, margin
     all_embeddings = torch.stack(anchor_embeddings).to(device)
     anchor_labels = torch.tensor(anchor_labels)
 
-    for i in range(len(anchor_embeddings)):
+    for i in tqdm(range(len(anchor_embeddings)), desc="Triplet Mining", leave=True):
         anchor = anchor_embeddings[i].to(device)
         anchor_label = anchor_labels[i].item()
 
