@@ -53,42 +53,61 @@ def load_deepfake_dataset(dataset):
     )
     return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
 
-def compute_distance_chunked(anchor, embeddings, chunk_size=10000):
-    distances = []
-    num_chunks = (len(embeddings) + chunk_size - 1) // chunk_size
-    for i in range(num_chunks):
-        chunk_start = i * chunk_size
-        chunk_end = min((i + 1) * chunk_size, len(embeddings))
-        chunk = embeddings[chunk_start:chunk_end]
-        dist = torch.norm(anchor - chunk, dim=1)
-        distances.append(dist)
-    return torch.cat(distances)
-
-def hard_chunked_triplet_mining(anchor_embeddings, anchor_labels, device, margin=.2):
+def hard_chunked_triplet_mining(anchor_embeddings, anchor_labels, device, margin=.2, chunk_size=1000):
     triplets = []
+    all_embeddings = torch.stack(anchor_embeddings).to(device)
+    anchor_labels = torch.tensor(anchor_labels)
 
     for i in range(len(anchor_embeddings)):
-        anchor = anchor_embeddings[i]
-        anchor_label = anchor_labels[i]
+        anchor = anchor_embeddings[i].to(device)
+        anchor_label = anchor_labels[i].item()
 
-        positive_mask = (anchor_labels == anchor_label)
-        negative_mask = (anchor_labels != anchor_label)
+        positive_mask = (anchor_labels == anchor_label).to(device)
+        negative_mask = (anchor_labels != anchor_label).to(device)
 
-        if len(positive_mask) == 1:
+        if positive_mask.sum().item() <= 1:
             continue
 
-        distances = compute_distance(anchor.unsqueeze(0), torch.stack(anchor_embeddings))
+        num_chunks = (all_embeddings.size(0) + chunk_size - 1) // chunk_size
+    
+        hardest_positive_distance = float('-inf')
+        hardest_positive_idx = -1
+        
+        hardest_negative_distance = float('inf')
+        hardest_negative_idx = -1
 
-        positive_distances = torch.where(torch.from_numpy(positive_mask).to(device), distances,
-                                         torch.tensor(float('-inf')))
-        negative_distances = torch.where(torch.from_numpy(negative_mask).to(device), distances,
-                                         torch.tensor(float('inf')))
+        for j in range(num_chunks):
+            start_idx = j * chunk_size
+            end_idx = min((j + 1) * chunk_size, all_embeddings.size(0))
+            
+            chunk = all_embeddings[start_idx:end_idx]
+            
+            distances = compute_distance(anchor.unsqueeze(0), chunk)
+            
+            chunk_positive_mask = positive_mask[start_idx:end_idx]
+            chunk_negative_mask = negative_mask[start_idx:end_idx]
+            
+            positive_distances = torch.where(chunk_positive_mask, distances,
+                                            torch.tensor(float('-inf')).to(device))
+            negative_distances = torch.where(chunk_negative_mask, distances,
+                                            torch.tensor(float('inf')).to(device))
+            
+            chunk_hardest_positive_idx = positive_distances.argmax()
+            chunk_hardest_negative_idx = negative_distances.argmin()
+            
+            chunk_hardest_positive_distance = positive_distances[chunk_hardest_positive_idx].item()
+            chunk_hardest_negative_distance = negative_distances[chunk_hardest_negative_idx].item()
+            
+            if chunk_hardest_positive_distance > hardest_positive_distance:
+                hardest_positive_distance = chunk_hardest_positive_distance
+                hardest_positive_idx = start_idx + chunk_hardest_positive_idx.item()
+            
+            if chunk_hardest_negative_distance < hardest_negative_distance:
+                hardest_negative_distance = chunk_hardest_negative_distance
+                hardest_negative_idx = start_idx + chunk_hardest_negative_idx.item()
 
-        hardest_positive_idx = positive_distances.argmax()
-        hardest_negative_idx = negative_distances.argmin()
-
-        triplets.append([i, hardest_positive_idx.item(),
-                        hardest_negative_idx.item()])
+        if hardest_positive_idx != -1 and hardest_negative_idx != -1:
+            triplets.append([i, hardest_positive_idx, hardest_negative_idx])
 
     return torch.LongTensor(triplets)
 
