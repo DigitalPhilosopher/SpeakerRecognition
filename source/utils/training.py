@@ -53,7 +53,8 @@ def load_deepfake_dataset(dataset):
     )
     return labels_text_path_list_train, labels_text_path_list_dev, labels_text_path_list_test
 
-def hard_chunked_triplet_mining(anchor_embeddings, anchor_labels, device, margin=.2, chunk_size=1000):
+
+def hard_chunked_triplet_mining(anchor_embeddings, anchor_labels, device, margin=.2, chunk_size=1000000):
     triplets = []
     all_embeddings = torch.stack(anchor_embeddings).to(device)
     anchor_labels = torch.tensor(anchor_labels)
@@ -69,39 +70,41 @@ def hard_chunked_triplet_mining(anchor_embeddings, anchor_labels, device, margin
             continue
 
         num_chunks = (all_embeddings.size(0) + chunk_size - 1) // chunk_size
-    
+
         hardest_positive_distance = float('-inf')
         hardest_positive_idx = -1
-        
+
         hardest_negative_distance = float('inf')
         hardest_negative_idx = -1
 
         for j in range(num_chunks):
             start_idx = j * chunk_size
             end_idx = min((j + 1) * chunk_size, all_embeddings.size(0))
-            
+
             chunk = all_embeddings[start_idx:end_idx]
-            
+
             distances = compute_distance(anchor.unsqueeze(0), chunk)
-            
+
             chunk_positive_mask = positive_mask[start_idx:end_idx]
             chunk_negative_mask = negative_mask[start_idx:end_idx]
-            
+
             positive_distances = torch.where(chunk_positive_mask, distances,
-                                            torch.tensor(float('-inf')).to(device))
+                                             torch.tensor(float('-inf')).to(device))
             negative_distances = torch.where(chunk_negative_mask, distances,
-                                            torch.tensor(float('inf')).to(device))
-            
+                                             torch.tensor(float('inf')).to(device))
+
             chunk_hardest_positive_idx = positive_distances.argmax()
             chunk_hardest_negative_idx = negative_distances.argmin()
-            
-            chunk_hardest_positive_distance = positive_distances[chunk_hardest_positive_idx].item()
-            chunk_hardest_negative_distance = negative_distances[chunk_hardest_negative_idx].item()
-            
+
+            chunk_hardest_positive_distance = positive_distances[chunk_hardest_positive_idx].item(
+            )
+            chunk_hardest_negative_distance = negative_distances[chunk_hardest_negative_idx].item(
+            )
+
             if chunk_hardest_positive_distance > hardest_positive_distance:
                 hardest_positive_distance = chunk_hardest_positive_distance
                 hardest_positive_idx = start_idx + chunk_hardest_positive_idx.item()
-            
+
             if chunk_hardest_negative_distance < hardest_negative_distance:
                 hardest_negative_distance = chunk_hardest_negative_distance
                 hardest_negative_idx = start_idx + chunk_hardest_negative_idx.item()
@@ -241,13 +244,15 @@ class ModelTrainer:
                 self.dataloader, desc=f"Epoch {epoch + 1}/{epochs}: Pre mining", leave=True)
             for step, (anchors, _, _, metadata) in enumerate(progress_bar):
                 anchors = anchors.to(self.device)
-                anchor_outputs = self.model(anchors)  # outputshape: [B, 1, 192]
+                # outputshape: [B, 1, 192]
+                anchor_outputs = self.model(anchors)
 
                 embeddings += [item for item in anchor_outputs]
                 labels += [item["anchor_speaker"] for item in metadata]
                 utterances += [item["anchor_utterance"] for item in metadata]
-            
-            triplets: torch.LongTensor = hard_chunked_triplet_mining(embeddings, labels, self.device)  # outputshape: [B, 3]
+
+            triplets: torch.LongTensor = hard_chunked_triplet_mining(
+                embeddings, labels, self.device)  # outputshape: [B, 3]
             if len(triplets) == 0:
                 return running_loss
 

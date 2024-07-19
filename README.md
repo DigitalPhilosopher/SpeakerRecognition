@@ -429,6 +429,9 @@ Next steps is to train on full LibriSpeech, as well as VoxCeleb (Only WavLm Base
 ### LibriSpeech Full - Hard offline Mining
 | Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
 |:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Genuine          | training   |                  0.0494411 |
+| WavLM-Base/Joint   | Genuine          | validation |                  0.132445  |
+| WavLM-Base/Joint   | Genuine          | test       |                  0.108779  |
 
 # References
 
