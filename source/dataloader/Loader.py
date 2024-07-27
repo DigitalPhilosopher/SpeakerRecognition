@@ -38,7 +38,7 @@ class Loader(Dataset, ABC):
         pass
 
     def get_data(self):
-        return (self.genuine, self.data_list)
+        return self.genuine, self.data_list
 
     def read_audio(self, filename, max_length=0):
         waveform, _ = librosa.load(filename, sr=16000)

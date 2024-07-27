@@ -8,7 +8,7 @@ class AudioDataset(Dataset):
 
         self.loader = loader
         self.max_length = max_length
-        self.data_list, self.genuine = loader.get_data()
+        self.genuine, self.data_list = loader.get_data()
 
     def __len__(self):
         return len(self.genuine)
