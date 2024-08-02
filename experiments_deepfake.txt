@@ -1,0 +1,9 @@
+# Training
+## WavLM Base Joint
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --batch_size 4 --epochs 3 --triplet_mining random --learning_rate 0.0001 --margin 0.2 --validation_rate 50 --model_path ../models/WavLM-Base-joint_ECAPA-TDNN_Random-Triplet-Mining_VoxCeleb-Genuine_best_model_state.pth
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --batch_size 4 --epochs 3 --triplet_mining hard --learning_rate 0.0001 --margin 0.2 --validation_rate 50 --model_path ../models/WavLM-Base-joint_ECAPA-TDNN_Random-Triplet-Mining_VoxCeleb-Genuine_best_model_state.pth
+python source/TrainModel.py --frontend wavlm_base --frozen 0 --dataset BSI.deepfake --batch_size 4 --epochs 3 --triplet_mining hard.same_audio --learning_rate 0.0001 --margin 0.2 --validation_rate 50 --model_path ../models/WavLM-Base-joint_ECAPA-TDNN_Random-Triplet-Mining_VoxCeleb-Genuine_best_model_state.pth
+
+# Analytics
+## WavLM Base Frozen
+python source/Analytics.py --frontend wavlm_base --dataset BSI.deepfake --batch_size 16 --train --valid --test --downsample_train 1000
