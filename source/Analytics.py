@@ -134,10 +134,9 @@ def analyze():
 
 def get_analytics(dataset_name, dataloader, _set, df_set):
     print(
-        f"Starting to validate the {dataset_name} (model={MODEL}, speaker_eer={(not NO_GENUINE)}, deepfake_eer={(not NO_DEEPFAKE)})")
+        f"Starting to validate the {dataset_name} (model={MODEL})")
     validator = ModelValidator(dataloader, device, _set, df_set)
-    sv_eer, sv_threshold, sv_rates, sv_minDCF, dd_eer, dd_threshold, dd_rates, dd_minDCF = validator.validate_model(
-        model=model, speaker_eer=(not NO_GENUINE), deepfake_eer=(not NO_DEEPFAKE), mlflow_logging=False)
+    sv_eer, sv_threshold, sv_rates, sv_minDCF = validator.validate_model(model=model, mlflow_logging=False)
 
     data_single_row = {
         "Model": MODEL,
@@ -149,13 +148,6 @@ def get_analytics(dataset_name, dataloader, _set, df_set):
         "Speaker Verification True Positives": sv_rates["TP"],
         "Speaker Verification False Negatives": sv_rates["FN"],
         "Speaker Verification False Positives": sv_rates["FP"],
-        "Deepfake Detection EER": dd_eer,
-        "Deepfake Detection minDCF": dd_minDCF,
-        "Deepfake Detection Threshold": dd_threshold,
-        "Deepfake Detection True Negatives": dd_rates["TN"],
-        "Deepfake Detection True Positives": dd_rates["TP"],
-        "Deepfake Detection False Negatives": dd_rates["FN"],
-        "Deepfake Detection False Positives": dd_rates["FP"]
     }
 
     return pd.DataFrame([data_single_row])
@@ -171,12 +163,6 @@ def print_analytics(dataset_name, analytics_df):
                 f"Speaker Verification minDCF: {row['Speaker Verification minDCF']}")
             print(
                 f"Speaker Verification Threshold: {row['Speaker Verification Threshold']}")
-        if not NO_DEEPFAKE:
-            print(f"Deepfake Detection EER: {row['Deepfake Detection EER']}")
-            print(
-                f"Deepfake Detection minDCF: {row['Deepfake Detection minDCF']}")
-            print(
-                f"Deepfake Detection Threshold: {row['Deepfake Detection Threshold']}")
 
 
 def save_analytics_to_csv(analytics_df, file_path):

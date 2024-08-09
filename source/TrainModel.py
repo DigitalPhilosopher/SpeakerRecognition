@@ -22,7 +22,7 @@ def define_variables(args):
 
     (MODEL, MODEL_PATH, DATASET, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE,
      DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS,
-     VALIDATION_RATE, WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST,
+     WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST,
      DOWNSAMPLING_VALID, TRIPLET_MINING) = get_training_variables(args)
 
 
@@ -150,7 +150,7 @@ def main(args):
 
     ##### TRAINING #####
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
-                           optimizer, MODEL, validation_rate=VALIDATION_RATE, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS)
+                           optimizer, MODEL, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS)
     trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING, create_dataset = lambda a, p, n: create_dataset_hard_mining(a, p, n))
 
 

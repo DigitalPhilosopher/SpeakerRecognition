@@ -3,7 +3,6 @@ from extraction_utils.get_label_files import get_label_files
 import time
 import mlflow
 import mlflow.pytorch
-from .validation import ModelValidator
 import gc
 from .mining import RandomMiningTrainer, HardMiningTrainer, HardOfflineMiningTrainer
 
@@ -56,12 +55,11 @@ class ModelTrainer:
 
     def __init__(self, model, dataloader, valid_dataloader, test_dataloader,
                  device, loss_function, optimizer, MODEL,
-                 FOLDER="Default", TAGS={}, accumulation_steps=1, validation_rate=5):
+                 FOLDER="Default", TAGS={}, accumulation_steps=1):
         self.model = model
         self.dataloader = dataloader
         self.test_dataloader = valid_dataloader
         self.test_dataloader = test_dataloader
-        self.validation_rate = validation_rate
         self.device = device
         self.loss_function = loss_function
         self.optimizer = optimizer
@@ -71,7 +69,6 @@ class ModelTrainer:
         self.TAGS = TAGS
         self.best_loss = float('inf')
         self.best_model_state = None
-        self.validator = ModelValidator(valid_dataloader, device)
 
     ##### TRAINING #####
 
@@ -109,12 +106,6 @@ class ModelTrainer:
                     self.log_model("best")
 
                 self.save_model_state(epoch)
-                if (epoch + 1) % self.validation_rate == 0:
-                    try:
-                        self.validator.validate_model(self.model, epoch + 1)
-                    except Exception as e:
-                        print(f"Error during validation: {e}")
-
                 gc.collect()
 
             self.log_model("latest")
@@ -124,8 +115,6 @@ class ModelTrainer:
             best_model.load_state_dict(self.best_model_state)
             best_model.to(self.device)
             best_model.eval()
-            tester = ModelValidator(self.test_dataloader, self.device)
-            tester.validate_model(best_model, epochs, "Best Model - ")
         finally:
             mlflow.end_run()
 

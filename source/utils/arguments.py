@@ -49,15 +49,6 @@ def get_training_arguments():
         help="Number of training epochs (default: 25)"
     )
 
-    # Validation
-    parser.add_argument(
-        "--validation_rate",
-        type=int,
-        required=False,
-        default=5,
-        help="Validation rate, i.e., validate every N epochs (default: 5)"
-    )
-
     # Pretrained_model
     parser.add_argument(
         "--model_path",
@@ -122,7 +113,6 @@ def get_training_variables(args):
     BATCH_SIZE_TEST_EVAL = args.batch_size_test_eval
     ACCUMULATION_STEPS = args.accumulation_steps
     EPOCHS = args.epochs
-    VALIDATION_RATE = args.validation_rate
     WEIGHT_DECAY = args.weight_decay
     AMSGRAD = args.amsgrad
     TRIPLET_MINING = args.triplet_mining
@@ -164,7 +154,7 @@ def get_training_variables(args):
 
     return (MODEL, MODEL_PATH, DATASET, FOLDER, TAGS, MFCCS, SAMPLE_RATE,
             EMBEDDING_SIZE, DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE,
-            BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS, VALIDATION_RATE,
+            BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS,
             WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST,
             DOWNSAMPLING_VALID, TRIPLET_MINING)
 

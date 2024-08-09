@@ -22,6 +22,8 @@ def get_valid_sets(name):
         valid_set = pd.read_csv("../validation_sets/LibriSpeech/valid.csv")
     elif name == "VoxCeleb":
         valid_set = pd.read_csv("../validation_sets/VoxCeleb/valid.csv")
+    elif name == "BSI":
+        valid_set = pd.read_csv("../validation_sets/BSI/valid.csv")
 
     return valid_set, df_valid_set
 
@@ -34,6 +36,8 @@ def get_train_sets(name):
         valid_set = pd.read_csv("../validation_sets/LibriSpeech/train.csv")
     elif name == "VoxCeleb":
         valid_set = pd.read_csv("../validation_sets/VoxCeleb/train.csv")
+    elif name == "BSI":
+        valid_set = pd.read_csv("../validation_sets/BSI/train.csv")
 
     return valid_set, df_valid_set
 
@@ -46,6 +50,8 @@ def get_test_sets(name):
         valid_set = pd.read_csv("../validation_sets/LibriSpeech/test.csv")
     elif name == "VoxCeleb":
         valid_set = pd.read_csv("../validation_sets/VoxCeleb/test.csv")
+    elif name == "BSI":
+        valid_set = pd.read_csv("../validation_sets/BSI/test.csv")
 
     return valid_set, df_valid_set
 
@@ -61,96 +67,63 @@ class ModelValidator:
         self.df_valid_set = df_valid_set
 
     ##### VALIDATION #####
-    def validate_model(self, model, step=-1, speaker_eer=True, deepfake_eer=True, mlflow_logging=True, prefix=""):
+    def validate_model(self, model, step=-1, mlflow_logging=True, prefix=""):
         start_time = time.time()
 
-        sv_eer, sv_threshold, dd_eer, dd_threshold = -1, -1, -1, -1
-        sv_rates, dd_rates = {"TP": 0, "TN": 0, "FP": 0, "FN": 0}, {
-            "TP": 0, "TN": 0, "FP": 0, "FN": 0}
+        sv_eer, sv_threshold = -1, -1
+        sv_rates = {"TP": 0, "TN": 0, "FP": 0, "FN": 0}
 
-        sv_min_dcf, dd_min_dcf = -1, -1
+        sv_min_dcf = -1
 
         if not self.dataloader:
-            return sv_eer, sv_threshold, sv_rates, sv_min_dcf, dd_eer, dd_threshold, dd_rates, dd_min_dcf
+            return sv_eer, sv_threshold, sv_rates, sv_min_dcf
 
         model.eval()
 
-        embeddings, labels, utterances, deepfake_embeddings, deepfake_labels, deepfake_utterances, deepfake_methods = self.generate_embeddings(
-            model)
+        embeddings, labels, utterances = self.generate_embeddings(model)
 
-        if speaker_eer:
-            if len(self.valid_set) > 0:
-                scores, score_labels, df_results = self.pairwise_scores_with_set(
-                    embeddings, utterances, self.valid_set)
-            else:
-                scores, score_labels = self.pairwise_scores(embeddings, labels)
+        if len(self.valid_set) > 0:
+            scores, score_labels, df_results = self.pairwise_scores_with_set(
+                embeddings, utterances, self.valid_set)
+        else:
+            scores, score_labels = self.pairwise_scores(embeddings, labels)
 
-            scores_genuine = [scores[i] for i in range(
-                len(scores)) if score_labels[i] == 1]
-            scores_imposter = [scores[i] for i in range(
-                len(scores)) if score_labels[i] == 0]
-            from utils.plot_score_lists import plot_similarity_lists_bar, calc_eer
-            plot_similarity_lists_bar(
-                [scores_imposter, scores_genuine],
-                ["False Accept attempt", "Genuine"], do_plot=False,
-                save_plot_path=os.path.join("..", "logs", f"{prefix}score_plot.png"))
-            eer = calc_eer(scores_genuine, scores_imposter)
-            print(
-                f'Plot saved at {os.path.join("..", "logs", f"{prefix}score_plot.png")}')
+        scores_genuine = [scores[i] for i in range(
+            len(scores)) if score_labels[i] == 1]
+        scores_imposter = [scores[i] for i in range(
+            len(scores)) if score_labels[i] == 0]
+        from utils.plot_score_lists import plot_similarity_lists_bar, calc_eer
+        plot_similarity_lists_bar(
+            [scores_imposter, scores_genuine],
+            ["False Accept attempt", "Genuine"], do_plot=False,
+            save_plot_path=os.path.join("..", "logs", f"{prefix}score_plot.png"))
+        eer = calc_eer(scores_genuine, scores_imposter)
+        print(
+            f'Plot saved at {os.path.join("..", "logs", f"{prefix}score_plot.png")}')
 
-            sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
-            sv_min_dcf = self.compute_min_dcf(scores, score_labels)
-            TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
-                scores, score_labels, sv_threshold)
-            sv_rates = {
-                "TP": TP,
-                "TN": TN,
-                "FP": FP,
-                "FN": FN,
-            }
+        sv_eer, sv_threshold = self.compute_eer(scores, score_labels)
+        sv_min_dcf = self.compute_min_dcf(scores, score_labels)
+        TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
+            scores, score_labels, sv_threshold)
+        sv_rates = {
+            "TP": TP,
+            "TN": TN,
+            "FP": FP,
+            "FN": FN,
+        }
 
-            if len(df_results):
-                df_results["result"] = df_results["distance"].apply(
-                    lambda x: 1 if x > sv_threshold else 0)
-                df_results.to_csv(os.path.join(
-                    "..", "logs", f"{prefix}SV_Results.csv"), index=False)
+        if len(df_results):
+            df_results["result"] = df_results["distance"].apply(
+                lambda x: 1 if x > sv_threshold else 0)
+            df_results.to_csv(os.path.join(
+                "..", "logs", f"{prefix}SV_Results.csv"), index=False)
 
-            if mlflow_logging:
-                mlflow.log_metrics({
-                    prefix + 'EER - Speaker Verification': sv_eer,
-                    prefix + 'Threshold - Speaker Verification': sv_threshold,
-                    prefix + 'minDCF - Speaker Verification': sv_min_dcf
-                }, step=step)
-
-        if deepfake_eer and len(deepfake_embeddings) > 0:
-            genuine_deepfake_scores, genuine_deepfake_labels, method_scores = self.generate_deepfake_pairwise_scores(
-                labels, embeddings, deepfake_labels, deepfake_embeddings, deepfake_methods)
-            dd_eer, dd_threshold = self.compute_eer(
-                genuine_deepfake_scores, genuine_deepfake_labels)
-            dd_min_dcf = self.compute_min_dcf(
-                genuine_deepfake_scores, genuine_deepfake_labels)
-            TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
-                genuine_deepfake_scores, genuine_deepfake_labels, dd_threshold)
-            dd_rates = {
-                "TP": TP,
-                "TN": TN,
-                "FP": FP,
-                "FN": FN,
-            }
-
-            # Find the hardest method
-            avg_method_scores = {method: np.mean(
-                scores) for method, scores in method_scores.items()}
-            hardest_method = min(avg_method_scores, key=avg_method_scores.get)
-            hardest_method_score = avg_method_scores[hardest_method]
-
-            if mlflow_logging:
-                mlflow.log_metrics({
-                    prefix + 'EER - Deepfake Detection': dd_eer,
-                    prefix + 'Threshold - Deepfake Detection': dd_threshold,
-                    prefix + 'minDCF - Deepfake Detection': dd_min_dcf,
-                    prefix + 'Hardest Deepfake Method': hardest_method_score
-                }, step=step)
+        if mlflow_logging:
+            mlflow.log_metrics({
+                prefix + 'EER - Speaker Verification': sv_eer,
+                prefix + 'Threshold - Speaker Verification': sv_threshold,
+                prefix + 'minDCF - Speaker Verification': sv_min_dcf
+            }, step=step)
 
         end_time = time.time()
         validation_time_minutes = int((end_time - start_time) / 60)
@@ -161,17 +134,12 @@ class ModelValidator:
 
         gc.collect()
 
-        return sv_eer, sv_threshold, sv_rates, sv_min_dcf, dd_eer, dd_threshold, dd_rates, dd_min_dcf
+        return sv_eer, sv_threshold, sv_rates, sv_min_dcf
 
     def generate_embeddings(self, model):
         embeddings = []
         labels = []
         utterances = []
-
-        deepfake_embeddings = []
-        deepfake_labels = []
-        deepfake_utterances = []
-        deepfake_methods = []
 
         with torch.no_grad():
             for data in tqdm(self.dataloader, desc="Generating embeddings"):
@@ -185,57 +153,7 @@ class ModelValidator:
                 embeddings.extend(embedding_output[genuine_indices])
                 labels.extend(targets[genuine_indices])
                 utterances.extend(utterance_ids[genuine_indices])
-
-                deepfake_embeddings.extend(embedding_output[~genuine_indices])
-                deepfake_labels.extend(targets[~genuine_indices])
-                deepfake_utterances.extend(utterance_ids[~genuine_indices])
-                deepfake_methods.extend(method[~genuine_indices])
-        return embeddings, labels, utterances, deepfake_embeddings, deepfake_labels, deepfake_utterances, deepfake_methods
-
-    def generate_deepfake_pairwise_scores(self, labels, embeddings, deepfake_labels, deepfake_embeddings, deepfake_methods):
-        unique_labels = list(set(labels))
-
-        genuine_deepfake_scores = []
-        genuine_deepfake_labels = []
-        method_scores = defaultdict(list)
-
-        for speaker in tqdm(unique_labels, desc="Calculating deepfake distances"):
-            genuine_indices = [i for i, lbl in enumerate(
-                labels) if lbl == speaker]
-            deepfake_indices = [i for i, lbl in enumerate(
-                deepfake_labels) if lbl == speaker]
-
-            # Compute scores for genuine-genuine pairs
-            for gi1, gi2 in combinations(genuine_indices, 2):
-                genuine_deepfake_scores.append(
-                    compute_distance(l2_normalize(embeddings[gi1]), l2_normalize(embeddings[gi2])))
-                # 1 indicates genuine-genuine
-                genuine_deepfake_labels.append(1)
-
-            # Compute scores for genuine-deepfake pairs
-            for gi in genuine_indices:
-                for di in deepfake_indices:
-                    score = compute_distance(
-                        l2_normalize(embeddings[gi]), l2_normalize(deepfake_embeddings[di]))
-                    genuine_deepfake_scores.append(score)
-                    genuine_deepfake_labels.append(0)
-                    method_scores[deepfake_methods[di]].append(score)
-
-        return genuine_deepfake_scores, genuine_deepfake_labels, method_scores
-
-    def pariwise_loss(self, embeddings, labels, valid_set=[]) -> float:
-        triplet_loss = TripletMarginWithDistanceLoss(
-            distance_function=compute_distance, margin=0.2)
-
-        losses = []
-        # Compute pairwise scores
-        for (emb1, lbl1), (emb2, lbl2), (emb3, lbl3) in tqdm(combinations(zip(embeddings, labels), 3), desc="Compute average loss"):
-            if lbl1 == lbl2 and lbl1 != lbl3:
-                loss = triplet_loss(
-                    l2_normalize(emb1), l2_normalize(emb2),
-                    l2_normalize(emb3))
-                losses.append(loss)
-        return sum(losses) / len(losses)
+        return embeddings, labels, utterances
 
     def pairwise_scores(self, embeddings, labels, valid_set=[]):
         scores = []
@@ -313,3 +231,6 @@ class ModelValidator:
                 min_dcf = dcf_i
 
         return min_dcf
+
+class DeepfakeModelValidator(ModelValidator):
+    pass
