@@ -80,7 +80,7 @@ class ModelValidator:
 
         model.eval()
 
-        embeddings, labels, utterances = self.generate_embeddings(model)
+        embeddings, labels, utterances, methods = self.generate_embeddings(model)
 
         if len(self.valid_set) > 0:
             scores, score_labels, df_results = self.pairwise_scores_with_set(
@@ -233,4 +233,94 @@ class ModelValidator:
         return min_dcf
 
 class DeepfakeModelValidator(ModelValidator):
-    pass
+    def generate_embeddings(self, model):
+        embeddings = []
+        labels = []
+        utterances = []
+
+        deepfake_embeddings = []
+        deepfake_labels = []
+        deepfake_utterances = []
+        deepfake_methods = []
+
+        with torch.no_grad():
+            for data in tqdm(self.dataloader, desc="Generating embeddings"):
+                inputs, targets, utterance_ids, is_genuine, method = data
+                inputs = inputs.to(self.device)
+                outputs = model(inputs)
+                embedding_output = outputs.data.cpu()
+                genuine_indices = is_genuine == 1
+
+                # Separate embeddings and labels for genuine and deepfake
+                embeddings.extend(embedding_output[genuine_indices])
+                labels.extend(targets[genuine_indices])
+                utterances.extend(utterance_ids[genuine_indices])
+
+                deepfake_embeddings.extend(embedding_output[~genuine_indices])
+                deepfake_labels.extend(targets[~genuine_indices])
+                deepfake_utterances.extend(utterance_ids[~genuine_indices])
+                deepfake_methods.extend(method[~genuine_indices])
+        return embeddings, labels, utterances, deepfake_embeddings, deepfake_labels, deepfake_utterances, deepfake_methods
+
+    ##### VALIDATION #####
+    def validate_model(self, model):
+        start_time = time.time()
+
+        sv_eer, sv_threshold = -1, -1
+        sv_rates = {"TP": 0, "TN": 0, "FP": 0, "FN": 0}
+
+        sv_min_dcf = -1
+
+        if not self.dataloader:
+            return sv_eer, sv_threshold, sv_rates, sv_min_dcf
+
+        model.eval()
+
+        embeddings, labels, utterances, deepfake_embeddings, deepfake_labels, deepfake_utterances, deepfake_methods = self.generate_embeddings(model)
+
+        if len(self.valid_set) > 0:
+            scores, score_labels, df_results = self.pairwise_scores_with_set(
+                embeddings, utterances, self.valid_set)
+        else:
+            scores, score_labels = self.pairwise_scores(embeddings, labels)
+
+        genuine_deepfake_scores, genuine_deepfake_labels, method_scores = self.generate_deepfake_pairwise_scores(
+            labels, embeddings, deepfake_labels, deepfake_embeddings, deepfake_methods)
+
+        dd_eer, dd_threshold = self.compute_eer(
+            genuine_deepfake_scores, genuine_deepfake_labels)
+        dd_min_dcf = self.compute_min_dcf(
+            genuine_deepfake_scores, genuine_deepfake_labels)
+        TP, TN, FP, FN = self.compute_tp_tn_fp_fn(
+            genuine_deepfake_scores, genuine_deepfake_labels, dd_threshold)
+        dd_rates = {
+            "TP": TP,
+            "TN": TN,
+            "FP": FP,
+            "FN": FN,
+        }
+
+        # Find the hardest method
+        avg_method_scores = {method: np.mean(
+            scores) for method, scores in method_scores.items()}
+        hardest_method = min(avg_method_scores, key=avg_method_scores.get)
+        hardest_method_score = avg_method_scores[hardest_method]
+
+        if mlflow_logging:
+            mlflow.log_metrics({
+                prefix + 'EER - Deepfake Detection': dd_eer,
+                prefix + 'Threshold - Deepfake Detection': dd_threshold,
+                prefix + 'minDCF - Deepfake Detection': dd_min_dcf,
+                prefix + 'Hardest Deepfake Method': hardest_method_score
+            }, step=step)
+
+        end_time = time.time()
+        validation_time_minutes = int((end_time - start_time) / 60)
+        if mlflow_logging:
+            mlflow.log_metrics({
+                prefix + 'Validation time in minutes': validation_time_minutes
+            }, step=step)
+
+        gc.collect()
+
+        return sv_eer, sv_threshold, sv_rates, sv_min_dcf

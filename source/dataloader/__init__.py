@@ -2,7 +2,7 @@ from .AudioDataset import AudioDataset, collate_triplet_fn, collate_triplet_wav_
 from .TripletLossDataset import TripletLossDataset
 from .RandomTripletLossDataset import RandomTripletLossDataset, DeepfakeRandomTripletLossDataset
 from .HardTripletLossDataset import HardTripletLossDataset
-from .ValidationDataset import ValidationDataset, collate_valid_fn
+from .ValidationDataset import ValidationDataset, collate_valid_fn, ValidationDatasetFromSet, collate_double_valid_fn
 from .BSILoader import BSILoader
 from .LibriSpeechLoader import LibriSpeechLoader
 from .VoxCelebLoader import VoxCelebLoader
