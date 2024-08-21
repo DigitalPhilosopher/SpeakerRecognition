@@ -8,7 +8,7 @@ import torch
 import torch.optim as optim
 from torch.nn import TripletMarginWithDistanceLoss
 from torch.utils.data import DataLoader
-from dataloader import ValidationDataset, RandomTripletLossDataset, HardTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn, BSILoader, LibriSpeechLoader, VoxCelebLoader
+from dataloader import ValidationDataset, RandomTripletLossDataset, DeepfakeRandomTripletLoss_VocoderPositiveDataset, DeepfakeRandomTripletLossSameUtteranceDataset, HardTripletLossDataset, DeepfakeRandomTripletLossDataset, collate_triplet_wav_fn, collate_valid_fn, BSILoader, LibriSpeechLoader, VoxCelebLoader
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
@@ -72,7 +72,7 @@ def create_dataset(args):
     if data == "genuine":
         tripletLossDataset = RandomTripletLossDataset
     elif data == "deepfake":
-        tripletLossDataset = DeepfakeRandomTripletLossDataset
+        tripletLossDataset = DeepfakeRandomTripletLoss_VocoderPositiveDataset
 
     if args.frontend == "mfcc":
         frontend = MFCCTransform(
