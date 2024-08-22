@@ -26,12 +26,25 @@ class RandomTripletLossDataset(TripletLossDataset):
 
 class DeepfakeRandomTripletLossDataset(RandomTripletLossDataset):
 
+    def __init__(self, loader, max_length: int = 0):
+        super(DeepfakeRandomTripletLossDataset, self).__init__(loader, max_length)
+        self.method_type = None
+
+    def set_method(self, method):
+        self.method_type = method
+
     def get_negative(self, anchor_data):
         # Get all deepfake samples with a different speaker
         negative_samples = self.data_list[self.data_list["speaker"]
                                           == anchor_data["speaker"]]
         negative_samples = negative_samples[negative_samples["is_genuine"] == 0]
+
         negative_samples = negative_samples[negative_samples["method_type"] != "Vocoder"]
+        if self.method_type:
+            _negative_samples = negative_samples[negative_samples["method_name"] == self.method_type]
+            if len(_negative_samples) > 0:
+                negative_samples = _negative_samples
+
         # Randomly select a negative sample
         negative_data = negative_samples.sample(n=1).iloc[0]
         return negative_data

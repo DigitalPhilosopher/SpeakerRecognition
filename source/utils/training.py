@@ -4,7 +4,7 @@ import time
 import mlflow
 import mlflow.pytorch
 import gc
-from .mining import RandomMiningTrainer, HardMiningTrainer, HardOfflineMiningTrainer
+from .mining import RandomMiningTrainer, HardMiningTrainer, HardOfflineMiningTrainer, DeepfakeHardOfflineMiningTrainer
 
 
 def load_deepfake_dataset(dataset):
@@ -55,7 +55,7 @@ class ModelTrainer:
 
     def __init__(self, model, dataloader, valid_dataloader, test_dataloader,
                  device, loss_function, optimizer, MODEL,
-                 FOLDER="Default", TAGS={}, accumulation_steps=1):
+                 FOLDER="Default", TAGS={}, accumulation_steps=1, deepfake=False):
         self.model = model
         self.dataloader = dataloader
         self.test_dataloader = valid_dataloader
@@ -69,10 +69,11 @@ class ModelTrainer:
         self.TAGS = TAGS
         self.best_loss = float('inf')
         self.best_model_state = None
+        self.deepfake = deepfake
 
     ##### TRAINING #####
 
-    def train_epoch(self, epoch, epochs, accumulation_steps=1, triplet_mining="random", create_dataset=None):
+    def train_epoch(self, epoch, epochs, accumulation_steps=1, triplet_mining="random", create_dataset=None, audio_dataset=None):
         if triplet_mining == "random":
             return RandomMiningTrainer().train_epoch(epoch, epochs, accumulation_steps, self)
 
@@ -80,10 +81,13 @@ class ModelTrainer:
             return HardMiningTrainer().train_epoch(epoch, epochs, accumulation_steps, self)
 
         elif triplet_mining == "hard-offline":
-            return HardOfflineMiningTrainer().train_epoch(epoch, epochs, accumulation_steps, self, create_dataset)
+            if self.deepfake:
+                return DeepfakeHardOfflineMiningTrainer().train_epoch(epoch, epochs, accumulation_steps, self, create_dataset, audio_dataset)
+            else:
+                return HardOfflineMiningTrainer().train_epoch(epoch, epochs, accumulation_steps, self, create_dataset)
 
 
-    def train_model(self, epochs, start_epoch=1, triplet_mining="random", create_dataset=None):
+    def train_model(self, epochs, start_epoch=1, triplet_mining="random", create_dataset=None, audio_dataset=None):
         try:
             mlflow.start_run(run_name=self.MODEL, experiment_id=self.FOLDER)
             self.log_params(epochs)
@@ -96,7 +100,7 @@ class ModelTrainer:
                 epoch_start_time = time.time()
                 epoch_loss = self.train_epoch(
                     epoch, epochs, accumulation_steps=self.accumulation_steps, triplet_mining=triplet_mining,
-                    create_dataset=create_dataset)
+                    create_dataset=create_dataset, audio_dataset=audio_dataset)
                 avg_loss = epoch_loss / len(self.dataloader)
                 self.log_epoch_metrics(avg_loss, epoch_start_time, epoch + 1)
 

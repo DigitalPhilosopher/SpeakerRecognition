@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from tqdm import tqdm
 from .distance import l2_normalize, compute_distance
 import torch
+import random
 
 
 
@@ -178,6 +179,56 @@ class HardOfflineMiningTrainer(RandomMiningTrainer):
             torch.cuda.empty_cache()
 
         return self.train_epoch_triplets(epoch, epochs, accumulation_steps, training_dataloader, modeltrainer)
+
+class DeepfakeHardOfflineMiningTrainer(RandomMiningTrainer):
+    def train_epoch(self, epoch, epochs, accumulation_steps, modeltrainer, create_dataset=None, audio_dataset=None):
+        with torch.no_grad():
+            modeltrainer.model.eval()
+            # Step 1: Select a random speaker
+            random_speaker = random.choice(audio_dataset.genuine['speaker'].unique())
+            random_genuine_utterance = audio_dataset.genuine.sample(n=1)
+
+            # Step 3: Get a random utterance for each method_name for the chosen speaker
+            df = audio_dataset.data_list
+
+            df = df[df["method_type"] != "Vocoder"]
+            df = df[df["method_type"] != "bonafide"]
+            df = df[df["is_genuine"] == 0]
+            utterances_by_method = df[df['speaker'] == random_speaker].groupby('method_name').apply(lambda x: x.sample(n=1))
+
+            # Step 4: Calculate the embeddings for the genuine utterance and the method_name utterances
+            if random_genuine_utterance is not None:
+                # Convert the utterances to the appropriate device for model processing
+                genuine_utterance_filename = random_genuine_utterance['filename'].values[0]
+                genuine_utterance_data = audio_dataset.read_audio(genuine_utterance_filename)  # Replace with your data loading method
+                genuine_utterance_embedding = modeltrainer.model(genuine_utterance_data.unsqueeze(0).to(modeltrainer.device))
+
+                distances = {}
+                
+                for index, row in utterances_by_method.iterrows():
+                    method_name = row['method_name']
+                    utterance_filename = row['filename']
+                    utterance_data = audio_dataset.read_audio(utterance_filename)  # Replace with your data loading method
+                    
+                    # Calculate the embedding
+                    utterance_embedding = modeltrainer.model(utterance_data.unsqueeze(0).to(modeltrainer.device))
+                    
+                    # Compute the distance between the genuine embedding and the method_name embedding
+                    distance = compute_distance(l2_normalize(genuine_utterance_embedding), l2_normalize(utterance_embedding))
+                    distances[method_name] = distance.item()  # Convert to scalar if it's a tensor
+
+                # Find the method_name with the lowest distance
+                best_method = min(distances, key=distances.get)
+                print(f"The method with the lowest distance to the genuine utterance is: {best_method} with a distance of {distances[best_method]}")
+
+            else:
+                print("No genuine utterance found for the selected speaker.")
+            torch.cuda.empty_cache()
+            audio_dataset.set_method(best_method)
+            modeltrainer.dataloader = create_dataset(audio_dataset)
+            print(f"Hardest audio method: {audio_dataset.method_type}")
+
+        return self.train_epoch_triplets(epoch, epochs, accumulation_steps, modeltrainer.dataloader, modeltrainer)
 
 
 class HardMiningTrainer(RandomMiningTrainer):

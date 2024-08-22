@@ -37,6 +37,10 @@ def config():
 
     device = get_device(DEVICE)
 
+def create_dataset_hard_deepfake_mining(ds):
+    return DataLoader(ds, batch_size=BATCH_SIZE, shuffle=True,
+                        drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet_wav_fn)
+
 def create_dataset_hard_mining(anchor, positive, negative):
     loader = DATASET.split(".")[0]
     if loader == "BSI":
@@ -62,7 +66,9 @@ def create_dataset_hard_mining(anchor, positive, negative):
 
 
 def create_dataset(args):
-    global audio_dataloader, validation_dataloader, test_dataloader, train_labels
+    global audio_dataset, audio_dataloader, validation_dataloader, test_dataloader, train_labels, create_dataset
+
+    create_dataset = lambda a, p, n: create_dataset_hard_mining(a, p, n)
 
     train_labels, dev_labels, test_labels = load_deepfake_dataset(
         DATASET.split(".")[0])
@@ -72,7 +78,8 @@ def create_dataset(args):
     if data == "genuine":
         tripletLossDataset = RandomTripletLossDataset
     elif data == "deepfake":
-        tripletLossDataset = DeepfakeRandomTripletLoss_VocoderPositiveDataset
+        create_dataset = create_dataset_hard_deepfake_mining
+        tripletLossDataset = DeepfakeRandomTripletLossDataset
 
     if args.frontend == "mfcc":
         frontend = MFCCTransform(
@@ -149,9 +156,11 @@ def main(args):
     get_model(args)
 
     ##### TRAINING #####
+    deepfake =  DATASET.split(".")[1] == "deepfake"
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
-                           optimizer, MODEL, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS)
-    trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING, create_dataset = lambda a, p, n: create_dataset_hard_mining(a, p, n))
+                           optimizer, MODEL, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS, deepfake=deepfake)
+    
+    trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING, create_dataset = create_dataset, audio_dataset = audio_dataset)
 
 
 if __name__ == "__main__":
