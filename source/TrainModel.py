@@ -21,7 +21,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),  # Output to console
-        logging.FileHandler("training.log")  # Output to a file
+        logging.FileHandler("TrainModel.log")  # Output to a file
     ]
 )
 logger = logging.getLogger(__name__)
