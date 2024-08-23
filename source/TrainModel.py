@@ -13,6 +13,19 @@ from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
 from frontend import MFCCTransform
 from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,  # Set the logging level
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),  # Output to console
+        logging.FileHandler("training.log")  # Output to a file
+    ]
+)
+logger = logging.getLogger(__name__)
+
 
 def define_variables(args):
     global MODEL, MODEL_PATH, DATASET, FOLDER, TAGS
@@ -20,24 +33,28 @@ def define_variables(args):
     global MFCCS, SAMPLE_RATE, EMBEDDING_SIZE, DEVICE, WEIGHT_DECAY, AMSGRAD
     global DOWNSAMPLING_TRAIN, DOWNSAMPLING_VALID, DOWNSAMPLING_TEST, TRIPLET_MINING
 
+    logger.info("Defining variables from training arguments.")
     (MODEL, MODEL_PATH, DATASET, FOLDER, TAGS, MFCCS, SAMPLE_RATE, EMBEDDING_SIZE,
      DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS,
      WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST,
      DOWNSAMPLING_VALID, TRIPLET_MINING) = get_training_variables(args)
+    logger.info(f"Variables defined: Model - {MODEL}, Dataset - {DATASET}, Folder - {FOLDER}")
 
 
 def config():
     global device
 
     warnings.filterwarnings("ignore")
-
+    logger.info("Configuring MLflow and device.")
     mlflow.set_tracking_uri("../mlruns")
-    logging.getLogger(
-        'mlflow.utils.requirements_utils').setLevel(logging.ERROR)
+    logging.getLogger('mlflow.utils.requirements_utils').setLevel(logging.ERROR)
 
     device = get_device(DEVICE)
+    logger.info(f"Device configured: {device}")
+
 
 def create_dataset_hard_deepfake_mining(ds):
+    logger.info("Creating DataLoader for hard deepfake mining dataset.")
     return DataLoader(ds, batch_size=BATCH_SIZE, shuffle=True,
                         drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet_wav_fn)
 
@@ -68,6 +85,7 @@ def create_dataset_hard_mining(anchor, positive, negative):
 def create_dataset(args):
     global audio_dataset, audio_dataloader, validation_dataloader, test_dataloader, train_labels, create_dataset
 
+    logger.info("Loading dataset and preparing dataloaders.")
     create_dataset = lambda a, p, n: create_dataset_hard_mining(a, p, n)
 
     train_labels, dev_labels, test_labels = load_deepfake_dataset(
@@ -133,17 +151,20 @@ def get_model(args):
         model = WavLM_Large_ECAPA_TDNN(frozen=frozen, device=device)
     # Load pretrained model if MODEL_PATH is provided
     if MODEL_PATH is not None:
-        print(f"Loading pretrained model from {MODEL_PATH}")
+        logger.info(f"Loading pretrained model from {MODEL_PATH}")
         model.load_state_dict(torch.load(MODEL_PATH))
 
     model.to(device)
+    logger.info("Model successfully loaded and moved to device.")
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters(
     )), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
     triplet_loss = TripletMarginWithDistanceLoss(
         distance_function=compute_distance, margin=MARGIN)
+    logger.info("Optimizer and loss function set up.")
 
 
 def main(args):
+    logger.info("Starting main execution.")
     define_variables(args)
 
     ##### CONFIG #####
@@ -160,7 +181,8 @@ def main(args):
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
                            optimizer, MODEL, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS, deepfake=deepfake)
     
-    trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING, create_dataset = create_dataset, audio_dataset = audio_dataset)
+    trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING, create_dataset=create_dataset, audio_dataset=audio_dataset)
+    logger.info("Training process completed.")
 
 
 if __name__ == "__main__":
@@ -168,5 +190,10 @@ if __name__ == "__main__":
 
     os.chdir("./source")
     os.environ["MLFLOW_ENABLE_SYSTEM_METRICS_LOGGING"] = "true"
-
-    sys.exit(main(args))
+    
+    logger.info("Script started.")
+    try:
+        sys.exit(main(args))
+    except Exception as e:
+        logger.error("An error occurred during execution.", exc_info=True)
+        sys.exit(1)
