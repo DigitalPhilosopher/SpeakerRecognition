@@ -15,16 +15,27 @@ from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
 
 import logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,  # Set the logging level
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),  # Output to console
-        logging.FileHandler("TrainModel.log")  # Output to a file
-    ]
-)
-logger = logging.getLogger(__name__)
+# Create a logger
+logger = logging.getLogger()  # This retrieves the root logger
+
+# Set the logger level
+logger.setLevel(logging.INFO)
+
+# Create a console handler and set its level and format
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+console_formatter = logging.Formatter('TrainModel.py: %(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(console_formatter)
+
+# Create a file handler and set its level and format
+file_handler = logging.FileHandler("TrainModel.log")
+file_handler.setLevel(logging.INFO)
+file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(file_formatter)
+
+# Add the handlers to the logger
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 
 
 def define_variables(args):

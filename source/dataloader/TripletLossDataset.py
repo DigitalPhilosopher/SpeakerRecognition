@@ -31,5 +31,8 @@ class TripletLossDataset(AudioDataset, ABC):
             "anchor_utterance": anchor_data["utterance"],
             "positive_utterance": positive_data["utterance"],
             "negative_utterance": negative_data["utterance"],
+            "anchor_method_name": anchor_data["method_name"],
+            "positive_method_name": positive_data["method_name"],
+            "negative_method_name": negative_data["method_name"],
         }
         return anchor, positive, negative, meta_data

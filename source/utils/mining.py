@@ -6,17 +6,27 @@ import random
 from abc import ABC, abstractmethod
 from .distance import l2_normalize, compute_distance
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,  # Set the logging level
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),  # Output to console
-        logging.FileHandler("mining_trainer.log")  # Output to a file
-    ]
-)
-logger = logging.getLogger(__name__)
+# Create a logger
+logger = logging.getLogger()  # This retrieves the root logger
 
+# Set the logger level
+logger.setLevel(logging.DEBUG)
+
+# Create a console handler and set its level and format
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG)
+console_formatter = logging.Formatter('utils/mining.py%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(console_formatter)
+
+# Create a file handler and set its level and format
+file_handler = logging.FileHandler("utils_mining.log")
+file_handler.setLevel(logging.DEBUG)
+file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(file_formatter)
+
+# Add the handlers to the logger
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 
 
 def hard_chunked_triplet_mining(anchor_embeddings, anchor_labels, device, margin=.2, chunk_size=1000000):
@@ -133,9 +143,13 @@ class RandomMiningTrainer(MiningEpochTrainer):
                 positive_outputs = modeltrainer.model(positives)
                 negative_outputs = modeltrainer.model(negatives)
 
-                loss = modeltrainer.loss_function(
-                    l2_normalize(anchor_outputs), l2_normalize(positive_outputs), l2_normalize(negative_outputs))
+                # Normalize the outputs
+                anchor_norm = l2_normalize(anchor_outputs)
+                positive_norm = l2_normalize(positive_outputs)
+                negative_norm = l2_normalize(negative_outputs)
 
+                # Calculate loss
+                loss = modeltrainer.loss_function(anchor_norm, positive_norm, negative_norm)
                 loss.backward()
 
                 if (step + 1) % accumulation_steps == 0 or (step + 1) == len(dataloader):
