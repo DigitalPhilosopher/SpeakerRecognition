@@ -24,13 +24,15 @@ logger.setLevel(logging.INFO)
 # Create a console handler and set its level and format
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.INFO)
-console_formatter = logging.Formatter('TrainModel.py: %(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_formatter = logging.Formatter(
+    'TrainModel.py: %(asctime)s - %(name)s - %(levelname)s - %(message)s')
 console_handler.setFormatter(console_formatter)
 
 # Create a file handler and set its level and format
 file_handler = logging.FileHandler("TrainModel.log")
 file_handler.setLevel(logging.INFO)
-file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(file_formatter)
 
 # Add the handlers to the logger
@@ -49,7 +51,8 @@ def define_variables(args):
      DEVICE, LEARNING_RATE, MARGIN, NORM, BATCH_SIZE, BATCH_SIZE_TEST_EVAL, ACCUMULATION_STEPS, MAX_AUDIO_LENGTH, EPOCHS,
      WEIGHT_DECAY, AMSGRAD, DOWNSAMPLING_TRAIN, DOWNSAMPLING_TEST,
      DOWNSAMPLING_VALID, TRIPLET_MINING) = get_training_variables(args)
-    logger.info(f"Variables defined: Model - {MODEL}, Dataset - {DATASET}, Folder - {FOLDER}")
+    logger.info(
+        f"Variables defined: Model - {MODEL}, Dataset - {DATASET}, Folder - {FOLDER}")
 
 
 def config():
@@ -58,7 +61,8 @@ def config():
     warnings.filterwarnings("ignore")
     logger.info("Configuring MLflow and device.")
     mlflow.set_tracking_uri("../mlruns")
-    logging.getLogger('mlflow.utils.requirements_utils').setLevel(logging.ERROR)
+    logging.getLogger(
+        'mlflow.utils.requirements_utils').setLevel(logging.ERROR)
 
     device = get_device(DEVICE)
     logger.info(f"Device configured: {device}")
@@ -67,7 +71,8 @@ def config():
 def create_dataset_hard_deepfake_mining(ds):
     logger.info("Creating DataLoader for hard deepfake mining dataset.")
     return DataLoader(ds, batch_size=BATCH_SIZE, shuffle=True,
-                        drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet_wav_fn)
+                      drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet_wav_fn)
+
 
 def create_dataset_hard_mining(anchor, positive, negative):
     loader = DATASET.split(".")[0]
@@ -77,7 +82,7 @@ def create_dataset_hard_mining(anchor, positive, negative):
         loader = LibriSpeechLoader
     elif loader == "VoxCeleb":
         loader = VoxCelebLoader
-        
+
     if args.frontend == "mfcc":
         frontend = MFCCTransform(
             number_output_parameters=MFCCS, sample_rate=SAMPLE_RATE)
@@ -88,7 +93,7 @@ def create_dataset_hard_mining(anchor, positive, negative):
         train_labels, frontend, DOWNSAMPLING_TRAIN), max_length=MAX_AUDIO_LENGTH)
     audio_dataset.set_triplets(anchor, positive, negative)
     audio_dataloader = DataLoader(audio_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet_wav_fn)
+                                  drop_last=True, num_workers=8, pin_memory=True, collate_fn=collate_triplet_wav_fn)
 
     return audio_dataloader
 
@@ -97,7 +102,7 @@ def create_dataset(args):
     global audio_dataset, audio_dataloader, validation_dataloader, test_dataloader, train_labels, create_dataset
 
     logger.info("Loading dataset and preparing dataloaders.")
-    create_dataset = lambda a, p, n: create_dataset_hard_mining(a, p, n)
+    def create_dataset(a, p, n): return create_dataset_hard_mining(a, p, n)
 
     train_labels, dev_labels, test_labels = load_deepfake_dataset(
         DATASET.split(".")[0])
@@ -188,11 +193,12 @@ def main(args):
     get_model(args)
 
     ##### TRAINING #####
-    deepfake =  DATASET.split(".")[1] == "deepfake"
+    deepfake = DATASET.split(".")[1] == "deepfake"
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
                            optimizer, MODEL, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS, deepfake=deepfake)
-    
-    trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING, create_dataset=create_dataset, audio_dataset=audio_dataset)
+
+    trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING,
+                        create_dataset=create_dataset, audio_dataset=audio_dataset)
     logger.info("Training process completed.")
 
 
@@ -201,7 +207,7 @@ if __name__ == "__main__":
 
     os.chdir("./source")
     os.environ["MLFLOW_ENABLE_SYSTEM_METRICS_LOGGING"] = "true"
-    
+
     logger.info("Script started.")
     try:
         sys.exit(main(args))

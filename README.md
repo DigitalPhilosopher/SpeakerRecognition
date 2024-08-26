@@ -433,6 +433,43 @@ Next steps is to train on full LibriSpeech, as well as VoxCeleb (Only WavLm Base
 | WavLM-Base/Joint   | Genuine          | validation |                  0.132445  |
 | WavLM-Base/Joint   | Genuine          | test       |                  0.108779  |
 
+## 5. VoxCeleb - Hard online Mining: 7 Epochs
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Genuine          | training   |        0.05057586702465077 |
+| WavLM-Base/Joint   | Genuine          | validation |        0.07528398725401961 |
+| WavLM-Base/Joint   | Genuine          | test       |        0.07521101408382184 |
+
+## 6. Fine Tuning: 100 Epochs
+
+### Before fine tuning
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Genuine          | training   |                     0.1445 |
+| WavLM-Base/Joint   | Genuine          | validation |                     0.2795 |
+| WavLM-Base/Joint   | Genuine          | test       |                     0.2889 |
+
+### Positive = Genuine from Same Speaker - Negative: Random Deepfake from Same Speaker
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.0946 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.1800 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.1820 |
+
+### Positive = Genuine from Same Speaker - Negative: Random Deepfake from Same Speaker and same Utterance
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.1314 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.2473 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.2503 |
+
+### Positive = Genuine from Same Speaker - Negative: Random Deepfake from Same Speaker (Hard mining per epoch to find hardest deepfake method)
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.1130 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.2122 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.2007 |
+
 # References
 
 1. [ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification](https://arxiv.org/abs/2005.07143)
