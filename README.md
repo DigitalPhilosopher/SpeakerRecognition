@@ -470,6 +470,38 @@ Next steps is to train on full LibriSpeech, as well as VoxCeleb (Only WavLm Base
 | WavLM-Base/Joint   | Deepfake         | validation |                     0.2122 |
 | WavLM-Base/Joint   | Deepfake         | test       |                     0.2007 |
 
+## 6. Fine Tuning, different margin: Positive = Genuine from Same Speaker - Negative: Random Deepfake from Same Speaker
+
+### 0.02
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.1603 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.2698 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.2759 |
+
+### 0.2
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.0946 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.1800 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.1820 |
+
+### 1
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.1629 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.2914 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.2988 |
+
+## 6. Fine Tuning, using vocoder
+
+### 
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0. |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0. |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0. |
+
 # References
 
 1. [ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification](https://arxiv.org/abs/2005.07143)
