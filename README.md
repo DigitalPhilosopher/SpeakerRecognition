@@ -493,14 +493,44 @@ Next steps is to train on full LibriSpeech, as well as VoxCeleb (Only WavLm Base
 | WavLM-Base/Joint   | Deepfake         | validation |                     0.2914 |
 | WavLM-Base/Joint   | Deepfake         | test       |                     0.2988 |
 
-## 6. Fine Tuning, using vocoder
+## 7. Fine Tuning, different learning rate: Positive = Genuine from Same Speaker - Negative: Random Deepfake from Same Speaker
+
+### 0.000005
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.0657 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.1386 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.1405 |
+
+### 0.00001
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.0723 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.1501 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.1433 |
+
+### 0.0001
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.0946 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.1800 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.1820 |
+
+### 0.001
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.2339 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.4918 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.4871 |
+
+## 8. Fine Tuning, using vocoder
 
 ### 
 | Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
 |:-------------------|:-----------------|:-----------|---------------------------:|
-| WavLM-Base/Joint   | Deepfake         | training   |                     0. |
-| WavLM-Base/Joint   | Deepfake         | validation |                     0. |
-| WavLM-Base/Joint   | Deepfake         | test       |                     0. |
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.0815 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.1620 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.1613 |
 
 # References
 
