@@ -495,6 +495,27 @@ Next steps is to train on full LibriSpeech, as well as VoxCeleb (Only WavLm Base
 
 ## 7. Fine Tuning, different learning rate: Positive = Genuine from Same Speaker - Negative: Random Deepfake from Same Speaker
 
+### 0.00000001
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.1419 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.2640 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.2764 |
+
+### 0.0000001
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.1143 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.1976 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.2069 |
+
+### 0.000001
+| Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
+|:-------------------|:-----------------|:-----------|---------------------------:|
+| WavLM-Base/Joint   | Deepfake         | training   |                     0.0802 |
+| WavLM-Base/Joint   | Deepfake         | validation |                     0.1468 |
+| WavLM-Base/Joint   | Deepfake         | test       |                     0.1522 |
+
 ### 0.000005
 | Front-End          | Triplet Mining   | Dataset    |   Speaker Verification EER |
 |:-------------------|:-----------------|:-----------|---------------------------:|
