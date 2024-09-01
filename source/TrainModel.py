@@ -3,7 +3,7 @@ import sys
 import os
 import warnings
 import mlflow
-from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_arguments, get_training_variables, compute_distance
+from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_arguments, get_training_variables, compute_distance, SemiHardTripletMarginLoss
 import torch
 import torch.optim as optim
 from torch.nn import TripletMarginWithDistanceLoss
@@ -175,7 +175,7 @@ def get_model(args):
     logger.info("Model successfully loaded and moved to device.")
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters(
     )), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
-    triplet_loss = TripletMarginWithDistanceLoss(
+    triplet_loss = SemiHardTripletMarginLoss(
         distance_function=compute_distance, margin=MARGIN)
     logger.info("Optimizer and loss function set up.")
 

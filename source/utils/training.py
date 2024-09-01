@@ -4,6 +4,9 @@ import time
 import mlflow
 import mlflow.pytorch
 import gc
+import torch.nn.functional as F
+import torch.nn as nn
+from .distance import compute_distance
 from .mining import RandomMiningTrainer, HardMiningTrainer, HardOfflineMiningTrainer, DeepfakeHardOfflineMiningTrainer
 import logging
 import sys
@@ -30,6 +33,32 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
+
+class SemiHardTripletMarginLoss(nn.Module):
+    def __init__(self, margin=0.2, distance_function=compute_distance):
+        super(SemiHardTripletMarginLoss, self).__init__()
+        self.margin = margin
+        self.distance_function = distance_function
+
+    def forward(self, anchor, positive, negative):
+        # Compute pairwise distances
+        p_dist = self.distance_function(anchor, positive)
+        n_dist = self.distance_function(anchor, negative)
+
+        mask = (p_dist + self.margin < n_dist)
+        
+        # Filter the semi-hard triplets
+        p_dist = p_dist[mask]
+        n_dist = n_dist[mask]
+
+        # If no semi-hard triplets are found, return a loss of zero
+        if p_dist.numel() == 0:
+            return torch.tensor(0.0, requires_grad=True).to(anchor.device)
+
+        # Compute the triplet loss only for the semi-hard triplets
+        loss = F.relu(p_dist - n_dist + self.margin)
+
+        return loss.mean()
 
 def load_deepfake_dataset(dataset):
     logger.info(f"Loading dataset: {dataset}")
