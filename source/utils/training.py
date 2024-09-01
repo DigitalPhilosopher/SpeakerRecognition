@@ -45,7 +45,8 @@ class SemiHardTripletMarginLoss(nn.Module):
         p_dist = self.distance_function(anchor, positive)
         n_dist = self.distance_function(anchor, negative)
 
-        mask = (p_dist + self.margin < n_dist)
+        mask = (p_dist < n_dist) & (n_dist < p_dist + self.margin)
+        print(f"Number of semi-hard triplets: {torch.sum(mask).item()}")
         
         # Filter the semi-hard triplets
         p_dist = p_dist[mask]
