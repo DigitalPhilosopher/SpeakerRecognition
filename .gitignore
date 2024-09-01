@@ -1,5 +1,7 @@
 # Data
 data
+*.csv
+*.xlsx
 
 
 # External Code
