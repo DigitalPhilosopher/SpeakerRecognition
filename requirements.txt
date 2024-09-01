@@ -4,6 +4,7 @@ ipykernel==6.29.4
 nbconvert==7.16.4
 tqdm==4.66.4
 tabulate
+plotly==5.24.0
 
 # Data Analysis and Processing
 pandas==2.2.2
