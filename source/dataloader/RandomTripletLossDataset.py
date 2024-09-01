@@ -22,6 +22,32 @@ class RandomTripletLossDataset(TripletLossDataset):
         # Randomly select a negative sample
         negative_data = negative_samples.sample(n=1).iloc[0]
         return negative_data
+    
+class RandomTripletLossDatasetDeepfakeAnchor(RandomTripletLossDataset):
+    def __init__(self, loader, max_length: int = 0):
+        super().__init__(loader, max_length)
+
+        speaker_counts = self.genuine['speaker'].value_counts()
+        self.data_list = self.data_list[self.data_list['speaker'].map(speaker_counts) >= 2].reset_index(drop=True)
+
+        self.deepfakes_list = self.data_list[(self.data_list["is_genuine"] == 0) & (self.data_list["method_type"] != "Vocoder")]
+
+    def __len__(self):
+        return len(self.deepfakes_list)
+    
+    def get_positives(self, negative_data):
+        speaker_samples = self.genuine[self.genuine["speaker"] == negative_data["speaker"]]
+
+        samples = speaker_samples.sample(n=2)
+        anchor_data = samples.iloc[0]
+        positive_data = samples.iloc[1]
+
+        return anchor_data, positive_data
+
+    def __getitem__(self, idx):
+        negative_data = self.deepfakes_list.iloc[idx]
+        anchor_data, positive_data = self.get_positives(negative_data)
+        return self.get_triplet(anchor_data, positive_data, negative_data)
 
 
 class DeepfakeRandomTripletLossDataset(RandomTripletLossDataset):
