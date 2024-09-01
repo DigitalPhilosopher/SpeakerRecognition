@@ -143,13 +143,12 @@ class RandomMiningTrainer(MiningEpochTrainer):
                 positive_outputs = modeltrainer.model(positives)
                 negative_outputs = modeltrainer.model(negatives)
 
-                # Normalize the outputs
-                anchor_norm = l2_normalize(anchor_outputs)
-                positive_norm = l2_normalize(positive_outputs)
-                negative_norm = l2_normalize(negative_outputs)
+                # TODO, test without normalization anchor_norm = l2_normalize(anchor_outputs)
+                # positive_norm = l2_normalize(positive_outputs)
+                # negative_norm = l2_normalize(negative_outputs)
 
                 # Calculate loss
-                loss = modeltrainer.loss_function(anchor_norm, positive_norm, negative_norm)
+                loss = modeltrainer.loss_function(anchor_outputs, positive_outputs, negative_outputs)
                 loss.backward()
 
                 if (step + 1) % accumulation_steps == 0 or (step + 1) == len(dataloader):
