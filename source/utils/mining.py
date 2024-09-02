@@ -133,8 +133,11 @@ class RandomMiningTrainer(MiningEpochTrainer):
     def train_epoch_triplets(self, epoch, epochs, accumulation_steps, dataloader, modeltrainer):
         modeltrainer.model.train()
         running_loss = 0.0
+        running_total = 0
+        running_wrong = 0
         last_100_losses = []
         progress_bar = tqdm(dataloader, desc=f"Epoch {epoch + 1}/{epochs}", leave=True)
+        batch_size = dataloader.batch_size
         
         for step, (anchors, positives, negatives, metadata) in enumerate(progress_bar):
             try:
@@ -149,6 +152,8 @@ class RandomMiningTrainer(MiningEpochTrainer):
 
                 # Calculate loss
                 loss = modeltrainer.loss_function(anchor_outputs, positive_outputs, negative_outputs)
+                running_wrong += modeltrainer.loss_function.wrong
+                running_total += batch_size
                 loss.backward()
 
                 if (step + 1) % accumulation_steps == 0 or (step + 1) == len(dataloader):
@@ -162,7 +167,8 @@ class RandomMiningTrainer(MiningEpochTrainer):
                 running_loss += loss.item()
 
                 progress_bar.set_postfix(loss=loss.item(),
-                                         average_loss=sum(last_100_losses) / len(last_100_losses))
+                                         average_loss=sum(last_100_losses) / len(last_100_losses),
+                                         wrongly_classified=f"{running_wrong}/{running_total} ({100*running_wrong/running_total:.5f}%)")
 
             except Exception as e:
                 logger.error(f"Error during training at step {step}: {e}", exc_info=True)

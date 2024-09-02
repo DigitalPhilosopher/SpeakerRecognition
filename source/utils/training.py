@@ -1,6 +1,7 @@
 import torch
 from extraction_utils.get_label_files import get_label_files
 import time
+import numpy as np
 import mlflow
 import mlflow.pytorch
 import gc
@@ -41,6 +42,7 @@ class SemiHardTripletMarginLoss(nn.Module):
         super(SemiHardTripletMarginLoss, self).__init__()
         self.margin = margin
         self.distance_function = distance_function
+        self.wrong = 0
 
     def forward(self, anchor, positive, negative):
         # Compute pairwise distances
@@ -48,6 +50,7 @@ class SemiHardTripletMarginLoss(nn.Module):
         n_dist = self.distance_function(anchor, negative)
 
         mask = (n_dist < (p_dist + self.margin))
+        self.wrong = (p_dist < n_dist).sum().item()
 
         # Filter the semi-hard triplets
         p_dist = p_dist[mask]
