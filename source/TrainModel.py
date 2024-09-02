@@ -167,8 +167,8 @@ def get_model(args):
     elif args.frontend == "wavlm_large":
         model = WavLM_Large_ECAPA_TDNN(frozen=frozen, device=device)
     # Load pretrained model if MODEL_PATH is provided
-    optimizer_state=None
-    best_loss=float('inf')
+    optimizer_state = None
+    best_loss = float('inf')
     if MODEL_PATH is not None:
         logger.info(f"Loading pretrained model from {MODEL_PATH}")
         try:
@@ -177,7 +177,7 @@ def get_model(args):
         except:
             checkpoint = torch.load(MODEL_PATH)
             model.load_state_dict(checkpoint['state_dict'])
-            optimizer_state=checkpoint['optimizer']
+            optimizer_state = checkpoint['optimizer']
             best_loss = checkpoint['best_loss']
             logger.info(f"Loaded checkpoint")
 
@@ -186,9 +186,9 @@ def get_model(args):
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters(
     )), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
     if not optimizer_state is None:
-        optimizer.load_state_dict(optimizer_state) 
-    triplet_loss = HardTripletMarginLoss(
-        distance_function=compute_distance, margin=0.5)
+        optimizer.load_state_dict(optimizer_state)
+    triplet_loss = SemiHardTripletMarginLoss(
+        distance_function=compute_distance, margin=MARGIN)
     logger.info("Optimizer and loss function set up.")
 
 

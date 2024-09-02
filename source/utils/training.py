@@ -53,7 +53,7 @@ class SemiHardTripletMarginLoss(nn.Module):
         n_dist = self.distance_function(anchor, negative)
 
         mask = self.get_mask(p_dist, n_dist)
-        self.wrong = (p_dist < n_dist).sum().item()
+        self.wrong = (n_dist < p_dist).sum().item()
 
         # Filter the semi-hard triplets
         p_dist = p_dist[mask]
@@ -68,10 +68,12 @@ class SemiHardTripletMarginLoss(nn.Module):
 
         return loss.mean()
 
+
 class HardTripletMarginLoss(SemiHardTripletMarginLoss):
     def get_mask(self, p_dist, n_dist):
         p_dist = (p_dist * (1+self.margin))
         return (n_dist < p_dist)
+
 
 def load_deepfake_dataset(dataset):
     logger.info(f"Loading dataset: {dataset}")
