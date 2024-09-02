@@ -20,13 +20,15 @@ logger.setLevel(logging.INFO)
 # Create a console handler and set its level and format
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.INFO)
-console_formatter = logging.Formatter('utils/training.py: %(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_formatter = logging.Formatter(
+    'utils/training.py: %(asctime)s - %(name)s - %(levelname)s - %(message)s')
 console_handler.setFormatter(console_formatter)
 
 # Create a file handler and set its level and format
 file_handler = logging.FileHandler("utils_training.log")
 file_handler.setLevel(logging.INFO)
-file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(file_formatter)
 
 # Add the handlers to the logger
@@ -45,9 +47,8 @@ class SemiHardTripletMarginLoss(nn.Module):
         p_dist = self.distance_function(anchor, positive)
         n_dist = self.distance_function(anchor, negative)
 
-        mask = (p_dist < n_dist) & (n_dist < p_dist + self.margin)
-        print(f"Number of semi-hard triplets: {torch.sum(mask).item()}")
-        
+        mask = (n_dist < (p_dist + self.margin))
+
         # Filter the semi-hard triplets
         p_dist = p_dist[mask]
         n_dist = n_dist[mask]
@@ -60,6 +61,7 @@ class SemiHardTripletMarginLoss(nn.Module):
         loss = F.relu(p_dist - n_dist + self.margin)
 
         return loss.mean()
+
 
 def load_deepfake_dataset(dataset):
     logger.info(f"Loading dataset: {dataset}")
@@ -130,7 +132,8 @@ class ModelTrainer:
         logger.info(f"ModelTrainer initialized with model: {MODEL}")
 
     def train_epoch(self, epoch, epochs, accumulation_steps=1, triplet_mining="random", create_dataset=None, audio_dataset=None):
-        logger.info(f"Training epoch {epoch + 1}/{epochs} using {triplet_mining} mining.")
+        logger.info(
+            f"Training epoch {epoch + 1}/{epochs} using {triplet_mining} mining.")
         if triplet_mining == "random":
             return RandomMiningTrainer().train_epoch(epoch, epochs, accumulation_steps, self)
         elif triplet_mining == "hard":
@@ -199,7 +202,8 @@ class ModelTrainer:
 
     def log_epoch_metrics(self, avg_loss, epoch_start_time, epoch):
         time_minutes = int((time.time() - epoch_start_time) / 60)
-        logger.info(f"Logging metrics for epoch {epoch}: Average Loss = {avg_loss}, Time = {time_minutes} minutes.")
+        logger.info(
+            f"Logging metrics for epoch {epoch}: Average Loss = {avg_loss}, Time = {time_minutes} minutes.")
         mlflow.log_metrics({
             "Average Triplet Loss": avg_loss,
             "Epoch time in minutes": time_minutes
@@ -208,9 +212,11 @@ class ModelTrainer:
     def log_model(self, model_type):
         logger.info(f"Logging model: {model_type}.")
         if model_type == "best":
-            mlflow.pytorch.log_model(self.model, artifact_path=f"{self.MODEL}_best_model_state")
+            mlflow.pytorch.log_model(
+                self.model, artifact_path=f"{self.MODEL}_best_model_state")
         elif model_type == "latest":
-            mlflow.pytorch.log_model(self.model, artifact_path=f"{self.MODEL}_latest_model")
+            mlflow.pytorch.log_model(
+                self.model, artifact_path=f"{self.MODEL}_latest_model")
 
     def create_or_get_experiment(self, name):
         logger.info(f"Creating or getting experiment: {name}.")
@@ -223,7 +229,8 @@ class ModelTrainer:
     def save_models(self):
         if self.best_model_state:
             logger.info("Saving best model state.")
-            torch.save(self.best_model_state, f"../models/{self.MODEL}_best_model_state.pth")
+            torch.save(self.best_model_state,
+                       f"../models/{self.MODEL}_best_model_state.pth")
             mlflow.log_artifact(f"../models/{self.MODEL}_best_model_state.pth")
 
     def save_model_state(self, epoch):
