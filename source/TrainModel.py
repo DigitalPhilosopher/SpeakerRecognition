@@ -3,7 +3,7 @@ import sys
 import os
 import warnings
 import mlflow
-from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_arguments, get_training_variables, compute_distance, SemiHardTripletMarginLoss
+from utils import get_device, load_deepfake_dataset, ModelTrainer, get_training_arguments, get_training_variables, compute_distance, SemiHardTripletMarginLoss, HardTripletMarginLoss
 import torch
 import torch.optim as optim
 from torch.nn import TripletMarginWithDistanceLoss
@@ -187,8 +187,8 @@ def get_model(args):
     )), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
     if not optimizer_state is None:
         optimizer.load_state_dict(optimizer_state) 
-    triplet_loss = SemiHardTripletMarginLoss(
-        distance_function=compute_distance, margin=MARGIN)
+    triplet_loss = HardTripletMarginLoss(
+        distance_function=compute_distance, margin=0.5)
     logger.info("Optimizer and loss function set up.")
 
 
