@@ -187,8 +187,8 @@ def get_model(args):
     )), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, amsgrad=AMSGRAD)
     if not optimizer_state is None:
         optimizer.load_state_dict(optimizer_state)
-    triplet_loss = SemiHardTripletMarginLoss(
-        distance_function=compute_distance, margin=MARGIN)
+    triplet_loss = HardTripletMarginLoss(
+        distance_function=compute_distance, margin=0.5)
     logger.info("Optimizer and loss function set up.")
 
 

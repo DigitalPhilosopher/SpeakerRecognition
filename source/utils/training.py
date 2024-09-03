@@ -47,6 +47,9 @@ class SemiHardTripletMarginLoss(nn.Module):
     def get_mask(self, p_dist, n_dist):
         return (n_dist < (p_dist + self.margin))
 
+    def get_loss(self, p_dist, n_dist):
+        return p_dist - n_dist + self.margin
+
     def forward(self, anchor, positive, negative):
         # Compute pairwise distances
         p_dist = self.distance_function(anchor, positive)
@@ -64,7 +67,7 @@ class SemiHardTripletMarginLoss(nn.Module):
             return torch.tensor(0.0, requires_grad=True).to(anchor.device)
 
         # Compute the triplet loss only for the semi-hard triplets
-        loss = F.relu(p_dist - n_dist + self.margin)
+        loss = F.relu(self.get_loss(p_dist, n_dist))
 
         return loss.mean()
 
@@ -73,6 +76,10 @@ class HardTripletMarginLoss(SemiHardTripletMarginLoss):
     def get_mask(self, p_dist, n_dist):
         p_dist = (p_dist * (1+self.margin))
         return (n_dist < p_dist)
+
+    def get_loss(self, p_dist, n_dist):
+        p_dist = (p_dist * (1+self.margin))
+        return p_dist - n_dist + self.margin
 
 
 def load_deepfake_dataset(dataset):

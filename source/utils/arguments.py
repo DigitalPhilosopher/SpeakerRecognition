@@ -106,7 +106,7 @@ def get_training_variables(args):
         args)
 
     LEARNING_RATE = args.learning_rate
-    MODEL_PATH = args.model_path
+    MODEL_PATH = f"../{args.model_path}"
     MARGIN = args.margin
     NORM = args.norm
     BATCH_SIZE = args.batch_size
