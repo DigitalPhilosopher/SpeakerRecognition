@@ -151,7 +151,7 @@ def create_dataset(args):
 
 
 def get_model(args):
-    global model, optimizer, triplet_loss, best_loss
+    global model, optimizer, triplet_loss
 
     if args.frozen == 0:
         frozen = False
@@ -168,7 +168,6 @@ def get_model(args):
         model = WavLM_Large_ECAPA_TDNN(frozen=frozen, device=device)
     # Load pretrained model if MODEL_PATH is provided
     optimizer_state = None
-    best_loss = float('inf')
     if MODEL_PATH is not None:
         logger.info(f"Loading pretrained model from {MODEL_PATH}")
         try:
@@ -178,7 +177,6 @@ def get_model(args):
             checkpoint = torch.load(MODEL_PATH)
             model.load_state_dict(checkpoint['state_dict'])
             optimizer_state = checkpoint['optimizer']
-            best_loss = checkpoint['best_loss']
             logger.info(f"Loaded checkpoint")
 
     model.to(device)
@@ -209,7 +207,6 @@ def main(args):
     deepfake = DATASET.split(".")[1] == "deepfake"
     trainer = ModelTrainer(model, audio_dataloader, validation_dataloader, test_dataloader, device, triplet_loss,
                            optimizer, MODEL, FOLDER=FOLDER, TAGS=TAGS, accumulation_steps=ACCUMULATION_STEPS, deepfake=deepfake)
-    trainer.best_loss = best_loss
 
     trainer.train_model(EPOCHS, triplet_mining=TRIPLET_MINING,
                         create_dataset=create_dataset, audio_dataset=audio_dataset)

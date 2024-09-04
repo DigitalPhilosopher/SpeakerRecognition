@@ -145,8 +145,6 @@ class ModelTrainer:
         self.accumulation_steps = accumulation_steps
         self.FOLDER = self.create_or_get_experiment(FOLDER)
         self.TAGS = TAGS
-        self.best_loss = float('inf')
-        self.best_model_state = None
         self.deepfake = deepfake
         logger.info(f"ModelTrainer initialized with model: {MODEL}")
 
@@ -182,22 +180,12 @@ class ModelTrainer:
                 avg_loss = epoch_loss / len(self.dataloader)
                 self.log_epoch_metrics(avg_loss, epoch_start_time, epoch + 1)
 
-                if avg_loss < self.best_loss:
-                    self.best_loss = avg_loss
-                    self.best_model_state = self.model.state_dict()
-                    self.log_model("best")
-
                 self.save_model_state(epoch)
                 gc.collect()
 
             self.log_model("latest")
-            self.save_models()
             logger.info("Model training completed.")
 
-            best_model = self.model
-            best_model.load_state_dict(self.best_model_state)
-            best_model.to(self.device)
-            best_model.eval()
         except Exception as e:
             logger.error("An error occurred during training.", exc_info=True)
         finally:
@@ -245,20 +233,12 @@ class ModelTrainer:
         else:
             return mlflow.create_experiment(name)
 
-    def save_models(self):
-        if self.best_model_state:
-            logger.info("Saving best model state.")
-            torch.save(self.best_model_state,
-                       f"../models/{self.MODEL}_best_model_state.pth")
-            mlflow.log_artifact(f"../models/{self.MODEL}_best_model_state.pth")
-
     def save_model_state(self, epoch):
         logger.info(f"Saving model state for epoch {epoch}.")
         state = {
             'epoch': epoch,
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
-            'best_loss': self.best_loss
         }
         torch.save(state, f'../models/{self.MODEL}_checkpoint.pth')
 
@@ -267,4 +247,3 @@ class ModelTrainer:
         checkpoint = torch.load(f'../models/{self.MODEL}_checkpoint.pth')
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
-        self.best_loss = checkpoint['best_loss']
