@@ -171,14 +171,6 @@ class RandomMiningTrainer(MiningEpochTrainer):
 
                 anchors, positives, negatives = anchors.to(modeltrainer.device), positives.to(
                     modeltrainer.device), negatives.to(modeltrainer.device)
-                DO_PRINT = False
-                # anchors = anchors[:2, :]
-                # positives = positives[:2, :]
-                # negatives = negatives[:2, :]
-
-                # anchor_outputs = modeltrainer.model(anchors)
-                # positive_outputs = modeltrainer.model(positives)
-                # negative_outputs = modeltrainer.model(negatives)
 
                 all_inputs = torch.cat([anchors, positives, negatives], dim=0)
                 all_outputs = modeltrainer.model(all_inputs)
@@ -187,10 +179,6 @@ class RandomMiningTrainer(MiningEpochTrainer):
                 positive_outputs = all_outputs[anchors.shape[0]
                     : 2*anchors.shape[0], ::]
                 negative_outputs = all_outputs[2 * anchors.shape[0]:, ::]
-
-                # anchor_outputs = anchor_outputs[:2, ::]
-                # positive_outputs = positive_outputs[:2, ::]
-                # negative_outputs = negative_outputs[:2, ::]
 
                 p_dist = modeltrainer.loss_function.distance_function(
                     (anchor_outputs), (positive_outputs))
@@ -206,8 +194,6 @@ class RandomMiningTrainer(MiningEpochTrainer):
                     positive_distance_list = positive_distance_list[-1000:]
                 if len(negative_distance_list) > 1000:
                     negative_distance_list = negative_distance_list[-1000:]
-                # print("!!!!positive_distance_list:", sum(positive_distance_list) / len(positive_distance_list))
-                # print("!!!!negative_distance_list:", sum(negative_distance_list) / len(negative_distance_list))
 
                 eer = get_eer_for_two_distance_lists(
                     positive_distance_list, negative_distance_list)
