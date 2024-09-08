@@ -6,6 +6,7 @@ tqdm==4.66.4
 tabulate
 plotly==5.24.0
 openpyxl
+kaleido
 
 # Data Analysis and Processing
 pandas==2.2.2
