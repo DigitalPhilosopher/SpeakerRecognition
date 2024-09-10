@@ -47,7 +47,16 @@ from utils import load_deepfake_dataset
 from dataloader import RandomTripletLossDataset, BSILoader
 import plotly.graph_objects as go
 from sklearn.metrics import confusion_matrix
-import ast
+import warnings
+import logging
+
+logging.getLogger('s3prl.util.download').setLevel(logging.ERROR)
+logging.getLogger('s3prl.upstream.wavlm.WavLM').setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", message=".*has been deprecated.*")
+logging.basicConfig(level=logging.ERROR)
+warnings.filterwarnings("ignore")
+
 
 def read_audio_batch(filenames, frontend, max_length=0):
     waveforms = []
@@ -98,15 +107,35 @@ def add_check_distances(check_data):
             data_list.at[idx, "check_utterances"] = unique_ids
 
 def add_check(check, data_list):
-    fpr, tpr, thresholds = roc_curve(1 - data_list['is_genuine'], data_list[check])
+    # Filter out rows where 'check' or 'is_genuine' are NaN
+    valid_data = data_list[[check, 'is_genuine']].dropna(subset=[check, 'is_genuine'])
+    
+    # Check if there are any valid values left
+    if valid_data.empty:
+        data_list[f"{check}_is_genuine"] = np.nan
+        data_list[f"{check}_eer"] = np.nan
+        data_list[f"{check}_threshold"] = np.nan
+
+        return data_list
+
+    # Compute ROC curve
+    fpr, tpr, thresholds = roc_curve(1 - valid_data['is_genuine'], valid_data[check])
+    
+    # Calculate the false negative rate (FNR) and equal error rate (EER)
     fnr = 1 - tpr
     eer_index = np.nanargmin(np.absolute(fpr - fnr))
     eer = fpr[eer_index]
     eer_threshold = thresholds[eer_index]
 
-    data_list[f"{check}_is_genuine"] = data_list[check].apply(lambda x: x < eer_threshold)
-    data_list[f"{check}_eer"] = eer
-    data_list[f"{check}_threshold"] = eer_threshold
+    # Add new columns based on the EER threshold
+    new_columns = pd.DataFrame({
+        f"{check}_is_genuine": data_list[check].apply(lambda x: x < eer_threshold if not np.isnan(x) else np.nan),
+        f"{check}_eer": eer,
+        f"{check}_threshold": eer_threshold
+    })
+
+    # Concatenate the new columns to the original DataFrame
+    data_list = pd.concat([data_list, new_columns], axis=1)
 
     return data_list
 
@@ -222,9 +251,9 @@ if MODEL.split("_")[0].lower().startswith("mfcc"):
     model = ECAPA_TDNN(input_size=80, lin_neurons=192)
 elif MODEL.split("_")[0].lower().startswith("wavlm"):
     if MODEL.split("-")[1].lower() == "base":
-        model = WavLM_Base_ECAPA_TDNN(frozen=False)
+        model = WavLM_Base_ECAPA_TDNN(frozen=True)
     else:
-        model = WavLM_Large_ECAPA_TDNN(frozen=False)
+        model = WavLM_Large_ECAPA_TDNN(frozen=True)
 try:
     model.load_state_dict(torch.load(MODEL_PATH))
 except:
@@ -358,25 +387,37 @@ def check_2(row):
 data_list['check_2'] = data_list.apply(check_2, axis=1)
 
 def check_3(row, number_of_averages):
-    distances = row['check_distances'][:number_of_averages]
-    return (sum(distances) / number_of_averages) - max(row['positive_distances'])
+    try:
+        distances = row['check_distances'][:number_of_averages]
+        return (sum(distances) / number_of_averages) - max(row['positive_distances'])
+    except (IndexError, ValueError):
+        return np.nan
 
 def check_4(row, number_of_averages):
-    distances = row['check_distances'][:number_of_averages]
-    pos = row['positive_distances'][:number_of_averages]
-    return np.mean(distances) - np.mean(pos)
+    try:
+        distances = row['check_distances'][:number_of_averages]
+        pos = row['positive_distances'][:number_of_averages]
+        return np.mean(distances) - np.mean(pos)
+    except (IndexError, ValueError):
+        return np.nan
 
 def check_5(row, number_of_averages):
-    distances = row['check_distances'][:number_of_averages]
-    pos = row['positive_distances'][:number_of_averages]
-    return np.median(distances) - np.median(pos)
+    try:
+        distances = row['check_distances'][:number_of_averages]
+        pos = row['positive_distances'][:number_of_averages]
+        return np.median(distances) - np.median(pos)
+    except (IndexError, ValueError):
+        return np.nan
 
 def check_6(row, number_of_averages):
-    positive_hits = 0
-    for i in range(number_of_averages):
-        if row['check_distances'][i] > row['positive_distances'][i]:
-            positive_hits += 1
-    return positive_hits
+    try:
+        positive_hits = 0
+        for i in range(number_of_averages):
+            if row['check_distances'][i] > row['positive_distances'][i]:
+                positive_hits += 1
+        return positive_hits
+    except (IndexError, ValueError):
+        return np.nan
 
 for i in range(DISTANCES):
     data_list[f'check_3_{i+1}'] = data_list.apply(lambda row: check_3(row, i+1), axis=1)
@@ -578,6 +619,8 @@ for i in range(DISTANCES):
 
 viz = []
 for i in range(DISTANCES):
+    if  pd.isna(data_list[f"check_6_{i+1}_eer"].iloc[0]):
+        continue
     viz.append([
         i+1,
         data_list[f"check_6_{i+1}_eer"].iloc[0],
@@ -598,8 +641,10 @@ column_names = ['Number of checks', 'EER', 'Method Type']
 df = pd.DataFrame(viz, columns=column_names)
 
 fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
-fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
-
+try:
+    fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
+except:
+    pass
 
 # Sample datasets
 settings = {
