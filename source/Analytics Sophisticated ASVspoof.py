@@ -5,12 +5,12 @@ parser = argparse.ArgumentParser(description='Model Setup Parameters')
 parser.add_argument('--dir', type=str, required=True, help='Model directory', default="models")
 parser.add_argument('--model', type=str, required=True, help='Model checkpoint file', default="WavLM-Base-joint_ECAPA-TDNN_Random-Triplet-Mining_BSI-Deepfake_checkpoint.pth")
 parser.add_argument('--batches', type=int, default=4, help='Number of batches')
-parser.add_argument('--labels', type=str, default='valid', help='Labels (train/test/valid)')
-parser.add_argument('--num_speakers', type=int, default=10, help='Number of speakers')
-parser.add_argument('--num_deepfakes', type=int, default=10, help='Number of deepfakes')
+parser.add_argument('--labels', type=str, default='dev', help='Labels (train/dev)')
+parser.add_argument('--num_speakers', type=int, default=0, help='Number of speakers')
+parser.add_argument('--num_deepfakes', type=int, default=0, help='Number of deepfakes')
 parser.add_argument('--distances', type=int, default=10, help='Distance value')
 parser.add_argument('--max_length', type=int, default=32000, help='Maximum length')
-parser.add_argument('--dataset', type=str, default='BSI.deepfake', help='Dataset name')
+parser.add_argument('--dataset', type=str, default='ASVspoof5', help='Dataset name')
 
 args = parser.parse_args()
 
@@ -162,25 +162,11 @@ def create_bar_figure(check):
     correct.append(total_true)
     wrong.append(total_false)
 
-    # total_ex_vocoder_true   = len(data_list[(data_list[f"{check}_is_genuine"] == True)  & (data_list["is_genuine"] == 1) & (data_list["method_type"] != "Vocoder")])
-    # total_ex_vocoder_true   += len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["is_genuine"] == 0) & (data_list["method_type"] != "Vocoder")])
-    # total_ex_vocoder_false  = len(data_list[(data_list[f"{check}_is_genuine"] == False) & (data_list["is_genuine"] == 1)  & (data_list["method_type"] != "Vocoder")])
-    # total_ex_vocoder_false  += len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["is_genuine"] == 0)  & (data_list["method_type"] != "Vocoder")])
-    # method_names.append("Total/Vocoder")
-    # correct.append(total_ex_vocoder_true)
-    # wrong.append(total_ex_vocoder_false)
-
     bonafide_true   = len(data_list[(data_list[f"{check}_is_genuine"] == True)  & (data_list["is_genuine"] == 1) & (data_list["method_type"] != "Vocoder")])
     bonafide_false  = len(data_list[(data_list[f"{check}_is_genuine"] == False) & (data_list["is_genuine"] == 1) & (data_list["method_type"] != "Vocoder")])
     method_names.append("Bonafide")
     correct.append(bonafide_true)
     wrong.append(bonafide_false)
-
-    # vocoder_true   = len(data_list[(data_list[f"{check}_is_genuine"] == True)  & (data_list["is_genuine"] == 1) & (data_list["method_type"] == "Vocoder")])
-    # vocoder_false  = len(data_list[(data_list[f"{check}_is_genuine"] == False) & (data_list["is_genuine"] == 1) & (data_list["method_type"] == "Vocoder")])
-    # method_names.append("Vocoder")
-    # correct.append(vocoder_true)
-    # wrong.append(vocoder_false)
 
     deepfake_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["is_genuine"] == 0)])
     deepfake_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["is_genuine"] == 0)])
@@ -188,15 +174,15 @@ def create_bar_figure(check):
     correct.append(deepfake_true)
     wrong.append(deepfake_false)
 
-    tts_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["method_type"] == "TTS")])
-    tts_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["method_type"] == "TTS")])
-    method_names.append("TTS")
+    tts_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["method_type"] == "spoof")])
+    tts_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["method_type"] == "spoof")])
+    method_names.append("spoof")
     correct.append(tts_true)
     wrong.append(tts_false)
 
-    vc_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["method_type"] == "VC")])
-    vc_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["method_type"] == "VC")])
-    method_names.append("VC")
+    vc_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["method_type"] == "nontarget")])
+    vc_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["method_type"] == "nontarget")])
+    method_names.append("nontarget")
     correct.append(vc_true)
     wrong.append(vc_false)
 
@@ -262,14 +248,6 @@ except:
 model.eval()
 model.to('cuda')
 
-train_labels, valid_labels, test_labels = load_deepfake_dataset("BSI")
-if LABELS == "train":
-    labels = train_labels
-elif LABELS == "test":
-    labels = test_labels
-else:
-    labels = valid_labels
-
 
 if MODEL.split("_")[0].lower().startswith("mfcc"):
     frontend = MFCCTransform(
@@ -277,10 +255,22 @@ if MODEL.split("_")[0].lower().startswith("mfcc"):
 else:
     def frontend(x): return x
 
-dataset = RandomTripletLossDataset(loader=BSILoader(labels, frontend, 0))
-data_list = dataset.data_list
-speaker_counts = dataset.genuine['speaker'].value_counts()
-data_list = data_list[data_list['speaker'].map(speaker_counts) >= 2].reset_index(drop=True)
+print(os.getcwd())
+trial = pd.read_csv("data/ASVspoof5/ASVspoof5.dev.trial.txt", header=None, sep=' ')
+trial.columns = ["speaker", "utterance", "method_type"]
+trial["is_genuine"] = trial["method_type"].apply(lambda x : 1 if x == "target" else 0)
+trial["method_type"] = trial["method_type"].apply(lambda x : "bonafide" if x == "target" else x)
+metadata = pd.read_csv("data/ASVspoof5/ASVspoof5.dev.metadata.txt", header=None, sep=' ')
+metadata.columns = ["speaker", "utterance", "gender", "vocoder", "method_name", "method_type"]
+metadata["method_type"] = metadata["method_type"].apply(lambda x : "bonafide" if x == "target" else x)
+df = pd.merge(trial, metadata[["utterance", "gender", "vocoder", "method_name"]], 
+                       on="utterance", how="left")
+def get_filename(utterance):
+    file = f"data/ASVspoof5/flac_{utterance.split('_')[0]}/{utterance}.flac"
+    file = os.path.abspath(file)
+    return file
+df["filename"] = df["utterance"].apply(get_filename)
+data_list = df
 
 if NUMBER_OF_SPEAKER > 0:
     speakers = data_list['speaker'].unique()
@@ -303,7 +293,6 @@ if NUMBER_OF_DEEPFAKES > 0:
     genuine_entries = data_list[data_list["is_genuine"] == 1]
     data_list = pd.concat([genuine_entries, sampled_deepfakes_df])
 
-data_list.head()
 
 def chunker(data, chunk_size):
     for start in range(0, len(data), chunk_size):
@@ -321,8 +310,6 @@ for chunk in tqdm(chunker(data_list, BATCHES), total=total_chunks):
 
 all_embeddings = np.vstack(all_embeddings)
 data_list['embeddings'] = [emb for emb in all_embeddings]
-
-data_list.head()
 
 data_list["positive_distances"] = None
 data_list["positive_combinations"] = None
@@ -372,11 +359,11 @@ data_list["is_genuine"] = data_list["method_type"].apply(lambda x: 1 if (x == "V
 bonafide_data = data_list[data_list['method_type'] == "bonafide"]
 add_check_distances(bonafide_data)
 
-tts_data = data_list[data_list['method_type'] == "TTS"]
-add_check_distances(tts_data)
+spoof_data = data_list[data_list['method_type'] == "spoof"]
+add_check_distances(spoof_data)
 
-vc_data = data_list[data_list['method_type'] == "VC"]
-add_check_distances(vc_data)
+nontarget_data = data_list[data_list['method_type'] == "nontarget"]
+add_check_distances(nontarget_data)
 
 data_list = data_list[data_list["method_type"] != "Vocoder"]
 
@@ -430,11 +417,11 @@ for i in range(DISTANCES):
 
 data_list = add_all_checks(data_list)
 
-tts_data = data_list[(data_list['method_type'] == "bonafide") | (data_list['method_type'] == "TTS")].copy(deep=True)
-tts_data = add_all_checks(tts_data)
+spoof_data = data_list[(data_list['method_type'] == "bonafide") | (data_list['method_type'] == "spoof")].copy(deep=True)
+spoof_data = add_all_checks(spoof_data)
 
-vc_data = data_list[(data_list['method_type'] == "bonafide") | (data_list['method_type'] == "VC")].copy(deep=True)
-vc_data = add_all_checks(vc_data)
+nontarget_data = data_list[(data_list['method_type'] == "bonafide") | (data_list['method_type'] == "nontarget")].copy(deep=True)
+nontarget_data = add_all_checks(nontarget_data)
 
 nclass =[]
 
@@ -501,13 +488,13 @@ for i in range(DISTANCES):
     ])
     viz.append([
         i+1,
-        tts_data[f"check_3_{i+1}_eer"].iloc[0],
-        "TTS"
+        spoof_data[f"check_3_{i+1}_eer"].iloc[0],
+        "spoof"
     ])
     viz.append([
         i+1,
-        vc_data[f"check_3_{i+1}_eer"].iloc[0],
-        "Voice Conversion"
+        nontarget_data[f"check_3_{i+1}_eer"].iloc[0],
+        "nontarget"
     ])
 
 column_names = ['Number of checks', 'EER', 'Method Type']
@@ -544,13 +531,13 @@ for i in range(DISTANCES):
     ])
     viz.append([
         i+1,
-        tts_data[f"check_4_{i+1}_eer"].iloc[0],
-        "TTS"
+        spoof_data[f"check_4_{i+1}_eer"].iloc[0],
+        "spoof"
     ])
     viz.append([
         i+1,
-        vc_data[f"check_4_{i+1}_eer"].iloc[0],
-        "Voice Conversion"
+        nontarget_data[f"check_4_{i+1}_eer"].iloc[0],
+        "nontarget"
     ])
 
 column_names = ['Number of checks', 'EER', 'Method Type']
@@ -584,13 +571,13 @@ for i in range(DISTANCES):
     ])
     viz.append([
         i+1,
-        tts_data[f"check_5_{i+1}_eer"].iloc[0],
-        "TTS"
+        spoof_data[f"check_5_{i+1}_eer"].iloc[0],
+        "spoof"
     ])
     viz.append([
         i+1,
-        vc_data[f"check_5_{i+1}_eer"].iloc[0],
-        "Voice Conversion"
+        nontarget_data[f"check_5_{i+1}_eer"].iloc[0],
+        "nontarget"
     ])
 
 column_names = ['Number of checks', 'EER', 'Method Type']
@@ -628,13 +615,13 @@ for i in range(DISTANCES):
     ])
     viz.append([
         i+1,
-        tts_data[f"check_6_{i+1}_eer"].iloc[0],
-        "TTS"
+        spoof_data[f"check_6_{i+1}_eer"].iloc[0],
+        "spoof"
     ])
     viz.append([
         i+1,
-        vc_data[f"check_6_{i+1}_eer"].iloc[0],
-        "Voice Conversion"
+        nontarget_data[f"check_6_{i+1}_eer"].iloc[0],
+        "nontarget"
     ])
 
 column_names = ['Number of checks', 'EER', 'Method Type']
