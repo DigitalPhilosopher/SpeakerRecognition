@@ -240,8 +240,46 @@ def fig_confusion(check, data_list):
     # Create heatmap
     fig = go.Figure(data=go.Heatmap(
                     z=conf_matrix,
-                    x=['Predicted Negative', 'Predicted Positive'],
-                    y=['Actual Negative', 'Actual Positive'],
+                    x=['Predicted Deepfake', 'Predicted Bonafide'],
+                    y=['Actual Deepfake', 'Actual Bonafide'],
+                    hoverongaps=False,
+                    colorscale='Greens'))
+
+    # Add annotations (optional)
+    annotations = []
+    for i in range(conf_matrix.shape[0]):
+        for j in range(conf_matrix.shape[1]):
+            annotations.append(
+                dict(
+                    x=j,
+                    y=i,
+                    text=str(conf_matrix[i][j]),
+                    showarrow=False,
+                    font=dict(color="black")
+                )
+            )
+
+    fig.update_layout(
+        title='Confusion Matrix',
+        annotations=annotations,
+        xaxis_title='Predicted label',
+        yaxis_title='True label'
+    )
+    return fig
+
+def fig_vocoder_confusion(check, data_list):
+    # Example true labels and predicted labels
+    true_labels = data_list["method_type"].apply(lambda x: 1 if x == "bonafide" else 0)
+    predicted_labels = data_list[f"{check}_is_genuine"].apply(lambda x: 1 if x else 0)
+
+    # Compute confusion matrix
+    conf_matrix = confusion_matrix(true_labels, predicted_labels)
+
+    # Create heatmap
+    fig = go.Figure(data=go.Heatmap(
+                    z=conf_matrix,
+                    x=['Predicted Deepfake', 'Predicted Bonafide'],
+                    y=['Vocoder', 'Bonafide'],
                     hoverongaps=False,
                     colorscale='Greens'))
 
@@ -292,6 +330,15 @@ def create_check_figures(check):
 
     fig = fig_confusion(check, data_list)
     fig.write_image(f"{SAVE}/confusion_matrix.png")
+
+    fig = fig_vocoder_confusion(check, data_list_with_vocoder[(data_list_with_vocoder["method_type"] == "Vocoder") | (data_list_with_vocoder["method_type"] == "bonafide")])
+    fig.write_image(f"{SAVE}/confusion_matrix_vocoder.png")
+
+    fig = fig_confusion(check, tts_data)
+    fig.write_image(f"{SAVE}/confusion_matrix_tts.png")
+
+    fig = fig_confusion(check, vc_data)
+    fig.write_image(f"{SAVE}/confusion_matrix_vc.png")
 
 def create_viz(check):
     viz = []
