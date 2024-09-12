@@ -168,12 +168,6 @@ def create_bar_figure(check):
     correct.append(bonafide_true)
     wrong.append(bonafide_false)
 
-    deepfake_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["is_genuine"] == 0)])
-    deepfake_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["is_genuine"] == 0)])
-    method_names.append("Deepfake")
-    correct.append(deepfake_true)
-    wrong.append(deepfake_false)
-
     tts_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["method_type"] == "spoof")])
     tts_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["method_type"] == "spoof")])
     method_names.append("spoof")
@@ -197,8 +191,8 @@ def create_bar_figure(check):
 
 def fig_confusion(check):
     # Example true labels and predicted labels
-    true_labels = data_list["is_genuine"]
-    predicted_labels = data_list[f"{check}_is_genuine"].apply(lambda x: 1 if x else 0)
+    true_labels = spoof_data["is_genuine"]
+    predicted_labels = spoof_data[f"{check}_is_genuine"].apply(lambda x: 1 if x else 0)
 
     # Compute confusion matrix
     conf_matrix = confusion_matrix(true_labels, predicted_labels)
@@ -415,13 +409,13 @@ for i in range(DISTANCES):
     
     data_list[f'check_6_{i+1}'] = data_list.apply(lambda row: check_6(row, i+1), axis=1)
 
-data_list = add_all_checks(data_list)
-
 spoof_data = data_list[(data_list['method_type'] == "bonafide") | (data_list['method_type'] == "spoof")].copy(deep=True)
 spoof_data = add_all_checks(spoof_data)
 
 nontarget_data = data_list[(data_list['method_type'] == "bonafide") | (data_list['method_type'] == "nontarget")].copy(deep=True)
 nontarget_data = add_all_checks(nontarget_data)
+
+data_list = add_all_checks(data_list)
 
 nclass =[]
 

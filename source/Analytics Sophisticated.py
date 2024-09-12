@@ -1,3 +1,9 @@
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Arguments--------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 import argparse
 import os
 
@@ -28,6 +34,11 @@ MODEL_PATH = f'{DIR}{MODEL}'
 SAVE = f"{DIR}analytics/{DATASET}/{LABELS}/{MODEL.split('_')[0]}"
 os.makedirs(SAVE, exist_ok=True)
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Imports----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 import torch
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
@@ -57,6 +68,11 @@ warnings.filterwarnings("ignore", message=".*has been deprecated.*")
 logging.basicConfig(level=logging.ERROR)
 warnings.filterwarnings("ignore")
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Functions--------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 def read_audio_batch(filenames, frontend, max_length=0):
     waveforms = []
@@ -149,7 +165,7 @@ def add_all_checks(data_list):
         data_list = add_check(f"check_6_{i+1}", data_list)
     return data_list
 
-def create_bar_figure(check):
+def create_bar_figure(check, data_list, with_vocoder=False):
     method_names = []
     correct = []
     wrong = []
@@ -162,13 +178,14 @@ def create_bar_figure(check):
     correct.append(total_true)
     wrong.append(total_false)
 
-    # total_ex_vocoder_true   = len(data_list[(data_list[f"{check}_is_genuine"] == True)  & (data_list["is_genuine"] == 1) & (data_list["method_type"] != "Vocoder")])
-    # total_ex_vocoder_true   += len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["is_genuine"] == 0) & (data_list["method_type"] != "Vocoder")])
-    # total_ex_vocoder_false  = len(data_list[(data_list[f"{check}_is_genuine"] == False) & (data_list["is_genuine"] == 1)  & (data_list["method_type"] != "Vocoder")])
-    # total_ex_vocoder_false  += len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["is_genuine"] == 0)  & (data_list["method_type"] != "Vocoder")])
-    # method_names.append("Total/Vocoder")
-    # correct.append(total_ex_vocoder_true)
-    # wrong.append(total_ex_vocoder_false)
+    if with_vocoder:
+        total_ex_vocoder_true   = len(data_list[(data_list[f"{check}_is_genuine"] == True)  & (data_list["is_genuine"] == 1) & (data_list["method_type"] != "Vocoder")])
+        total_ex_vocoder_true   += len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["is_genuine"] == 0) & (data_list["method_type"] != "Vocoder")])
+        total_ex_vocoder_false  = len(data_list[(data_list[f"{check}_is_genuine"] == False) & (data_list["is_genuine"] == 1)  & (data_list["method_type"] != "Vocoder")])
+        total_ex_vocoder_false  += len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["is_genuine"] == 0)  & (data_list["method_type"] != "Vocoder")])
+        method_names.append("Total/Vocoder")
+        correct.append(total_ex_vocoder_true)
+        wrong.append(total_ex_vocoder_false)
 
     bonafide_true   = len(data_list[(data_list[f"{check}_is_genuine"] == True)  & (data_list["is_genuine"] == 1) & (data_list["method_type"] != "Vocoder")])
     bonafide_false  = len(data_list[(data_list[f"{check}_is_genuine"] == False) & (data_list["is_genuine"] == 1) & (data_list["method_type"] != "Vocoder")])
@@ -176,11 +193,12 @@ def create_bar_figure(check):
     correct.append(bonafide_true)
     wrong.append(bonafide_false)
 
-    # vocoder_true   = len(data_list[(data_list[f"{check}_is_genuine"] == True)  & (data_list["is_genuine"] == 1) & (data_list["method_type"] == "Vocoder")])
-    # vocoder_false  = len(data_list[(data_list[f"{check}_is_genuine"] == False) & (data_list["is_genuine"] == 1) & (data_list["method_type"] == "Vocoder")])
-    # method_names.append("Vocoder")
-    # correct.append(vocoder_true)
-    # wrong.append(vocoder_false)
+    if with_vocoder:
+        vocoder_true   = len(data_list[(data_list[f"{check}_is_genuine"] == True)  & (data_list["is_genuine"] == 1) & (data_list["method_type"] == "Vocoder")])
+        vocoder_false  = len(data_list[(data_list[f"{check}_is_genuine"] == False) & (data_list["is_genuine"] == 1) & (data_list["method_type"] == "Vocoder")])
+        method_names.append("Vocoder")
+        correct.append(vocoder_true)
+        wrong.append(vocoder_false)
 
     deepfake_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["is_genuine"] == 0)])
     deepfake_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["is_genuine"] == 0)])
@@ -247,6 +265,13 @@ def fig_confusion(check):
     )
     return fig
 
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Model and Data---------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 if MODEL.split("_")[0].lower().startswith("mfcc"):
     model = ECAPA_TDNN(input_size=80, lin_neurons=192)
 elif MODEL.split("_")[0].lower().startswith("wavlm"):
@@ -303,7 +328,12 @@ if NUMBER_OF_DEEPFAKES > 0:
     genuine_entries = data_list[data_list["is_genuine"] == 1]
     data_list = pd.concat([genuine_entries, sampled_deepfakes_df])
 
-data_list.head()
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Embeddings-------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 def chunker(data, chunk_size):
     for start in range(0, len(data), chunk_size):
@@ -322,7 +352,11 @@ for chunk in tqdm(chunker(data_list, BATCHES), total=total_chunks):
 all_embeddings = np.vstack(all_embeddings)
 data_list['embeddings'] = [emb for emb in all_embeddings]
 
-data_list.head()
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Positive combinations--------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 data_list["positive_distances"] = None
 data_list["positive_combinations"] = None
@@ -365,6 +399,11 @@ for speaker in tqdm(speakers, desc="Speakers", total=len(speakers), position=0):
         lambda x: (x if x is not None else []) + combinations
     )
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check combinations------------ #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 data_list = data_list[~pd.isna(data_list["positive_distances"])]
 data_list["is_genuine"] = data_list["method_type"].apply(lambda x: 1 if (x == "Vocoder") | (x == "bonafide") else 0)
@@ -379,6 +418,12 @@ vc_data = data_list[data_list['method_type'] == "VC"]
 add_check_distances(vc_data)
 
 data_list = data_list[data_list["method_type"] != "Vocoder"]
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Checks------------------------ #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 data_list["check_1"] = data_list["check_distances"].apply(lambda x: x[0])
 
@@ -428,7 +473,14 @@ for i in range(DISTANCES):
     
     data_list[f'check_6_{i+1}'] = data_list.apply(lambda row: check_6(row, i+1), axis=1)
 
-data_list = add_all_checks(data_list)
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Final Datasets---------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
+data_list_with_vocoder = data_list.copy(deep=True)
+data_list_with_vocoder = add_all_checks(data_list_with_vocoder)
 
 tts_data = data_list[(data_list['method_type'] == "bonafide") | (data_list['method_type'] == "TTS")].copy(deep=True)
 tts_data = add_all_checks(tts_data)
@@ -436,11 +488,19 @@ tts_data = add_all_checks(tts_data)
 vc_data = data_list[(data_list['method_type'] == "bonafide") | (data_list['method_type'] == "VC")].copy(deep=True)
 vc_data = add_all_checks(vc_data)
 
+data_list = add_all_checks(data_list)
+
 nclass =[]
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 1----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 check = "check_1"
 
-fig, method_names, correct, wrong = create_bar_figure(check)
+fig, method_names, correct, wrong = create_bar_figure(check, data_list)
 
 fig.write_image(f"{SAVE}/{check}_barplot.png")
 for i in range(len(method_names)):
@@ -451,13 +511,18 @@ for i in range(len(method_names)):
         wrong[i]
     ])
 
-check = "check_1"
 fig = fig_confusion(check)
 fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 2----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 check = "check_2"
 
-fig, method_names, correct, wrong = create_bar_figure(check)
+fig, method_names, correct, wrong = create_bar_figure(check, data_list)
 
 fig.write_image(f"{SAVE}/{check}_barplot.png")
 for i in range(len(method_names)):
@@ -469,15 +534,19 @@ for i in range(len(method_names)):
     ])
 
 
-check = "check_2"
 fig = fig_confusion(check)
 fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 3----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 for i in range(DISTANCES):
     check = f"check_3_{i+1}"
 
-    fig, method_names, correct, wrong = create_bar_figure(check)
+    fig, method_names, correct, wrong = create_bar_figure(check, data_list)
 
     fig.write_image(f"{SAVE}/{check}_barplot.png")
     for i in range(len(method_names)):
@@ -516,11 +585,16 @@ df = pd.DataFrame(viz, columns=column_names)
 fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
 fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 4----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 for i in range(DISTANCES):
     check = f"check_4_{i+1}"
 
-    fig, method_names, correct, wrong = create_bar_figure(check)
+    fig, method_names, correct, wrong = create_bar_figure(check, data_list)
     fig.write_image(f"{SAVE}/{check}_barplot.png")
     for i in range(len(method_names)):
         nclass.append([
@@ -559,10 +633,16 @@ df = pd.DataFrame(viz, columns=column_names)
 fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
 fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 5----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 for i in range(DISTANCES):
     check = f"check_5_{i+1}"
 
-    fig, method_names, correct, wrong = create_bar_figure(check)
+    fig, method_names, correct, wrong = create_bar_figure(check, data_list)
     fig.write_image(f"{SAVE}/{check}_barplot.png")
     for i in range(len(method_names)):
         nclass.append([
@@ -599,12 +679,16 @@ df = pd.DataFrame(viz, columns=column_names)
 fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
 fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
 
-
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 6----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 for i in range(DISTANCES):
     check = f"check_6_{i+1}"
 
-    fig, method_names, correct, wrong = create_bar_figure(check)
+    fig, method_names, correct, wrong = create_bar_figure(check, data_list)
     fig.write_image(f"{SAVE}/{check}_barplot.png")
     for i in range(len(method_names)):
         nclass.append([
@@ -646,6 +730,12 @@ try:
 except:
     pass
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Settings---------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 # Sample datasets
 settings = {
     "MODEL_PATH": MODEL_PATH,
@@ -656,6 +746,12 @@ settings = {
     "DISTANCES": DISTANCES,
     "MAX_LENGTH": MAX_LENGTH
 }
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------EERs-------------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 eers = [
     ["check_1", "Distance between audio to check and a single genuine", data_list["check_1_eer"].iloc[0], data_list["check_1_threshold"].iloc[0]],
@@ -691,6 +787,12 @@ for i in range(DISTANCES):
         data_list[f"check_6_{i+1}_threshold"].iloc[0]
     ])
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Save Data--------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 # Convert to DataFrames
 settings = pd.DataFrame(list(settings.items()), columns=["Setting", "Value"])
 eers = pd.DataFrame(eers, columns=["Check", "Description", "EER","Threshold"])
@@ -706,4 +808,3 @@ with pd.ExcelWriter(f"{SAVE}/analytics.xlsx") as writer:
 
 data_list.to_csv(f"{SAVE}/data_list.csv")
 data_list.to_excel(f"{SAVE}/data_list.xlsx")
-

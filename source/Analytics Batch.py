@@ -37,14 +37,17 @@ for model_path in pth_files:
     directory, model = os.path.split(model_path)
     directory = directory + "/"
 
-    subprocess.run(["python", "source/Analytics Sophisticated.py",
+    execution_file = "source/Analytics Sophisticated.py"
+    if DATASET == "ASVspoof5":
+        execution_file = "source/Analytics Sophisticated ASVspoof.py"
+    subprocess.run(["python", execution_file,
         "--model", model,
-        "--dir", directory,                            # Directory argument
-        "--batches", str(BATCHES),               # Number of batches
-        "--labels", LABELS,                      # Labels argument
-        "--num_speakers", str(NUMBER_OF_SPEAKER),# Number of speakers
-        "--num_deepfakes", str(NUMBER_OF_DEEPFAKES), # Number of deepfakes
-        "--distances", str(DISTANCES),           # Distances
-        "--max_length", str(MAX_LENGTH),         # Max length
-        "--dataset", DATASET                     # Dataset argument
+        "--dir", directory,
+        "--batches", str(BATCHES),
+        "--labels", LABELS,
+        "--num_speakers", str(NUMBER_OF_SPEAKER),
+        "--num_deepfakes", str(NUMBER_OF_DEEPFAKES),
+        "--distances", str(DISTANCES),
+        "--max_length", str(MAX_LENGTH),
+        "--dataset", DATASET
     ])
