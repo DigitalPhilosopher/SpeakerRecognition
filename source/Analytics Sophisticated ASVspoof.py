@@ -1,3 +1,9 @@
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Arguments--------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 import argparse
 import os
 
@@ -27,7 +33,14 @@ DATASET = args.dataset
 MODEL_PATH = f'{DIR}{MODEL}'
 SAVE = f"{DIR}analytics/{DATASET}/{LABELS}/{MODEL.split('_')[0]}"
 os.makedirs(SAVE, exist_ok=True)
+for i in range(1, 7):
+    os.makedirs(os.path.join(SAVE, f"check_{i}"), exist_ok=True)
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Imports----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 import torch
 from models import WavLM_Base_ECAPA_TDNN, WavLM_Large_ECAPA_TDNN
@@ -57,6 +70,11 @@ warnings.filterwarnings("ignore", message=".*has been deprecated.*")
 logging.basicConfig(level=logging.ERROR)
 warnings.filterwarnings("ignore")
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Functions--------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 def read_audio_batch(filenames, frontend, max_length=0):
     waveforms = []
@@ -227,6 +245,12 @@ def fig_confusion(check):
     )
     return fig
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Model and Data---------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 if MODEL.split("_")[0].lower().startswith("mfcc"):
     model = ECAPA_TDNN(input_size=80, lin_neurons=192)
 elif MODEL.split("_")[0].lower().startswith("wavlm"):
@@ -249,7 +273,7 @@ if MODEL.split("_")[0].lower().startswith("mfcc"):
 else:
     def frontend(x): return x
 
-print(os.getcwd())
+
 trial = pd.read_csv("data/ASVspoof5/ASVspoof5.dev.trial.txt", header=None, sep=' ')
 trial.columns = ["speaker", "utterance", "method_type"]
 trial["is_genuine"] = trial["method_type"].apply(lambda x : 1 if x == "target" else 0)
@@ -287,6 +311,11 @@ if NUMBER_OF_DEEPFAKES > 0:
     genuine_entries = data_list[data_list["is_genuine"] == 1]
     data_list = pd.concat([genuine_entries, sampled_deepfakes_df])
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Embeddings-------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 def chunker(data, chunk_size):
     for start in range(0, len(data), chunk_size):
@@ -304,6 +333,12 @@ for chunk in tqdm(chunker(data_list, BATCHES), total=total_chunks):
 
 all_embeddings = np.vstack(all_embeddings)
 data_list['embeddings'] = [emb for emb in all_embeddings]
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Positive combinations--------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 data_list["positive_distances"] = None
 data_list["positive_combinations"] = None
@@ -346,6 +381,11 @@ for speaker in tqdm(speakers, desc="Speakers", total=len(speakers), position=0):
         lambda x: (x if x is not None else []) + combinations
     )
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check combinations------------ #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 data_list = data_list[~pd.isna(data_list["positive_distances"])]
 data_list["is_genuine"] = data_list["method_type"].apply(lambda x: 1 if (x == "Vocoder") | (x == "bonafide") else 0)
@@ -359,7 +399,11 @@ add_check_distances(spoof_data)
 nontarget_data = data_list[data_list['method_type'] == "nontarget"]
 add_check_distances(nontarget_data)
 
-data_list = data_list[data_list["method_type"] != "Vocoder"]
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Checks------------------------ #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 data_list["check_1"] = data_list["check_distances"].apply(lambda x: x[0])
 
@@ -409,6 +453,12 @@ for i in range(DISTANCES):
     
     data_list[f'check_6_{i+1}'] = data_list.apply(lambda row: check_6(row, i+1), axis=1)
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Final Datasets---------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 spoof_data = data_list[(data_list['method_type'] == "bonafide") | (data_list['method_type'] == "spoof")].copy(deep=True)
 spoof_data = add_all_checks(spoof_data)
 
@@ -418,6 +468,13 @@ nontarget_data = add_all_checks(nontarget_data)
 data_list = add_all_checks(data_list)
 
 nclass =[]
+SAVE_root = SAVE
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 1----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 check = "check_1"
 
@@ -435,6 +492,12 @@ for i in range(len(method_names)):
 check = "check_1"
 fig = fig_confusion(check)
 fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 2----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 check = "check_2"
 
@@ -454,6 +517,11 @@ check = "check_2"
 fig = fig_confusion(check)
 fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 3----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 for i in range(DISTANCES):
     check = f"check_3_{i+1}"
@@ -497,6 +565,11 @@ df = pd.DataFrame(viz, columns=column_names)
 fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
 fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
 
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 4----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 for i in range(DISTANCES):
     check = f"check_4_{i+1}"
@@ -513,8 +586,6 @@ for i in range(DISTANCES):
 
     fig = fig_confusion(check)
     fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
-
-
 
 viz = []
 for i in range(DISTANCES):
@@ -539,6 +610,12 @@ df = pd.DataFrame(viz, columns=column_names)
 
 fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
 fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 5----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 for i in range(DISTANCES):
     check = f"check_5_{i+1}"
@@ -580,7 +657,11 @@ df = pd.DataFrame(viz, columns=column_names)
 fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
 fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
 
-
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Check 6----------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 for i in range(DISTANCES):
     check = f"check_6_{i+1}"
@@ -627,6 +708,13 @@ try:
 except:
     pass
 
+SAVE = SAVE_root
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Settings---------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+
 # Sample datasets
 settings = {
     "MODEL_PATH": MODEL_PATH,
@@ -637,6 +725,12 @@ settings = {
     "DISTANCES": DISTANCES,
     "MAX_LENGTH": MAX_LENGTH
 }
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------EERs-------------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 eers = [
     ["check_1", "Distance between audio to check and a single genuine", data_list["check_1_eer"].iloc[0], data_list["check_1_threshold"].iloc[0]],
@@ -671,6 +765,12 @@ for i in range(DISTANCES):
         data_list[f"check_6_{i+1}_eer"].iloc[0],
         data_list[f"check_6_{i+1}_threshold"].iloc[0]
     ])
+
+# -------------------------------------------------- #
+# -------------------------------------------------- #
+# --------------------Save Data--------------------- #
+# -------------------------------------------------- #
+# -------------------------------------------------- #
 
 # Convert to DataFrames
 settings = pd.DataFrame(list(settings.items()), columns=["Setting", "Value"])
