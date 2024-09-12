@@ -33,6 +33,8 @@ DATASET = args.dataset
 MODEL_PATH = f'{DIR}{MODEL}'
 SAVE = f"{DIR}analytics/{DATASET}/{LABELS}/{MODEL.split('_')[0]}"
 os.makedirs(SAVE, exist_ok=True)
+for i in range(1, 7):
+    os.makedirs(os.path.join(SAVE, f"check_{i}"), exist_ok=True)
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
@@ -267,7 +269,7 @@ def fig_confusion(check, data_list):
 
 def create_check_figures(check):
     fig, method_names, correct, wrong = create_bar_figure(check, data_list)
-    fig.write_image(f"{SAVE}/{check}_barplot.png")
+    fig.write_image(f"{SAVE}/barplot.png")
     for i in range(len(method_names)):
         nclass.append([
             check,
@@ -278,7 +280,7 @@ def create_check_figures(check):
         ])
 
     fig, method_names, correct, wrong = create_bar_figure(check, data_list_with_vocoder, True)
-    fig.write_image(f"{SAVE}/{check}_with_vocoder_barplot.png")
+    fig.write_image(f"{SAVE}/barplot_with_vocoder.png")
     for i in range(len(method_names)):
         nclass.append([
             check,
@@ -289,7 +291,7 @@ def create_check_figures(check):
         ])
 
     fig = fig_confusion(check, data_list)
-    fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
+    fig.write_image(f"{SAVE}/confusion_matrix.png")
 
 def create_viz(check):
     viz = []
@@ -550,14 +552,15 @@ data_list = data_list[data_list["method_type"] != "Vocoder"]
 data_list = add_all_checks(data_list)
 
 nclass =[]
+SAVE_root = SAVE
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 # --------------------Check 1----------------------- #
 # -------------------------------------------------- #
 # -------------------------------------------------- #
-
 check = "check_1"
+SAVE = f"{SAVE_root}/{check}"
 create_check_figures(check)
 
 # -------------------------------------------------- #
@@ -567,6 +570,7 @@ create_check_figures(check)
 # -------------------------------------------------- #
 
 check = "check_2"
+SAVE = f"{SAVE_root}/{check}"
 create_check_figures(check)
 
 # -------------------------------------------------- #
@@ -574,34 +578,12 @@ create_check_figures(check)
 # --------------------Check 3----------------------- #
 # -------------------------------------------------- #
 # -------------------------------------------------- #
-
+check = "check_3"
+SAVE = f"{SAVE_root}/{check}"
 for i in range(DISTANCES):
-    check = f"check_3_{i+1}"
-    create_check_figures(check)
-
-viz = []
-for i in range(DISTANCES):
-    viz.append([
-        i+1,
-        data_list[f"check_3_{i+1}_eer"].iloc[0],
-        "TOTAL"
-    ])
-    viz.append([
-        i+1,
-        tts_data[f"check_3_{i+1}_eer"].iloc[0],
-        "TTS"
-    ])
-    viz.append([
-        i+1,
-        vc_data[f"check_3_{i+1}_eer"].iloc[0],
-        "Voice Conversion"
-    ])
-
-column_names = ['Number of checks', 'EER', 'Method Type']
-df = pd.DataFrame(viz, columns=column_names)
-
-fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
-fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
+    checky = f"{check}_{i+1}"
+    create_check_figures(checky)
+create_viz(check)
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
@@ -609,6 +591,7 @@ fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 check = "check_4"
+SAVE = f"{SAVE_root}/{check}"
 for i in range(DISTANCES):
     checky = f"{check}_{i+1}"
     create_check_figures(checky)
@@ -620,6 +603,7 @@ create_viz(check)
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 check = "check_5"
+SAVE = f"{SAVE_root}/{check}"
 for i in range(DISTANCES):
     checky = f"{check}_{i+1}"
     create_check_figures(checky)
@@ -631,11 +615,13 @@ create_viz(check)
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 check = "check_6"
+SAVE = f"{SAVE_root}/{check}"
 for i in range(DISTANCES):
     checky = f"{check}_{i+1}"
     create_check_figures(checky)
 create_viz(check)
 
+SAVE = SAVE_root
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 # --------------------Settings---------------------- #
