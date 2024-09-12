@@ -523,13 +523,32 @@ def chunker(data, chunk_size):
 
 total_chunks = len(data_list) // BATCHES + (1 if len(data_list) % BATCHES != 0 else 0)
 all_embeddings = []
+failed_filenames = []
 for chunk in tqdm(chunker(data_list, BATCHES), total=total_chunks):
-    waveforms = read_audio_batch(chunk['filename'].tolist(), frontend, MAX_LENGTH)
+    try:
+        waveforms = read_audio_batch(chunk['filename'].tolist(), frontend, MAX_LENGTH)
 
-    embeddings = extract_embeddings_batch(model, waveforms)
-    embeddings = embeddings.squeeze(1)  # Shape becomes [batch_size, embedding_dim]
+        embeddings = extract_embeddings_batch(model, waveforms)
+        embeddings = embeddings.squeeze(1)  # Shape becomes [batch_size, embedding_dim]
 
-    all_embeddings.append(embeddings.cpu().numpy())
+        all_embeddings.append(embeddings.cpu().numpy())
+    except Exception as e:
+        # Print the error and filenames for debugging
+        print(f"Error processing batch: {e}")
+        print(f"Failed filenames: {chunk['filename'].tolist()}")
+
+        # Add failed filenames to a list for removal
+        failed_filenames.extend(chunk['filename'].tolist())
+
+# Remove failed filenames from the DataFrame
+if failed_filenames:
+    data_list = data_list[~data_list['filename'].isin(failed_filenames)]
+
+# Print the removed filenames
+if failed_filenames:
+    print("Removed filenames due to errors:")
+    for filename in failed_filenames:
+        print(filename)
 
 all_embeddings = np.vstack(all_embeddings)
 data_list['embeddings'] = [emb for emb in all_embeddings]
