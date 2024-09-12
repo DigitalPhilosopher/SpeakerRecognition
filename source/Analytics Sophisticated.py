@@ -240,8 +240,8 @@ def fig_confusion(check, data_list):
     # Create heatmap
     fig = go.Figure(data=go.Heatmap(
                     z=conf_matrix,
-                    x=['Predicted Deepfake', 'Predicted Bonafide'],
-                    y=['Actual Deepfake', 'Actual Bonafide'],
+                    x=['Deepfake', 'Bonafide'],
+                    y=['Deepfake', 'Bonafide'],
                     hoverongaps=False,
                     colorscale='Greens'))
 
@@ -278,7 +278,7 @@ def fig_vocoder_confusion(check, data_list):
     # Create heatmap
     fig = go.Figure(data=go.Heatmap(
                     z=conf_matrix,
-                    x=['Predicted Deepfake', 'Predicted Bonafide'],
+                    x=['Deepfake', 'Bonafide'],
                     y=['Vocoder', 'Bonafide'],
                     hoverongaps=False,
                     colorscale='Greens'))
@@ -301,7 +301,7 @@ def fig_vocoder_confusion(check, data_list):
         title='Confusion Matrix',
         annotations=annotations,
         xaxis_title='Predicted label',
-        yaxis_title='True label'
+        yaxis_title='Vocoder used'
     )
     return fig
 
