@@ -167,7 +167,7 @@ def add_all_checks(data_list):
         data_list = add_check(f"check_6_{i+1}", data_list)
     return data_list
 
-def create_bar_figure(check):
+def create_bar_figure(check, data_list, with_nontarget=False):
     method_names = []
     correct = []
     wrong = []
@@ -192,11 +192,12 @@ def create_bar_figure(check):
     correct.append(tts_true)
     wrong.append(tts_false)
 
-    vc_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["method_type"] == "nontarget")])
-    vc_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["method_type"] == "nontarget")])
-    method_names.append("nontarget")
-    correct.append(vc_true)
-    wrong.append(vc_false)
+    if with_nontarget:
+        vc_true   = len(data_list[(data_list[f"{check}_is_genuine"] == False)  & (data_list["method_type"] == "nontarget")])
+        vc_false  = len(data_list[(data_list[f"{check}_is_genuine"] == True) & (data_list["method_type"] == "nontarget")])
+        method_names.append("nontarget")
+        correct.append(vc_true)
+        wrong.append(vc_false)
 
 
     fig = go.Figure(data=[
@@ -207,10 +208,10 @@ def create_bar_figure(check):
     fig.update_layout(barmode='group')
     return fig, method_names, correct, wrong
 
-def fig_confusion(check):
+def fig_confusion(check, data_list, labels=['Spoof', 'Target']):
     # Example true labels and predicted labels
-    true_labels = spoof_data["is_genuine"]
-    predicted_labels = spoof_data[f"{check}_is_genuine"].apply(lambda x: 1 if x else 0)
+    true_labels = data_list["is_genuine"]
+    predicted_labels = data_list[f"{check}_is_genuine"].apply(lambda x: 1 if x else 0)
 
     # Compute confusion matrix
     conf_matrix = confusion_matrix(true_labels, predicted_labels)
@@ -218,8 +219,8 @@ def fig_confusion(check):
     # Create heatmap
     fig = go.Figure(data=go.Heatmap(
                     z=conf_matrix,
-                    x=['Predicted Negative', 'Predicted Positive'],
-                    y=['Actual Negative', 'Actual Positive'],
+                    x=labels,
+                    y=labels,
                     hoverongaps=False,
                     colorscale='Greens'))
 
@@ -244,6 +245,205 @@ def fig_confusion(check):
         yaxis_title='True label'
     )
     return fig
+
+def fig_nontarget_confusion(check, data_list):
+    # Example true labels and predicted labels
+    true_labels = data_list["method_type"].apply(lambda x: 1 if x == "bonafide" else 0)
+    predicted_labels = data_list[f"{check}_is_genuine"].apply(lambda x: 1 if x else 0)
+
+    # Compute confusion matrix
+    conf_matrix = confusion_matrix(true_labels, predicted_labels)
+
+    # Create heatmap
+    fig = go.Figure(data=go.Heatmap(
+                    z=conf_matrix,
+                    x=['Predicted Deepfake', 'Predicted Bonafide'],
+                    y=['Vocoder', 'Bonafide'],
+                    hoverongaps=False,
+                    colorscale='Greens'))
+
+    # Add annotations (optional)
+    annotations = []
+    for i in range(conf_matrix.shape[0]):
+        for j in range(conf_matrix.shape[1]):
+            annotations.append(
+                dict(
+                    x=j,
+                    y=i,
+                    text=str(conf_matrix[i][j]),
+                    showarrow=False,
+                    font=dict(color="black")
+                )
+            )
+
+    fig.update_layout(
+        title='Confusion Matrix',
+        annotations=annotations,
+        xaxis_title='Predicted label',
+        yaxis_title='True label'
+    )
+    return fig
+
+def create_check_figures(check):
+    fig, method_names, correct, wrong = create_bar_figure(check, spoof_data)
+    fig.write_image(f"{SAVE}/{check}_barplot.png")
+    for i in range(len(method_names)):
+        nclass.append([
+            check,
+            False,
+            method_names[i],
+            correct[i],
+            wrong[i]
+        ])
+
+    fig, method_names, correct, wrong = create_bar_figure(check, data_list, True)
+    fig.write_image(f"{SAVE}/{check}_barplot_with_nontarget.png")
+    for i in range(len(method_names)):
+        nclass.append([
+            check,
+            True,
+            method_names[i],
+            correct[i],
+            wrong[i]
+        ])
+
+    fig = fig_confusion(check, spoof_data)
+    fig.write_image(f"{SAVE}/{check}_confusion_matrix_deepfake_detection.png")
+    
+    fig = fig_confusion(check, data_list, labels=['Spoof / Non Target', 'Target'])
+    fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
+    
+    fig = fig_confusion(check, nontarget_data, labels=['Non Target', 'Target'])
+    fig.write_image(f"{SAVE}/{check}_confusion_matrix_speaker_verification.png")
+
+    fig = create_absolute_method_fig(check, spoof_data)
+    if fig:
+        fig.write_image(f"{SAVE}/{check}_absolute_wrong_methods.png")
+
+    fig = create_relative_method_fig(check, spoof_data)
+    if fig:
+        fig.write_image(f"{SAVE}/{check}_relative_wrong_methods.png")
+
+def create_viz(check):
+    viz = []
+    for i in range(DISTANCES):
+        if pd.isna(data_list[f"{check}_{i+1}_eer"].iloc[0]):
+            continue
+        viz.append([
+            i+1,
+            data_list[f"{check}_{i+1}_eer"].iloc[0],
+            "TOTAL"
+        ])
+        viz.append([
+            i+1,
+            spoof_data[f"{check}_{i+1}_eer"].iloc[0],
+            "spoof"
+        ])
+        viz.append([
+            i+1,
+            nontarget_data[f"check_3_{i+1}_eer"].iloc[0],
+            "nontarget"
+        ])
+
+    column_names = ['Number of checks', 'EER', 'Method Type']
+    df = pd.DataFrame(viz, columns=column_names)
+
+    fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
+    fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
+
+def create_absolute_method_fig(check, df):
+    condition = (df[f'{check}_is_genuine'] == True) & (df['is_genuine'] == False)
+    counts = df[condition].groupby('method_name').size().reset_index(name='counts')
+
+    if not counts.empty:
+        max_count = counts['counts'].max()
+        
+        fig = px.bar(
+            counts,
+            x='method_name',
+            y='counts',
+            title='Number of wrongly classified audios grouped by Method',
+            labels={'counts': 'Wrong classifications', 'method_name': 'Method Name'},
+        )
+
+        fig.update_layout(
+            xaxis_tickangle=-45,
+            xaxis_title="Method Name",
+            yaxis_title="Number of Items",
+            margin=dict(t=100),
+        )
+
+        fig.update_yaxes(
+            tickmode='linear',
+            dtick=1,
+            tickformat='d',
+            range=[0, max_count + 1]
+        )
+
+        fig.update_traces(
+            marker_color='red',
+            texttemplate='%{y}',
+            textposition='outside',
+            cliponaxis=False,
+        )
+
+        return fig
+    return None
+
+def create_relative_method_fig(check, df):
+    # Calculate correct and incorrect classifications
+    total_counts = df.groupby('method_name').size().reset_index(name='total_counts')
+    wrong_counts = df[(df[f'{check}_is_genuine'] == True) & (df['is_genuine'] == False)]\
+                    .groupby('method_name').size().reset_index(name='wrong_counts')
+
+    # Merge both dataframes
+    merged_counts = pd.merge(total_counts, wrong_counts, on='method_name', how='left')
+    merged_counts['wrong_counts'] = merged_counts['wrong_counts'].fillna(0)  # Handle NaN values
+    merged_counts['correct_counts'] = merged_counts['total_counts'] - merged_counts['wrong_counts']
+
+    # Filter to show only methods with wrong classifications and sort by wrong_counts
+    filtered_counts = merged_counts[merged_counts['wrong_counts'] > 0].sort_values(by='wrong_counts', ascending=False)
+
+    # Limit the result to the top 10 methods
+    merged_counts = filtered_counts.head(10)
+
+    
+    # Calculate percentages
+    merged_counts['wrong_percentage'] = (merged_counts['wrong_counts'] / merged_counts['total_counts']) * 100
+    merged_counts['correct_percentage'] = (merged_counts['correct_counts'] / merged_counts['total_counts']) * 100
+
+    if not merged_counts.empty:
+        # Create a bar chart for correct (green) and wrong (red) percentages
+        fig = px.bar(
+            merged_counts.melt(id_vars='method_name', value_vars=['wrong_percentage', 'correct_percentage']),
+            x='method_name',
+            y='value',
+            color='variable',
+            title='Percentage of Correct and Wrong Classifications by Method',
+            labels={'value': 'Percentage (%)', 'method_name': 'Method Name'},
+            text='value'
+        )
+
+        fig.update_layout(
+            xaxis_tickangle=-45,
+            xaxis_title="Method Name",
+            yaxis_title="Percentage (%)",
+            margin=dict(t=100),
+        )
+
+        # Customize the color for correct and wrong classifications
+        fig.update_traces(
+            texttemplate='%{y:.2f}%',
+            cliponaxis=False,
+        )
+
+        # Ensure correct classifications are in green and wrong classifications in red
+        fig.for_each_trace(
+            lambda trace: trace.update(marker_color='green') if 'correct' in trace.name else trace.update(marker_color='red')
+        )
+
+        return fig
+    return None
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
@@ -475,238 +675,66 @@ SAVE_root = SAVE
 # --------------------Check 1----------------------- #
 # -------------------------------------------------- #
 # -------------------------------------------------- #
-
 check = "check_1"
-
-fig, method_names, correct, wrong = create_bar_figure(check)
-
-fig.write_image(f"{SAVE}/{check}_barplot.png")
-for i in range(len(method_names)):
-    nclass.append([
-        check,
-        method_names[i],
-        correct[i],
-        wrong[i]
-    ])
-
-check = "check_1"
-fig = fig_confusion(check)
-fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
+SAVE = f"{SAVE_root}/{check}"
+create_check_figures(check)
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 # --------------------Check 2----------------------- #
 # -------------------------------------------------- #
 # -------------------------------------------------- #
-
 check = "check_2"
-
-fig, method_names, correct, wrong = create_bar_figure(check)
-
-fig.write_image(f"{SAVE}/{check}_barplot.png")
-for i in range(len(method_names)):
-    nclass.append([
-        check,
-        method_names[i],
-        correct[i],
-        wrong[i]
-    ])
-
-
-check = "check_2"
-fig = fig_confusion(check)
-fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
+SAVE = f"{SAVE_root}/{check}"
+create_check_figures(check)
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 # --------------------Check 3----------------------- #
 # -------------------------------------------------- #
 # -------------------------------------------------- #
-
+check = "check_3"
+SAVE = f"{SAVE_root}/{check}"
 for i in range(DISTANCES):
-    check = f"check_3_{i+1}"
-
-    fig, method_names, correct, wrong = create_bar_figure(check)
-
-    fig.write_image(f"{SAVE}/{check}_barplot.png")
-    for i in range(len(method_names)):
-        nclass.append([
-            check,
-            method_names[i],
-            correct[i],
-            wrong[i]
-        ])
-        
-
-    fig = fig_confusion(check)
-    fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
-
-viz = []
-for i in range(DISTANCES):
-    viz.append([
-        i+1,
-        data_list[f"check_3_{i+1}_eer"].iloc[0],
-        "TOTAL"
-    ])
-    viz.append([
-        i+1,
-        spoof_data[f"check_3_{i+1}_eer"].iloc[0],
-        "spoof"
-    ])
-    viz.append([
-        i+1,
-        nontarget_data[f"check_3_{i+1}_eer"].iloc[0],
-        "nontarget"
-    ])
-
-column_names = ['Number of checks', 'EER', 'Method Type']
-df = pd.DataFrame(viz, columns=column_names)
-
-fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
-fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
+    checky = f"{check}_{i+1}"
+    create_check_figures(checky)
+create_viz(check)
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 # --------------------Check 4----------------------- #
 # -------------------------------------------------- #
 # -------------------------------------------------- #
-
+check = "check_4"
+SAVE = f"{SAVE_root}/{check}"
 for i in range(DISTANCES):
-    check = f"check_4_{i+1}"
-
-    fig, method_names, correct, wrong = create_bar_figure(check)
-    fig.write_image(f"{SAVE}/{check}_barplot.png")
-    for i in range(len(method_names)):
-        nclass.append([
-            check,
-            method_names[i],
-            correct[i],
-            wrong[i]
-        ])
-
-    fig = fig_confusion(check)
-    fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
-
-viz = []
-for i in range(DISTANCES):
-    viz.append([
-        i+1,
-        data_list[f"check_4_{i+1}_eer"].iloc[0],
-        "TOTAL"
-    ])
-    viz.append([
-        i+1,
-        spoof_data[f"check_4_{i+1}_eer"].iloc[0],
-        "spoof"
-    ])
-    viz.append([
-        i+1,
-        nontarget_data[f"check_4_{i+1}_eer"].iloc[0],
-        "nontarget"
-    ])
-
-column_names = ['Number of checks', 'EER', 'Method Type']
-df = pd.DataFrame(viz, columns=column_names)
-
-fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
-fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
+    checky = f"{check}_{i+1}"
+    create_check_figures(checky)
+create_viz(check)
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 # --------------------Check 5----------------------- #
 # -------------------------------------------------- #
 # -------------------------------------------------- #
-
+check = "check_5"
+SAVE = f"{SAVE_root}/{check}"
 for i in range(DISTANCES):
-    check = f"check_5_{i+1}"
-
-    fig, method_names, correct, wrong = create_bar_figure(check)
-    fig.write_image(f"{SAVE}/{check}_barplot.png")
-    for i in range(len(method_names)):
-        nclass.append([
-            check,
-            method_names[i],
-            correct[i],
-            wrong[i]
-        ])
-
-    fig = fig_confusion(check)
-    fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
-
-viz = []
-for i in range(DISTANCES):
-    viz.append([
-        i+1,
-        data_list[f"check_5_{i+1}_eer"].iloc[0],
-        "TOTAL"
-    ])
-    viz.append([
-        i+1,
-        spoof_data[f"check_5_{i+1}_eer"].iloc[0],
-        "spoof"
-    ])
-    viz.append([
-        i+1,
-        nontarget_data[f"check_5_{i+1}_eer"].iloc[0],
-        "nontarget"
-    ])
-
-column_names = ['Number of checks', 'EER', 'Method Type']
-df = pd.DataFrame(viz, columns=column_names)
-
-fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
-fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
+    checky = f"{check}_{i+1}"
+    create_check_figures(checky)
+create_viz(check)
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
 # --------------------Check 6----------------------- #
 # -------------------------------------------------- #
 # -------------------------------------------------- #
-
+check = "check_6"
+SAVE = f"{SAVE_root}/{check}"
 for i in range(DISTANCES):
-    check = f"check_6_{i+1}"
-
-    fig, method_names, correct, wrong = create_bar_figure(check)
-    fig.write_image(f"{SAVE}/{check}_barplot.png")
-    for i in range(len(method_names)):
-        nclass.append([
-            check,
-            method_names[i],
-            correct[i],
-            wrong[i]
-        ])
-
-    fig = fig_confusion(check)
-    fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
-
-viz = []
-for i in range(DISTANCES):
-    if  pd.isna(data_list[f"check_6_{i+1}_eer"].iloc[0]):
-        continue
-    viz.append([
-        i+1,
-        data_list[f"check_6_{i+1}_eer"].iloc[0],
-        "TOTAL"
-    ])
-    viz.append([
-        i+1,
-        spoof_data[f"check_6_{i+1}_eer"].iloc[0],
-        "spoof"
-    ])
-    viz.append([
-        i+1,
-        nontarget_data[f"check_6_{i+1}_eer"].iloc[0],
-        "nontarget"
-    ])
-
-column_names = ['Number of checks', 'EER', 'Method Type']
-df = pd.DataFrame(viz, columns=column_names)
-
-fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
-try:
-    fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
-except:
-    pass
+    checky = f"{check}_{i+1}"
+    create_check_figures(checky)
+create_viz(check)
 
 SAVE = SAVE_root
 # -------------------------------------------------- #
@@ -733,13 +761,23 @@ settings = {
 # -------------------------------------------------- #
 
 eers = [
-    ["check_1", "Distance between audio to check and a single genuine", data_list["check_1_eer"].iloc[0], data_list["check_1_threshold"].iloc[0]],
-    ["check_2", "Using a triplet of two genuine audios and the audio to check", data_list["check_2_eer"].iloc[0], data_list["check_2_threshold"].iloc[0]]
+    ["check_1", False, "Distance between audio to check and a single genuine", spoof_data["check_1_eer"].iloc[0], spoof_data["check_1_threshold"].iloc[0]],
+    ["check_1", True, "Distance between audio to check and a single genuine", data_list["check_1_eer"].iloc[0], data_list["check_1_threshold"].iloc[0]],
+    ["check_2", False, "Using a triplet of two genuine audios and the audio to check", spoof_data["check_2_eer"].iloc[0], spoof_data["check_2_threshold"].iloc[0]],
+    ["check_2", True, "Using a triplet of two genuine audios and the audio to check", data_list["check_2_eer"].iloc[0], data_list["check_2_threshold"].iloc[0]],
 ]
 
 for i in range(DISTANCES):
     eers.append([
         f"check_3_{i+1}",
+        False,
+        f"Using the maximum distance of {i+1} genuine distances against the mean distance the audio to check against {i+1} genuine audio files",
+        spoof_data[f"check_3_{i+1}_eer"].iloc[0],
+        spoof_data[f"check_3_{i+1}_threshold"].iloc[0]
+    ])
+    eers.append([
+        f"check_3_{i+1}",
+        True,
         f"Using the maximum distance of {i+1} genuine distances against the mean distance the audio to check against {i+1} genuine audio files",
         data_list[f"check_3_{i+1}_eer"].iloc[0],
         data_list[f"check_3_{i+1}_threshold"].iloc[0]
@@ -747,6 +785,14 @@ for i in range(DISTANCES):
 for i in range(DISTANCES):
     eers.append([
         f"check_4_{i+1}",
+        False,
+        f"Using the average distance of {i+1} genuine distances against the mean distance the audio to check against {i+1} genuine audio files",
+        spoof_data[f"check_4_{i+1}_eer"].iloc[0],
+        spoof_data[f"check_4_{i+1}_threshold"].iloc[0]
+    ])
+    eers.append([
+        f"check_4_{i+1}",
+        True,
         f"Using the average distance of {i+1} genuine distances against the mean distance the audio to check against {i+1} genuine audio files",
         data_list[f"check_4_{i+1}_eer"].iloc[0],
         data_list[f"check_4_{i+1}_threshold"].iloc[0]
@@ -754,6 +800,14 @@ for i in range(DISTANCES):
 for i in range(DISTANCES):
     eers.append([
         f"check_5_{i+1}",
+        False,
+        f"Using the median distance of {i+1} genuine distances against the median distance the audio to check against {i+1} genuine audio files",
+        spoof_data[f"check_5_{i+1}_eer"].iloc[0],
+        spoof_data[f"check_5_{i+1}_threshold"].iloc[0]
+    ])
+    eers.append([
+        f"check_5_{i+1}",
+        True,
         f"Using the median distance of {i+1} genuine distances against the median distance the audio to check against {i+1} genuine audio files",
         data_list[f"check_5_{i+1}_eer"].iloc[0],
         data_list[f"check_5_{i+1}_threshold"].iloc[0]
@@ -761,6 +815,14 @@ for i in range(DISTANCES):
 for i in range(DISTANCES):
     eers.append([
         f"check_6_{i+1}",
+        False,
+        f"Using {i+1} positive distances and {i+1} distances from audio to check against positive sample. Counting how many checks are further away than the genuine distances",
+        spoof_data[f"check_6_{i+1}_eer"].iloc[0],
+        spoof_data[f"check_6_{i+1}_threshold"].iloc[0]
+    ])
+    eers.append([
+        f"check_6_{i+1}",
+        True,
         f"Using {i+1} positive distances and {i+1} distances from audio to check against positive sample. Counting how many checks are further away than the genuine distances",
         data_list[f"check_6_{i+1}_eer"].iloc[0],
         data_list[f"check_6_{i+1}_threshold"].iloc[0]
@@ -774,8 +836,8 @@ for i in range(DISTANCES):
 
 # Convert to DataFrames
 settings = pd.DataFrame(list(settings.items()), columns=["Setting", "Value"])
-eers = pd.DataFrame(eers, columns=["Check", "Description", "EER","Threshold"])
-nclass = pd.DataFrame(nclass, columns=["Check", "Method name", "Correct","Wrong"])
+eers = pd.DataFrame(eers, columns=["Check", "Including Non Target", "Description", "EER","Threshold"])
+nclass = pd.DataFrame(nclass, columns=["Check", "Including Non Target", "Method name", "Correct","Wrong"])
 grouped_nclass = nclass.groupby('Check').apply(lambda x: x).reset_index(drop=True)
 
 # Create a Pandas Excel writer object
@@ -788,3 +850,8 @@ with pd.ExcelWriter(f"{SAVE}/analytics.xlsx") as writer:
 data_list.to_csv(f"{SAVE}/data_list.csv")
 data_list.to_excel(f"{SAVE}/data_list.xlsx")
 
+nontarget_data.to_csv(f"{SAVE}/nontarget_data.csv")
+nontarget_data.to_excel(f"{SAVE}/nontarget_data.xlsx")
+
+spoof_data.to_csv(f"{SAVE}/spoof_data.csv")
+spoof_data.to_excel(f"{SAVE}/spoof_data.xlsx")

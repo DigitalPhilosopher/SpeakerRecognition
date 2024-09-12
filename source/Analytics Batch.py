@@ -37,9 +37,13 @@ for model_path in pth_files:
     directory, model = os.path.split(model_path)
     directory = directory + "/"
 
-    execution_file = "source/Analytics Sophisticated.py"
-    if DATASET == "ASVspoof5":
+    if DATASET == "BSI.deepfake":
+        execution_file = "source/Analytics Sophisticated.py"
+    elif DATASET == "ASVspoof5":
         execution_file = "source/Analytics Sophisticated ASVspoof.py"
+    else:
+        print("Dataset must be either ASVspoof5 or BSI.deepfake")
+        exit(-1)
     subprocess.run(["python", execution_file,
         "--model", model,
         "--dir", directory,
