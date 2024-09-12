@@ -344,6 +344,10 @@ def create_check_figures(check):
     if fig:
         fig.write_image(f"{SAVE}/{check}_absolute_wrong_methods.png")
 
+    fig = create_relative_method_fig(check, data_list)
+    if fig:
+        fig.write_image(f"{SAVE}/{check}_relative_wrong_methods.png")
+
 def create_viz(check):
     viz = []
     for i in range(DISTANCES):
@@ -410,6 +414,61 @@ def create_absolute_method_fig(check, df):
             texttemplate='%{y}',
             textposition='outside',
             cliponaxis=False,
+        )
+
+        return fig
+    return None
+
+def create_relative_method_fig(check, df):
+    # Calculate correct and incorrect classifications
+    total_counts = df.groupby('method_name').size().reset_index(name='total_counts')
+    wrong_counts = df[(df[f'{check}_is_genuine'] == True) & (df['is_genuine'] == False)]\
+                    .groupby('method_name').size().reset_index(name='wrong_counts')
+
+    # Merge both dataframes
+    merged_counts = pd.merge(total_counts, wrong_counts, on='method_name', how='left')
+    merged_counts['wrong_counts'] = merged_counts['wrong_counts'].fillna(0)  # Handle NaN values
+    merged_counts['correct_counts'] = merged_counts['total_counts'] - merged_counts['wrong_counts']
+
+    # Filter to show only methods with wrong classifications and sort by wrong_counts
+    filtered_counts = merged_counts[merged_counts['wrong_counts'] > 0].sort_values(by='wrong_counts', ascending=False)
+
+    # Limit the result to the top 10 methods
+    merged_counts = filtered_counts.head(10)
+
+    
+    # Calculate percentages
+    merged_counts['wrong_percentage'] = (merged_counts['wrong_counts'] / merged_counts['total_counts']) * 100
+    merged_counts['correct_percentage'] = (merged_counts['correct_counts'] / merged_counts['total_counts']) * 100
+
+    if not merged_counts.empty:
+        # Create a bar chart for correct (green) and wrong (red) percentages
+        fig = px.bar(
+            merged_counts.melt(id_vars='method_name', value_vars=['wrong_percentage', 'correct_percentage']),
+            x='method_name',
+            y='value',
+            color='variable',
+            title='Percentage of Correct and Wrong Classifications by Method',
+            labels={'value': 'Percentage (%)', 'method_name': 'Method Name'},
+            text='value'
+        )
+
+        fig.update_layout(
+            xaxis_tickangle=-45,
+            xaxis_title="Method Name",
+            yaxis_title="Percentage (%)",
+            margin=dict(t=100),
+        )
+
+        # Customize the color for correct and wrong classifications
+        fig.update_traces(
+            texttemplate='%{y:.2f}%',
+            cliponaxis=False,
+        )
+
+        # Ensure correct classifications are in green and wrong classifications in red
+        fig.for_each_trace(
+            lambda trace: trace.update(marker_color='green') if 'correct' in trace.name else trace.update(marker_color='red')
         )
 
         return fig
