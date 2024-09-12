@@ -307,7 +307,7 @@ def fig_vocoder_confusion(check, data_list):
 
 def create_check_figures(check):
     fig, method_names, correct, wrong = create_bar_figure(check, data_list)
-    fig.write_image(f"{SAVE}/barplot.png")
+    fig.write_image(f"{SAVE}/{check}_barplot.png")
     for i in range(len(method_names)):
         nclass.append([
             check,
@@ -318,7 +318,7 @@ def create_check_figures(check):
         ])
 
     fig, method_names, correct, wrong = create_bar_figure(check, data_list_with_vocoder, True)
-    fig.write_image(f"{SAVE}/barplot_with_vocoder.png")
+    fig.write_image(f"{SAVE}/{check}_barplot_with_vocoder.png")
     for i in range(len(method_names)):
         nclass.append([
             check,
@@ -329,16 +329,20 @@ def create_check_figures(check):
         ])
 
     fig = fig_confusion(check, data_list)
-    fig.write_image(f"{SAVE}/confusion_matrix.png")
+    fig.write_image(f"{SAVE}/{check}_confusion_matrix.png")
 
     fig = fig_vocoder_confusion(check, data_list_with_vocoder[(data_list_with_vocoder["method_type"] == "Vocoder") | (data_list_with_vocoder["method_type"] == "bonafide")])
-    fig.write_image(f"{SAVE}/confusion_matrix_vocoder.png")
+    fig.write_image(f"{SAVE}/{check}_confusion_matrix_vocoder.png")
 
     fig = fig_confusion(check, tts_data)
-    fig.write_image(f"{SAVE}/confusion_matrix_tts.png")
+    fig.write_image(f"{SAVE}/{check}_confusion_matrix_tts.png")
 
     fig = fig_confusion(check, vc_data)
-    fig.write_image(f"{SAVE}/confusion_matrix_vc.png")
+    fig.write_image(f"{SAVE}/{check}_confusion_matrix_vc.png")
+
+    fig = create_absolute_method_fig(check, data_list)
+    if fig:
+        fig.write_image(f"{SAVE}/{check}_absolute_wrong_methods.png")
 
 def create_viz(check):
     viz = []
@@ -371,6 +375,45 @@ def create_viz(check):
 
     fig = px.line(df, x='Number of checks', y='EER', color='Method Type', markers=True)
     fig.write_image(f"{SAVE}/{check}_eer_per_distance.png")
+
+def create_absolute_method_fig(check, df):
+    condition = (df[f'{check}_is_genuine'] == True) & (df['is_genuine'] == False)
+    counts = df[condition].groupby('method_name').size().reset_index(name='counts')
+
+    if not counts.empty:
+        max_count = counts['counts'].max()
+        
+        fig = px.bar(
+            counts,
+            x='method_name',
+            y='counts',
+            title='Number of wrongly classified audios grouped by Method',
+            labels={'counts': 'Wrong classifications', 'method_name': 'Method Name'},
+        )
+
+        fig.update_layout(
+            xaxis_tickangle=-45,
+            xaxis_title="Method Name",
+            yaxis_title="Number of Items",
+            margin=dict(t=100),
+        )
+
+        fig.update_yaxes(
+            tickmode='linear',
+            dtick=1,
+            tickformat='d',
+            range=[0, max_count + 1]
+        )
+
+        fig.update_traces(
+            marker_color='red',
+            texttemplate='%{y}',
+            textposition='outside',
+            cliponaxis=False,
+        )
+
+        return fig
+    return None
 
 # -------------------------------------------------- #
 # -------------------------------------------------- #
