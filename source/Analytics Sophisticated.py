@@ -384,6 +384,9 @@ def create_absolute_method_fig(check, df):
     condition = (df[f'{check}_is_genuine'] == True) & (df['is_genuine'] == False)
     counts = df[condition].groupby('method_name').size().reset_index(name='counts')
 
+    # Sort by 'counts' in descending order and take the first 10 rows
+    counts = counts.sort_values(by='counts', ascending=False).head(10)
+
     if not counts.empty:
         max_count = counts['counts'].max()
         
@@ -432,14 +435,12 @@ def create_relative_method_fig(check, df):
 
     # Filter to show only methods with wrong classifications and sort by wrong_counts
     filtered_counts = merged_counts[merged_counts['wrong_counts'] > 0].sort_values(by='wrong_counts', ascending=False)
-
-    # Limit the result to the top 10 methods
-    merged_counts = filtered_counts.head(10)
-
+    merged_counts = filtered_counts
     
     # Calculate percentages
     merged_counts['wrong_percentage'] = (merged_counts['wrong_counts'] / merged_counts['total_counts']) * 100
     merged_counts['correct_percentage'] = (merged_counts['correct_counts'] / merged_counts['total_counts']) * 100
+    merged_counts = merged_counts.sort_values(by='wrong_percentage', ascending=False).head(10)
 
     if not merged_counts.empty:
         # Create a bar chart for correct (green) and wrong (red) percentages
@@ -901,13 +902,6 @@ with pd.ExcelWriter(f"{SAVE}/analytics.xlsx") as writer:
 
 
 data_list.to_csv(f"{SAVE}/data_list.csv")
-data_list.to_excel(f"{SAVE}/data_list.xlsx")
-
 data_list_with_vocoder.to_csv(f"{SAVE}/data_list_with_vocoder.csv")
-data_list_with_vocoder.to_excel(f"{SAVE}/data_list_with_vocoder.xlsx")
-
 tts_data.to_csv(f"{SAVE}/tts_data.csv")
-tts_data.to_excel(f"{SAVE}/tts_data.xlsx")
-
 vc_data.to_csv(f"{SAVE}/vc_data.csv")
-vc_data.to_excel(f"{SAVE}/vc_data.xlsx")
