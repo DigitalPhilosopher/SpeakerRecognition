@@ -5,12 +5,12 @@ import subprocess
 parser = argparse.ArgumentParser(description='Model Setup Parameters')
 parser.add_argument('--dir', type=str, required=True, help='Model directory', default="models/")
 parser.add_argument('--batches', type=int, default=8, help='Number of batches')
-parser.add_argument('--labels', type=str, default='valid', help='Labels (train/test/valid)')
+parser.add_argument('--labels', type=str, default='valid', help='Labels (dev/train/test/valid)')
 parser.add_argument('--num_speakers', type=int, default=0, help='Number of speakers')
 parser.add_argument('--num_deepfakes', type=int, default=10, help='Number of deepfakes')
 parser.add_argument('--distances', type=int, default=5, help='Distance value')
 parser.add_argument('--max_length', type=int, default=32000, help='Maximum length')
-parser.add_argument('--dataset', type=str, default='BSI.deepfake', help='Dataset name')
+parser.add_argument('--dataset', type=str, default='BSI.deepfake', help='Dataset name (BSI.deepfake/ASVspoof5/inthewild)')
 
 args = parser.parse_args()
 
@@ -41,8 +41,10 @@ for model_path in pth_files:
         execution_file = "source/Analytics Sophisticated.py"
     elif DATASET == "ASVspoof5":
         execution_file = "source/Analytics Sophisticated ASVspoof.py"
+    elif DATASET == "inthewild":
+        execution_file = "source/Analytics Sophisticated in the wild.py"
     else:
-        print("Dataset must be either ASVspoof5 or BSI.deepfake")
+        print("Dataset must be either inthewild, ASVspoof5 or BSI.deepfake")
         exit(-1)
     subprocess.run(["python", execution_file,
         "--model", model,
